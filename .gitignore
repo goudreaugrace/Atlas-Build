@@ -15,6 +15,7 @@ out/
 .vinext/
 dist/
 Atlas/
+Atlas-intelligence-/
 
 # TypeScript / tooling caches
 *.tsbuildinfo
