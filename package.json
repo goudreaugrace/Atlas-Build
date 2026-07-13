@@ -1,5 +1,5 @@
 {
-  "name": "bbe-brand-doctor",
+  "name": "atlas-intelligence",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -28,6 +28,10 @@
     "@types/node": "latest",
     "@types/react": "latest",
     "@types/react-dom": "latest",
-    "typescript": "latest"
+    "@vitejs/plugin-rsc": "^0.5.27",
+    "typescript": "latest",
+    "vinext": "1.0.0-beta.1",
+    "vite": "^8.1.4",
+    "wrangler": "^4.110.0"
   }
 }
