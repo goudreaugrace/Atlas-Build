@@ -1,0 +1,192 @@
+[
+  {
+    "id": "strong_but_slipping",
+    "name": "Strong but Slipping",
+    "severityDefault": "watch",
+    "plainEnglishDefinition": "The brand remains structurally powerful, but one or more core equity inputs are losing momentum. Scale can mask weakening relevance or freshness.",
+    "triggerSummary": "Large or established brand; high Demand Power or Meaningful; declining momentum on Demand Power or Meaningful; Salience may still be strong.",
+    "doctorRead": "This is not a crisis diagnosis. It is an early warning that the equity base needs maintenance before the advantage leaks into demand or pricing power.",
+    "whatNotToConclude": [
+      "Do not treat this as a pure awareness problem.",
+      "Do not assume the brand is weak because core levels remain strong.",
+      "Do not ignore the signal because commercial scale still looks healthy."
+    ],
+    "primaryTreatmentFamilies": [
+      "refresh_relevance",
+      "modernize_iconicity",
+      "strengthen_distinctive_assets",
+      "value_delivery_check"
+    ],
+    "typicalFollowUpSignals": [
+      "Meaningful momentum",
+      "Demand Power momentum",
+      "Creative effectiveness",
+      "Occasion salience",
+      "Pricing Power"
+    ]
+  },
+  {
+    "id": "salient_but_generic",
+    "name": "Salient but Generic",
+    "severityDefault": "watch",
+    "plainEnglishDefinition": "The brand comes to mind, but does not have a strong enough reason to choose beyond familiarity, habit, or availability.",
+    "triggerSummary": "Salience is strong or stable; Difference and Pricing Power are not ahead or are weak.",
+    "doctorRead": "The brand is visible in memory, but the point of difference is not doing enough work. More reach alone may create empty awareness.",
+    "whatNotToConclude": [
+      "Do not prescribe more media before checking proposition clarity.",
+      "Do not confuse fame with choice power."
+    ],
+    "primaryTreatmentFamilies": [
+      "sharpen_point_of_difference",
+      "distinctive_brand_assets",
+      "functional_difference",
+      "emotive_difference"
+    ],
+    "typicalFollowUpSignals": [
+      "Different",
+      "Pricing Power",
+      "Brand image uniqueness",
+      "Creative asset recognition"
+    ]
+  },
+  {
+    "id": "meaningful_but_invisible",
+    "name": "Meaningful but Invisible",
+    "severityDefault": "opportunity",
+    "plainEnglishDefinition": "Consumers who know the brand see relevance, but the brand does not come to mind often enough in relevant occasions.",
+    "triggerSummary": "Meaningful is strong; Salience is weak or not ahead.",
+    "doctorRead": "The brand has permission but lacks mental availability. The treatment is presence and memory structure, not necessarily repositioning.",
+    "whatNotToConclude": [
+      "Do not rebuild the proposition if relevance is already strong."
+    ],
+    "primaryTreatmentFamilies": [
+      "build_salience",
+      "occasion_memory_structures",
+      "increase_reach_continuity",
+      "physical_presence"
+    ],
+    "typicalFollowUpSignals": [
+      "Salient",
+      "Unaided awareness",
+      "Reach",
+      "Continuity"
+    ]
+  },
+  {
+    "id": "different_but_niche",
+    "name": "Different but Niche",
+    "severityDefault": "opportunity",
+    "plainEnglishDefinition": "The brand stands for something distinctive, but the difference is not yet broad, relevant, or easy enough to scale.",
+    "triggerSummary": "Different is strong; Meaningful or Salient lag.",
+    "doctorRead": "The brand has an edge. The job is to translate that edge into a broader consumer job without sanding it down.",
+    "whatNotToConclude": [
+      "Do not dilute difference in pursuit of mass relevance."
+    ],
+    "primaryTreatmentFamilies": [
+      "broaden_relevance",
+      "translate_difference",
+      "build_salience",
+      "availability_in_high_fit_channels"
+    ],
+    "typicalFollowUpSignals": [
+      "Meaningful",
+      "Salient",
+      "Trial",
+      "Availability"
+    ]
+  },
+  {
+    "id": "underbuilt_equity",
+    "name": "Underbuilt Equity",
+    "severityDefault": "priority",
+    "plainEnglishDefinition": "The brand does not yet have enough Meaningful, Different, or Salient equity to support a scaled growth role.",
+    "triggerSummary": "Demand Power below ambition and M/D/S not ahead.",
+    "doctorRead": "The foundation is not strong enough. Scaling media or aggressive commercial expectations before the basics are clear risks wasting investment.",
+    "whatNotToConclude": [
+      "Do not label the brand as a failure without clarifying its portfolio role.",
+      "Do not jump to premium or acceleration treatments before foundation is fixed."
+    ],
+    "primaryTreatmentFamilies": [
+      "clarify_proposition",
+      "build_basic_familiarity",
+      "product_experience_check",
+      "establish_distinctive_assets"
+    ],
+    "typicalFollowUpSignals": [
+      "Meaningful",
+      "Different",
+      "Salient",
+      "Trial",
+      "Consideration"
+    ]
+  },
+  {
+    "id": "foundation_deficit",
+    "name": "Foundation Deficit",
+    "severityDefault": "priority",
+    "plainEnglishDefinition": "The brand is weak across most core equity measures. It needs basic brand-building foundations before targeted optimization.",
+    "triggerSummary": "DP, PP, M, D, and S are all weak or category-lagging.",
+    "doctorRead": "Treat the foundation before treating symptoms. This is the brand-equity version of nutrition, sleep, and exercise before specialist intervention.",
+    "whatNotToConclude": [
+      "Do not over-prescribe advanced activations when the foundation is not clear."
+    ],
+    "primaryTreatmentFamilies": [
+      "clarify_proposition",
+      "build_basic_familiarity",
+      "product_experience_check",
+      "distinctive_brand_assets",
+      "physical_presence"
+    ],
+    "typicalFollowUpSignals": [
+      "M/D/S collectively",
+      "Familiarity",
+      "Consideration",
+      "Trial"
+    ]
+  },
+  {
+    "id": "price_value_vulnerability",
+    "name": "Price-Value Vulnerability",
+    "severityDefault": "watch",
+    "plainEnglishDefinition": "The brand may not have enough equity-based justification to defend or command its intended price position.",
+    "triggerSummary": "Pricing Power not ahead, weak Different or Meaningful, or Pricing Power 9-box flags risk.",
+    "doctorRead": "This is a broad brand-equity pricing signal, not a SKU price recommendation. The question is whether the brand earns its price in consumers\u2019 minds.",
+    "whatNotToConclude": [
+      "Do not use Pricing Power to set SKU-level price points.",
+      "Do not assume the only answer is price reduction."
+    ],
+    "primaryTreatmentFamilies": [
+      "premium_justification",
+      "quality_cues",
+      "value_delivery_check",
+      "rgm_referral"
+    ],
+    "typicalFollowUpSignals": [
+      "Pricing Power",
+      "Perceived worth",
+      "Different",
+      "RGM price positioning"
+    ]
+  },
+  {
+    "id": "healthy_or_watch",
+    "name": "Healthy / Monitor",
+    "severityDefault": "monitor",
+    "plainEnglishDefinition": "The brand does not trigger a major equity ailment from the current data. Continue monitoring and look for strategic upside.",
+    "triggerSummary": "No high-priority diagnostic rules fire.",
+    "doctorRead": "The current panel does not demand urgent intervention. The right work is to maintain the brand\u2019s strengths and monitor context shifts.",
+    "whatNotToConclude": [
+      "Do not assume no action is needed; context and portfolio role still matter."
+    ],
+    "primaryTreatmentFamilies": [
+      "maintain_distinctive_assets",
+      "monitor_context",
+      "selective_acceleration"
+    ],
+    "typicalFollowUpSignals": [
+      "Momentum",
+      "Category context",
+      "GN conversion"
+    ]
+  }
+]

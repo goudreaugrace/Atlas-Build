@@ -1,0 +1,718 @@
+[
+  {
+    "moduleId": "why-brand-equity-matters",
+    "eyebrow": "Start With Brand Equity",
+    "title": "Why Brand Equity Matters",
+    "promise": "Understand why BBE is the starting point before any diagnosis, Jarvis question, or work asset.",
+    "summary": "Brand equity is the consumer-side strength that helps a brand get chosen, justify value, and keep building momentum. Brand Doctor starts here because governed outputs only make sense once the team understands the health of that equity system.",
+    "heroBullets": [
+      "Demand Power and Perceived Value are the outcome signals.",
+      "Momentum tells whether the brand is getting healthier, not just whether it is strong today.",
+      "The goal is better marketing action, not measurement for its own sake."
+    ],
+    "blocks": [
+      {
+        "type": "narrative",
+        "title": "The marketer version",
+        "body": [
+          "BBE matters because it helps PepsiCo read the brand before the commercial result is fully visible. A brand can still be large, famous, or widely distributed while its equity is quietly losing energy.",
+          "That is why Brand Doctor starts with the equity signal panel. It tells the room whether consumers have enough memory, relevance, difference, demand support, and broad value perception for the brand to keep doing its job."
+        ]
+      },
+      {
+        "type": "principle-grid",
+        "title": "What Brand Doctor is trying to protect",
+        "items": [
+          {
+            "title": "Future demand",
+            "body": "Demand Power points to whether equity can help the brand generate consumer pull."
+          },
+          {
+            "title": "Value justification",
+            "body": "Perceived Value points to whether equity broadly supports premium or value defense."
+          },
+          {
+            "title": "Momentum",
+            "body": "Momentum shows whether those strengths are improving, holding, or slipping."
+          }
+        ]
+      },
+      {
+        "type": "comparison",
+        "title": "Strong today is not the same as healthy tomorrow",
+        "columns": [
+          {
+            "title": "Strong today",
+            "body": "The brand may sit above the category or look advantaged versus peers.",
+            "bullets": [
+              "Useful for context",
+              "Can reflect existing scale",
+              "Does not prove the brand is improving"
+            ]
+          },
+          {
+            "title": "Healthy tomorrow",
+            "body": "The brand is gaining or protecting momentum in the signals that matter for its role.",
+            "bullets": [
+              "More useful for action",
+              "Highlights trajectory",
+              "Makes treatment urgency clearer"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "example",
+        "title": "Prototype read",
+        "brand": "A large salty snack brand",
+        "situation": "The brand is still category-leading on Demand Power but is no longer gaining momentum.",
+        "read": "The team should not panic, but it should not ignore the signal either. The diagnosis should ask what part of the equity system is no longer compounding.",
+        "whatToDo": "Bring the conversation back to the evidence: which input KPI is slipping, which benchmark is creating the watchout, and what follow-up signal would prove the brand is recovering?"
+      },
+      {
+        "type": "questions",
+        "title": "Questions to bring into the room",
+        "prompts": [
+          "Are we strong because of current equity, inherited scale, or both?",
+          "Which signal tells us whether the brand is getting healthier?",
+          "What would make us change the treatment path, proof request, or work asset next quarter?"
+        ]
+      }
+    ]
+  },
+  {
+    "moduleId": "bbe-system-one-picture",
+    "eyebrow": "Read The Signals",
+    "title": "The BBE System In One Picture",
+    "promise": "Separate BBE outcomes from the input signals that explain the equity foundation underneath.",
+    "summary": "BBE is easiest to read when the team separates what the brand is achieving from why it may be achieving it. Demand Power and Perceived Value are outcome KPIs. Salient, Meaningful, and Different are input KPIs that help explain the pattern.",
+    "heroBullets": [
+      "Demand Power is typically read through Meaningful plus Salient.",
+      "Perceived Value is typically read through Meaningful plus Different.",
+      "Weak input metrics are symptoms. Diagnosis comes from the pattern."
+    ],
+    "blocks": [
+      {
+        "type": "signal-read",
+        "title": "The five core signals",
+        "intro": "Use the plain-English read first, then go deeper when the evidence or rule trace requires it.",
+        "signals": [
+          {
+            "label": "Demand Power",
+            "read": "How much brand equity can support consumer demand.",
+            "caveat": "Do not read it as sales volume or distribution."
+          },
+          {
+            "label": "Perceived Value",
+            "read": "How well brand equity broadly supports perceived value.",
+            "caveat": "Do not read it as SKU-level pricing guidance."
+          },
+          {
+            "label": "Salient",
+            "read": "Whether the brand comes to mind in relevant moments.",
+            "caveat": "Mental availability is broader than awareness."
+          },
+          {
+            "label": "Meaningful",
+            "read": "Whether the brand feels relevant and meets consumer needs.",
+            "caveat": "High relevance still needs retrieval and choice clarity."
+          },
+          {
+            "label": "Different",
+            "read": "Whether the brand feels meaningfully distinct in the category.",
+            "caveat": "Do not equate it with distinctive asset measurement."
+          }
+        ]
+      },
+      {
+        "type": "principle-grid",
+        "title": "How the system hangs together",
+        "items": [
+          {
+            "title": "Meaningful supports both outcomes",
+            "body": "Relevance is foundational. If consumers do not see the brand as meeting needs, demand and perceived value both become harder."
+          },
+          {
+            "title": "Salient strengthens demand",
+            "body": "A brand that is easy to retrieve has a better chance of being chosen when the occasion appears."
+          },
+          {
+            "title": "Different strengthens perceived value",
+            "body": "A brand that feels clear, distinctive, or leading has more equity permission to defend value."
+          }
+        ]
+      },
+      {
+        "type": "guardrail",
+        "title": "Do not diagnose from one metric alone",
+        "body": "One weak metric tells the team where to look. It does not automatically explain the condition or choose the treatment.",
+        "allowed": [
+          "Use one metric as a symptom.",
+          "Check related inputs and outcomes.",
+          "Look for matched, missing, and counter evidence."
+        ],
+        "blocked": [
+          "Do not prescribe a campaign from one red score.",
+          "Do not treat Salient, Meaningful, and Different as interchangeable.",
+          "Do not let the LLM invent a diagnosis outside configured rules."
+        ]
+      },
+      {
+        "type": "example",
+        "title": "Prototype read",
+        "brand": "A salient but generic brand",
+        "situation": "The brand is easy to think of, but Different is weak and Perceived Value is not ahead.",
+        "read": "The issue may not be reach. It may be that the brand lacks enough choice advantage or recognizable value to defend premium.",
+        "whatToDo": "Check diagnosis evidence before jumping to media. A distinctiveness or brand-meaning treatment path may be more appropriate."
+      }
+    ]
+  },
+  {
+    "moduleId": "three-benchmarks",
+    "eyebrow": "Interpret The Pattern",
+    "title": "How To Read The Three Benchmarks",
+    "promise": "Know which benchmark is speaking before deciding whether a signal is good, bad, or mixed.",
+    "summary": "BBE signals are not just scores. They are read through category context, peer ambition, and movement over time. The same metric can look strong through one lens and concerning through another.",
+    "heroBullets": [
+      "Vs Category answers: where do we stand in the category?",
+      "Ahead answers: are we ahead of similar-size or life-stage peers?",
+      "Momentum answers: are we improving, holding, or declining?"
+    ],
+    "blocks": [
+      {
+        "type": "comparison",
+        "title": "The benchmark triptych",
+        "columns": [
+          {
+            "title": "Vs Category",
+            "body": "A context lens. It compares the brand to the category average.",
+            "bullets": [
+              "Good for orientation",
+              "Can flatter large leaders",
+              "Can hide ambition gaps"
+            ]
+          },
+          {
+            "title": "Ahead",
+            "body": "An ambition lens. It asks whether the brand is ahead of the relevant peer threshold.",
+            "bullets": [
+              "Useful for role expectations",
+              "Depends on life stage",
+              "Should not be read as universal rank"
+            ]
+          },
+          {
+            "title": "Momentum",
+            "body": "A trajectory lens. It asks whether the brand has moved significantly versus the prior period.",
+            "bullets": [
+              "Best for urgency",
+              "Different from current strength",
+              "Needs source-period caveats"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "signal-read",
+        "title": "Common benchmark conflicts",
+        "intro": "Conflicts are not bugs. They are the reason diagnosis is useful.",
+        "signals": [
+          {
+            "label": "Category-leading but declining",
+            "read": "The brand is strong today but may be losing future advantage.",
+            "caveat": "Do not call the brand unhealthy without checking repeated evidence."
+          },
+          {
+            "label": "Category parity but gaining",
+            "read": "The brand may not be advantaged yet, but the trajectory is promising.",
+            "caveat": "Do not over-celebrate if the base remains weak."
+          },
+          {
+            "label": "Ahead but flat",
+            "read": "The brand may be meeting peer ambition without building new momentum.",
+            "caveat": "Treatment urgency depends on brand role and category pressure."
+          }
+        ]
+      },
+      {
+        "type": "guardrail",
+        "title": "Ask: red versus what?",
+        "body": "A red signal is only useful when the team knows which benchmark created it.",
+        "allowed": [
+          "Red versus category means relative category weakness.",
+          "Red on Ahead means the brand may not meet peer ambition.",
+          "Red on Momentum means the brand is moving the wrong way."
+        ],
+        "blocked": [
+          "Do not collapse all reds into one problem.",
+          "Do not compare across categories without caveats.",
+          "Do not treat one period as a permanent trend."
+        ]
+      },
+      {
+        "type": "questions",
+        "title": "Diagnostic questions",
+        "prompts": [
+          "Which benchmark is driving the concern?",
+          "Is this a current-strength issue or a trajectory issue?",
+          "Would the read change if we used the brand's life-stage peer set?"
+        ]
+      }
+    ]
+  },
+  {
+    "moduleId": "momentum-ambition",
+    "eyebrow": "Interpret The Pattern",
+    "title": "Why Momentum Is The Ambition",
+    "promise": "Use Momentum to separate brands that are merely holding from brands that are truly getting healthier.",
+    "summary": "Momentum is the movement signal. It helps the team see whether Demand Power and Perceived Value are building, holding, or eroding. It should be interpreted with category context, brand role, and source-period caveats.",
+    "heroBullets": [
+      "Current strength is the health read today.",
+      "Momentum is the trajectory read.",
+      "A strong but slipping brand and a weak but gaining brand need different conversations."
+    ],
+    "blocks": [
+      {
+        "type": "workflow",
+        "title": "How to read momentum",
+        "steps": [
+          {
+            "label": "Start with the outcome",
+            "body": "Look first at Demand Power and Perceived Value momentum because these are the outcome KPIs."
+          },
+          {
+            "label": "Check the inputs",
+            "body": "Look for Salient, Meaningful, or Different movement that explains the outcome trajectory."
+          },
+          {
+            "label": "Compare to role",
+            "body": "A growth engine may need active momentum. A harvest role may have different expectations."
+          },
+          {
+            "label": "Name the caveat",
+            "body": "One period can be a warning, but it should not be treated as a permanent trend without more evidence."
+          }
+        ]
+      },
+      {
+        "type": "comparison",
+        "title": "Two brands, same score, different read",
+        "columns": [
+          {
+            "title": "Strong but slipping",
+            "body": "A brand can look healthy today while losing momentum in the signals that built its advantage.",
+            "bullets": [
+              "Protect the base",
+              "Find the slipping input",
+              "Refresh before erosion gets obvious"
+            ]
+          },
+          {
+            "title": "Weak but gaining",
+            "body": "A brand can be below ambition today while showing evidence that the system is improving.",
+            "bullets": [
+              "Do not overreact to current weakness",
+              "Look for repeatable drivers",
+              "Accelerate if evidence is credible"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "guardrail",
+        "title": "Holding is not always enough",
+        "body": "Holding can be acceptable in some contexts, but it is not the same as building advantage.",
+        "allowed": [
+          "Use holding as a stability signal.",
+          "Pair holding with brand role and category pressure.",
+          "Ask what would create gaining momentum."
+        ],
+        "blocked": [
+          "Do not call holding a growth win by default.",
+          "Do not ignore slipping inputs under stable outcomes.",
+          "Do not call momentum causal without causal evidence."
+        ]
+      }
+    ]
+  },
+  {
+    "moduleId": "brandz-typologies",
+    "eyebrow": "Protect Source Boundaries",
+    "title": "Source Context And Typology Boundaries",
+    "promise": "Use source-deck typology language only as context, not as the product verdict.",
+    "summary": "Some source reports include labels such as Star, Mainstream, or Specialist. Brand Doctor can explain those labels when asked, but the current product read should lead with Momentum, Ahead/Behind, category context, M/D/S, Perceived Value, evidence gaps, and treatment paths to test.",
+    "heroBullets": [
+      "Typology labels belong to source context.",
+      "Do not volunteer them in ordinary diagnosis or CMO answers.",
+      "The product verdict comes from the current evidence pattern."
+    ],
+    "blocks": [
+      {
+        "type": "principle-grid",
+        "title": "Where source labels fit",
+        "items": [
+          {
+            "title": "Source report context",
+            "body": "Use typology language when the user explicitly asks how a source deck framed the brand."
+          },
+          {
+            "title": "Peer and life-stage context",
+            "body": "Use life-stage or peer-set context to explain benchmark fairness, not to override the current read."
+          },
+          {
+            "title": "Product verdict",
+            "body": "Use Momentum, Ahead/Behind, category context, M/D/S, Perceived Value, proof gaps, and treatment paths as the ordinary headline."
+          },
+          {
+            "title": "Assistant behavior",
+            "body": "Jarvis and the stable Assistant should not volunteer Star, BrandZ, or Kantar-style labels unless the user asks about that source context."
+          }
+        ]
+      },
+      {
+        "type": "example",
+        "title": "When a source label appears",
+        "brand": "A brand labeled Star in a source deck",
+        "situation": "A stakeholder asks whether the brand is a Star.",
+        "read": "Brand Doctor can answer that as source context, then bring the conversation back to the current evidence: Momentum, M/D/S, Perceived Value, proof gaps, and the treatment path to test.",
+        "whatToDo": "Do not make Star the headline verdict. Use it only to explain the source deck or benchmark context, then return to the governed brand read."
+      },
+      {
+        "type": "guardrail",
+        "title": "Typology is source context only",
+        "body": "A typology is a source-deck read from a specific category, market, period, and competitive set. It should never become permanent brand DNA or a substitute for diagnosis.",
+        "allowed": [
+          "Explain typology when explicitly asked.",
+          "Use life stage to explain fair peer thresholds.",
+          "Return to the current evidence pattern for the headline read."
+        ],
+        "blocked": [
+          "Do not volunteer typology labels in ordinary equity answers.",
+          "Do not call a brand permanently miscast from one period.",
+          "Do not use typology as the diagnosis or product verdict."
+        ]
+      }
+    ]
+  },
+  {
+    "moduleId": "growth-navigator-connection",
+    "eyebrow": "Connect BBE To Action",
+    "title": "How BBE Connects To Growth Navigator",
+    "promise": "Understand how Growth Navigator helps separate equity health from commercial conversion symptoms.",
+    "summary": "BBE diagnoses the equity system. Growth Navigator adds commercial vitals: proposition, reach, resonance, availability and visibility, and value. The bridge helps teams avoid rewriting the brand when the real constraint may be conversion, reach, or availability.",
+    "heroBullets": [
+      "BBE is equity health.",
+      "Growth Navigator is commercial vitals.",
+      "Bridge language should avoid causal overclaiming."
+    ],
+    "blocks": [
+      {
+        "type": "principle-grid",
+        "title": "What GN can help explain",
+        "items": [
+          {
+            "title": "Proposition",
+            "body": "Is the offer clear enough and connected to the job consumers need done?"
+          },
+          {
+            "title": "Reach",
+            "body": "Is the brand reaching enough buyers or occasions to convert equity into growth?"
+          },
+          {
+            "title": "Resonance",
+            "body": "Are consumers responding to the brand in a way that supports repeat choice?"
+          },
+          {
+            "title": "Available and Visible",
+            "body": "Can people find, see, and buy the brand when demand exists?"
+          },
+          {
+            "title": "Value",
+            "body": "Does the brand feel worth the choice in the current category and price context?"
+          }
+        ]
+      },
+      {
+        "type": "comparison",
+        "title": "Equity ailment or conversion leak?",
+        "columns": [
+          {
+            "title": "Equity ailment",
+            "body": "BBE shows weakness in the brand's meaning, distinctiveness, salience, demand support, or perceived value.",
+            "bullets": [
+              "Treatment likely starts with brand foundations",
+              "Evidence sits in BBE and related equity sources"
+            ]
+          },
+          {
+            "title": "Conversion leak",
+            "body": "BBE may be stable or strong, but GN suggests reach, availability, visibility, proposition, or value delivery is blocking growth.",
+            "bullets": [
+              "Treatment may need commercial partners",
+              "Evidence sits in GN, sales, retail, or activation sources"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "guardrail",
+        "title": "Do not turn a bridge into causality",
+        "body": "BBE and GN may use different periods, sources, and definitions. The bridge is a diagnostic lens unless causal evidence is available.",
+        "allowed": [
+          "Say a pattern is consistent with a conversion leak.",
+          "Call out missing GN data explicitly.",
+          "Use source-period caveats."
+        ],
+        "blocked": [
+          "Do not claim GN proves BBE caused sales movement.",
+          "Do not infer cannibalization or occasion migration as fact.",
+          "Do not treat GN as a duplicate BBE dashboard."
+        ]
+      }
+    ]
+  },
+  {
+    "moduleId": "pricing-power-guardrail",
+    "eyebrow": "Read The Signals",
+    "title": "Perceived Value Guardrail",
+    "promise": "Use Perceived Value as a brand-equity signal without turning it into SKU-level pricing advice.",
+    "summary": "Perceived Value is broad equity-based value perception. It helps the team understand whether brand equity supports premium defense or value perception. It does not set price points, pack architecture, promo depth, or channel-level pricing moves.",
+    "heroBullets": [
+      "Perceived Value is an equity diagnostic.",
+      "Exact price decisions need RGM and pricing science.",
+      "Weak Perceived Value often points back to Meaningful and Different."
+    ],
+    "blocks": [
+      {
+        "type": "guardrail",
+        "title": "Allowed and blocked reads",
+        "body": "The most important thing is not to overstate what the metric can do.",
+        "allowed": [
+          "The brand may have broad equity permission to justify a premium.",
+          "The brand may need stronger value, relevance, or distinctiveness before taking price.",
+          "The team should partner with RGM for specific pricing decisions."
+        ],
+        "blocked": [
+          "Raise price by a specific amount.",
+          "Change pack architecture based on Perceived Value alone.",
+          "Use Perceived Value as a substitute for conjoint, MMM, store, or channel analysis."
+        ]
+      },
+      {
+        "type": "signal-read",
+        "title": "How to interpret common patterns",
+        "intro": "Perceived Value becomes more useful when read with Meaningful and Different, while preserving Pricing Power as the source metric name where source files use it.",
+        "signals": [
+          {
+            "label": "Meaningful strong, Different weak",
+            "read": "The brand may be relevant but not distinctive enough to defend premium.",
+            "caveat": "Do not assume a new claim fixes the problem without asset and category evidence."
+          },
+          {
+            "label": "Different strong, Meaningful weak",
+            "read": "The brand may stand out but not connect strongly enough to needs.",
+            "caveat": "Do not over-invest in novelty if relevance is the binding constraint."
+          },
+          {
+            "label": "Both weak",
+            "read": "Perceived Value may be limited by both relevance and perceived choice advantage.",
+            "caveat": "Treatment likely needs foundational brand work before price action."
+          }
+        ]
+      },
+      {
+        "type": "example",
+        "title": "Prototype read",
+        "brand": "A premium-aspiring snack brand",
+        "situation": "Perceived Value is not ahead, Different is weak, and the team wants to talk price.",
+        "read": "Brand Doctor should keep the conversation at equity permission, not SKU price. The likely question is whether consumers see enough differentiated value to support premium justification.",
+        "whatToDo": "Bring RGM into price mechanics, but use Brand Doctor to clarify what equity needs to strengthen first."
+      }
+    ]
+  },
+  {
+    "moduleId": "brand-doctor-workflow",
+    "eyebrow": "Use Brand Command",
+    "title": "How The Brand Doctor Works",
+    "promise": "Understand how Brand Command, Jarvis, Report, Data, and Work fit together.",
+    "summary": "Brand Doctor is now one governed brand intelligence brain with many outputs. It reads the Brand Health Record, evaluates configured rules, exposes evidence, answers grounded questions, and creates review-draft workspaces only when the user approves a heavier work request.",
+    "heroBullets": [
+      "Components render.",
+      "Services compute.",
+      "Config files define.",
+      "LLMs explain."
+    ],
+    "blocks": [
+      {
+        "type": "workflow",
+        "title": "The current product path",
+        "steps": [
+          {
+            "label": "Open Brand Command Home",
+            "body": "Start with the brand's command lobby: what we know, what can be done next, and where to go for Report, Work, Data, Assistant, Jarvis, or Portfolio."
+          },
+          {
+            "label": "Read or ask first",
+            "body": "Use the Report for the full diagnostic read, the stable Assistant for grounded chat, or Jarvis for the immersive command layer."
+          },
+          {
+            "label": "Approve heavier work",
+            "body": "When the ask needs a proof pack, meeting prep read, treatment read, or CMO asset, the system scopes the work before building it."
+          },
+          {
+            "label": "Use the Work Shelf",
+            "body": "Durable workspaces hold CMO Review assets, Evidence Reads, Treatment Reads, and other outputs as URL-addressable review drafts."
+          },
+          {
+            "label": "Keep proof and gates visible",
+            "body": "Evidence, gaps, review posture, source boundaries, and export/circulation gates stay visible before the team treats an output as decision-ready."
+          }
+        ]
+      },
+      {
+        "type": "comparison",
+        "title": "System versus human ownership",
+        "columns": [
+          {
+            "title": "The system owns",
+            "body": "Consistent interpretation of configured facts, rules, evidence, caveats, treatment-path options, and governed output templates.",
+            "bullets": [
+              "Diagnosis logic",
+              "Evidence trace",
+              "Treatment fit",
+              "Missing data labels",
+              "Review-draft workspaces"
+            ]
+          },
+          {
+            "title": "The human team owns",
+            "body": "The actual prescription decision, business tradeoffs, sequencing, ownership, cross-functional action, and official circulation.",
+            "bullets": [
+              "Strategic judgment",
+              "Commercial feasibility",
+              "Creative choices",
+              "Operational commitment"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "guardrail",
+        "title": "No Magic AI",
+        "body": "The LLM can explain, challenge, compare, summarize, and translate. It should not invent diagnoses, treatments, or facts.",
+        "allowed": [
+          "Explain why a rule fired.",
+          "Summarize evidence for a meeting.",
+          "Prepare a review-draft work asset with approval.",
+          "Pressure-test a treatment path."
+        ],
+        "blocked": [
+          "Invent a new diagnosis.",
+          "Prescribe final action as a command.",
+          "Claim evidence exists when the ledger says it is missing.",
+          "Treat export or circulation as approved before gates clear."
+        ]
+      }
+    ]
+  },
+  {
+    "moduleId": "connecting-bbe-to-action",
+    "eyebrow": "Connect BBE To Action",
+    "title": "Connecting BBE To Better Marketing Action",
+    "promise": "See how connected evidence lenses and governed workspaces help explain and act on the BBE diagnosis without replacing it.",
+    "summary": "This is the bridge from orientation to action. BBE remains the diagnostic spine. Connected systems and output workspaces help answer what else to check, which partner to involve, and what evidence would make the next decision smarter.",
+    "heroBullets": [
+      "Connected systems are support lenses around BBE.",
+      "Each lens should be labeled as measured, inferred, simulated, or missing.",
+      "The right surface depends on the decision moment."
+    ],
+    "blocks": [
+      {
+        "type": "principle-grid",
+        "title": "Which lens helps next?",
+        "items": [
+          {
+            "title": "Growth Navigator",
+            "body": "Use when the question is whether equity is converting through reach, value, availability, visibility, or proposition."
+          },
+          {
+            "title": "Mental Availability / CEPs",
+            "body": "Use when Salient or Demand Power needs a more actionable read of buying situations and memory structures."
+          },
+          {
+            "title": "Distinctive assets",
+            "body": "Use when Different is being over-read as recognizability or when the brand needs stronger retrieval cues."
+          },
+          {
+            "title": "Physical availability",
+            "body": "Use when people may want the brand but cannot easily find, see, or buy it."
+          },
+          {
+            "title": "Machine availability",
+            "body": "Use when AI search, retail feeds, structured data, or discoverability could influence retrieval and purchase paths."
+          },
+          {
+            "title": "Evidence Readiness",
+            "body": "Use when the team needs to know how confident the system can be and what evidence is still missing."
+          },
+          {
+            "title": "Work Shelf",
+            "body": "Use when the question needs a durable CMO asset, Evidence Read, Treatment Read, or meeting-prep workspace with proof and gates visible."
+          }
+        ]
+      },
+      {
+        "type": "workflow",
+        "title": "A practical action sequence",
+        "steps": [
+          {
+            "label": "Start with BBE",
+            "body": "Name the diagnosis and the strongest evidence behind it."
+          },
+          {
+            "label": "Choose the surface",
+            "body": "Use Report for the full read, Assistant for grounded questions, Jarvis for the command layer, Data for proof, or Work for a review-draft output."
+          },
+          {
+            "label": "Identify the partner",
+            "body": "Bring in the right function: insights, brand, commercial, RGM, media, retail, data, or ecommerce."
+          },
+          {
+            "label": "Pick treatment paths to test",
+            "body": "Use the treatment library as options to consider, not a command."
+          },
+          {
+            "label": "Set proof signals",
+            "body": "Define what would make the team continue, change, stop the path, or revise the work asset."
+          }
+        ]
+      },
+      {
+        "type": "guardrail",
+        "title": "Do not create a competing master framework",
+        "body": "The prototype may show Growth Availability, Mental Availability, CEPs, physical availability, machine availability, and executive work assets, but those lenses should point back to the BBE diagnosis.",
+        "allowed": [
+          "Use connected systems to explain the BBE read.",
+          "Use them to expose missing evidence.",
+          "Use them to route the next action or work asset."
+        ],
+        "blocked": [
+          "Do not replace BBE with a new master score.",
+          "Do not treat simulated prototype packets as measured facts.",
+          "Do not infer portfolio migration or cannibalization without evidence.",
+          "Do not treat a review-draft workspace as officially approved."
+        ]
+      },
+      {
+        "type": "questions",
+        "title": "Meeting prompts",
+        "prompts": [
+          "Which connected lens or work asset would most improve our confidence in this diagnosis?",
+          "What evidence is missing before we commit resources?",
+          "Which partner needs to be in the next working session?",
+          "Does this need a Report read, a Jarvis answer, a Data inspection, or a Work Shelf asset?"
+        ]
+      }
+    ]
+  }
+]

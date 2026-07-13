@@ -1,0 +1,33 @@
+{
+  "brandId": "lay-s",
+  "sourceType": "strategy_brief",
+  "reviewStatus": "draft",
+  "sourceLabel": "Brand Strategic Context source label",
+  "sourceOwner": "Marketing or Insights owner",
+  "sourceDate": "2026-06-28",
+  "brandStatement": "One concise approved brand statement.",
+  "brandDna": [
+    "foundation one",
+    "foundation two"
+  ],
+  "positioning": "Approved positioning, when available.",
+  "objectives": [
+    "Approved objective one",
+    "Approved objective two"
+  ],
+  "portfolioContext": "Approved portfolio role/context.",
+  "planningPriorities": [
+    "Planning priority one",
+    "Planning priority two"
+  ],
+  "creativePlatform": "Approved creative platform, when available.",
+  "approvedClaims": [
+    "Claim the team is allowed to use."
+  ],
+  "claimsNotToMake": [
+    "Claim the team should not make."
+  ],
+  "caveats": [
+    "Draft or prototype packets are not an official brand source until promoted by the source owner."
+  ]
+}

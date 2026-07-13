@@ -1,0 +1,626 @@
+{
+  "id": "executive-intelligence-asset-page-module-registry-v1",
+  "lastReviewed": "2026-07-06",
+  "purpose": "Defines the governed page modules, proof minimums, caveat signals, source modules, revision types, and next operations for web-native executive intelligence assets.",
+  "guardrails": [
+    "Every executive asset page must declare its source modules and proof contract before visual rendering.",
+    "Slide-level polish cannot hide missing evidence, source caveats, simulated data, or blocked overclaims.",
+    "Treatment pages must remain options to consider or paths to test until human review is complete.",
+    "Source readiness and export posture must remain visible before any artifact is circulated."
+  ],
+  "assetDefinitions": [
+    {
+      "assetId": "cmo-review-intelligence-asset",
+      "titlePrefix": "CMO Review Intelligence Asset",
+      "coverTitlePrefix": "Momentum Read",
+      "approvedSkillId": "bbe_momentum_intelligence_read",
+      "approvedTemplateId": "cmo-review-intelligence-asset",
+      "audience": "cmo",
+      "objective": "decision_read",
+      "sourcePrompt": "Build me a CMO-ready read. Focus on whether we are actually strong or just big, what the risk is, and what we should do next.",
+      "summary": "Full executive intelligence asset that turns the current BBE/Growth Navigator packet into a governed CMO read with proof, caveats, treatment paths, and source-owner next proof.",
+      "proofSummary": { "evidence": 8, "gaps": 8, "gates": 1 },
+      "moduleIds": [
+        "executive_verdict",
+        "benchmark_lens_read",
+        "primary_chart_read",
+        "driver_diagnosis",
+        "demographic_boundary",
+        "provocation_questions",
+        "treatment_paths",
+        "source_readiness_next_proof"
+      ],
+      "decisionSupported": "Decide how leadership should read the brand now, what the current packet proves, where proof is still gated, and what paths are worth testing next.",
+      "askPrompts": ["Ask why Momentum leads", "Make this CMO-facing", "Create proof handoff"],
+      "triggerTerms": ["cmo review", "executive read", "intelligence asset", "momentum read", "brand equity read", "full asset"],
+      "sourceBasis": ["BBE packet", "Growth Navigator packet", "Kate/Lydia transcript feedback", "2026 Q1 US Snacks PPTX"]
+    },
+    {
+      "assetId": "primary-mds-dashboard-read",
+      "titlePrefix": "Primary MDS Dashboard Read",
+      "coverTitlePrefix": "MDS Dashboard Read",
+      "approvedSkillId": "bbe_momentum_intelligence_read",
+      "approvedTemplateId": "executive-asset-primary-chart-read",
+      "audience": "cmo",
+      "objective": "proof_review",
+      "sourcePrompt": "Create a CMO-grade read of the primary MDS dashboard, with source-chart lineage and proof caveats visible.",
+      "summary": "Source-chart replacement asset for the core MDS dashboard read: what the chart says, what it proves, what it does not prove, and what source-owner reconciliation is still needed.",
+      "proofSummary": { "evidence": 5, "gaps": 2, "gates": 1 },
+      "moduleIds": ["primary_chart_read"],
+      "decisionSupported": "Decide what the core MDS dashboard proves, what it does not prove, and what source-owner reconciliation is needed before deck replacement.",
+      "askPrompts": ["Show the chart source basis", "What claim is blocked here?", "Create the source-owner chart ask"],
+      "triggerTerms": ["mds dashboard", "primary chart", "source chart", "chart read", "recreate chart", "dashboard read"],
+      "sourceBasis": ["2026 Q1 US Snacks PPTX", "deck chart ledger", "BBE source data ledger"]
+    },
+    {
+      "assetId": "benchmark-lens-explainer",
+      "titlePrefix": "Benchmark Lens Explainer",
+      "coverTitlePrefix": "Benchmark Lens Read",
+      "approvedSkillId": "bbe_momentum_intelligence_read",
+      "approvedTemplateId": "executive-asset-benchmark-lens-explainer",
+      "audience": "cmo",
+      "objective": "decision_read",
+      "sourcePrompt": "Create a CMO-grade explainer for Momentum, Ahead/Behind, and category context so the read does not overclaim brand strength.",
+      "summary": "Explains the benchmark hierarchy from the PPTX and Kate feedback: Momentum is the headline verdict, Ahead/Behind is the size-adjusted check, and category index is context.",
+      "proofSummary": { "evidence": 6, "gaps": 1, "gates": 1 },
+      "moduleIds": ["benchmark_lens_read"],
+      "decisionSupported": "Align leadership on how to interpret Momentum, Ahead/Behind, and category context before the brand read turns into generic strength language.",
+      "askPrompts": ["Why does Momentum lead?", "Explain category context", "Show the Ahead/Behind proof"],
+      "triggerTerms": ["benchmark lens", "momentum leads", "ahead behind", "category context", "category index", "health proof"],
+      "sourceBasis": ["Kate/Lydia transcript feedback", "BBE deck doctrine", "2026 Q1 US Snacks PPTX"]
+    },
+    {
+      "assetId": "category-position-read",
+      "titlePrefix": "Category Position Read",
+      "coverTitlePrefix": "Category Position",
+      "approvedSkillId": "bbe_momentum_intelligence_read",
+      "approvedTemplateId": "executive-asset-category-position-read",
+      "audience": "cmo",
+      "objective": "decision_read",
+      "sourcePrompt": "Create a CMO-grade category position read that explains where the brand stands without treating category index as health proof.",
+      "summary": "Answers where the brand stands in the category while preserving peer-basis caveats and reconnecting scale context to Momentum and driver support.",
+      "proofSummary": { "evidence": 6, "gaps": 2, "gates": 1 },
+      "moduleIds": ["benchmark_lens_read", "primary_chart_read"],
+      "decisionSupported": "Decide how to describe category position while keeping scale, peer basis, Momentum, and driver support separate.",
+      "askPrompts": ["What does category position prove?", "What should we not overclaim?", "Compare to Momentum"],
+      "triggerTerms": ["category position", "where do we stand", "category index", "category standing", "peer basis", "category health"],
+      "sourceBasis": ["2026 Q1 US Snacks PPTX", "BBE deck doctrine", "Kate/Lydia transcript feedback"],
+      "pageOverrides": {
+        "benchmark_lens_read": {
+          "title": "Category Position Logic",
+          "role": "Show category position as context while keeping Momentum and Ahead/Behind separate from raw scale."
+        }
+      }
+    },
+    {
+      "assetId": "momentum-over-time-read",
+      "titlePrefix": "Momentum Over Time Read",
+      "coverTitlePrefix": "Momentum Over Time",
+      "approvedSkillId": "bbe_momentum_intelligence_read",
+      "approvedTemplateId": "executive-asset-momentum-over-time-read",
+      "audience": "cmo",
+      "objective": "decision_read",
+      "sourcePrompt": "Create a CMO-grade Momentum over time read that explains trajectory, urgency, significance caveats, and next proof.",
+      "summary": "Focuses leadership on trajectory and urgency: whether the brand is building, holding, or losing strength over time, with movement/significance limits visible.",
+      "proofSummary": { "evidence": 5, "gaps": 2, "gates": 1 },
+      "moduleIds": ["benchmark_lens_read"],
+      "decisionSupported": "Decide whether the brand is building, holding, or losing strength over time and what proof is needed before calling the trajectory durable.",
+      "askPrompts": ["What is the trajectory?", "What proof is missing?", "What would make this read wrong?"],
+      "triggerTerms": ["momentum over time", "trajectory", "trend", "over time", "losing strength", "building strength", "durable momentum"],
+      "sourceBasis": ["2026 Q1 US Snacks PPTX", "momentum source extracts", "Kate/Lydia transcript feedback"],
+      "pageOverrides": {
+        "benchmark_lens_read": {
+          "title": "Momentum Over Time Read",
+          "role": "Focus leadership on trajectory and proof needs before claiming the brand is building strength over time."
+        }
+      }
+    },
+    {
+      "assetId": "driver-relationship-map",
+      "titlePrefix": "Driver Relationship Map",
+      "coverTitlePrefix": "Driver Map",
+      "approvedSkillId": "bbe_momentum_intelligence_read",
+      "approvedTemplateId": "executive-asset-driver-relationship-map",
+      "audience": "cmo",
+      "objective": "decision_read",
+      "sourcePrompt": "Create a CMO-grade driver relationship map showing how Meaningful, Different, Salient, Demand Power, and Perceived Value work together.",
+      "summary": "Shows why the diagnosis is not one isolated metric: Demand Power is read with Meaningful and Salient; Perceived Value is read with Meaningful and Different.",
+      "proofSummary": { "evidence": 5, "gaps": 2, "gates": 1 },
+      "moduleIds": ["driver_diagnosis"],
+      "decisionSupported": "Decide which driver tension matters most and which treatment path should be inspected first.",
+      "askPrompts": ["Explain the driver system", "Why not diagnose one metric?", "Open treatment paths"],
+      "triggerTerms": ["driver map", "driver relationship", "mds", "meaningful different salient", "demand power", "perceived value together"],
+      "sourceBasis": ["BBE packet", "BBE deck doctrine", "Kate/Lydia transcript feedback"]
+    },
+    {
+      "assetId": "perceived-value-guardrail",
+      "titlePrefix": "Perceived Value Guardrail",
+      "coverTitlePrefix": "Perceived Value Guardrail",
+      "approvedSkillId": "bbe_momentum_intelligence_read",
+      "approvedTemplateId": "executive-asset-perceived-value-guardrail",
+      "audience": "cmo",
+      "objective": "proof_review",
+      "sourcePrompt": "Create a CMO-grade Perceived Value guardrail asset that preserves Pricing Power source lineage without turning it into SKU-level pricing guidance.",
+      "summary": "Explains what Pricing Power / Perceived Value can and cannot support: broad brand-equity price justification, not SKU/store/promo pricing action.",
+      "proofSummary": { "evidence": 4, "gaps": 2, "gates": 1 },
+      "moduleIds": ["driver_diagnosis"],
+      "decisionSupported": "Decide how to discuss value perception safely while blocking SKU-level price, pack architecture, and promotion optimization overclaims.",
+      "askPrompts": ["What can Perceived Value support?", "What pricing claims are blocked?", "Show source lineage"],
+      "triggerTerms": ["perceived value", "pricing power", "pricing guardrail", "price justification", "sku pricing", "promo pricing"],
+      "sourceBasis": ["Pricing Power guardrails", "BBE packet", "Kate/Lydia transcript feedback"],
+      "pageOverrides": {
+        "driver_diagnosis": {
+          "title": "Perceived Value Guardrail",
+          "headline": "Perceived Value is brand-equity value perception, not SKU-level pricing guidance.",
+          "role": "Show what the source metric can support, preserve Pricing Power lineage, and block pricing-action overclaims."
+        }
+      }
+    },
+    {
+      "assetId": "brand-jobs-to-be-done",
+      "titlePrefix": "Brand Jobs To Be Done",
+      "coverTitlePrefix": "Jobs To Be Done",
+      "approvedSkillId": "create_growth_provocations",
+      "approvedTemplateId": "executive-asset-brand-jobs-to-be-done",
+      "audience": "brand_lead",
+      "objective": "treatment_path",
+      "sourcePrompt": "Create a CMO-grade Brand Jobs To Be Done asset that turns the diagnostic read into questions and paths to test.",
+      "summary": "Bridges diagnosis to action by turning the read into testable brand jobs, leadership questions, and proof requirements rather than final commands.",
+      "proofSummary": { "evidence": 6, "gaps": 3, "gates": 1 },
+      "moduleIds": ["provocation_questions", "treatment_paths"],
+      "decisionSupported": "Decide which brand jobs the team should explore next and what evidence must be inspected before action.",
+      "askPrompts": ["Which job matters first?", "Turn this into a workshop", "Show the proof needed"],
+      "triggerTerms": ["jobs to be done", "brand jobs", "what should we do", "treatment path", "action path", "workshop"],
+      "sourceBasis": ["Treatment library", "BBE packet", "V7 direction", "Kate/Lydia transcript feedback"]
+    },
+    {
+      "assetId": "demographic-diagnostic-boundary",
+      "titlePrefix": "Demographic Diagnostic Boundary",
+      "coverTitlePrefix": "Demographic Boundary",
+      "approvedSkillId": "explain_diagnosis_evidence",
+      "approvedTemplateId": "executive-asset-demographic-boundary",
+      "audience": "insights_lead",
+      "objective": "proof_review",
+      "sourcePrompt": "Create a CMO-grade demographic diagnostic boundary that shows what can be answered now and what needs official cuts.",
+      "summary": "Answers demographic-performance questions honestly by separating measured availability, simulated workflow data, missing cuts, base-size needs, and pilot replacement work.",
+      "proofSummary": { "evidence": 4, "gaps": 3, "gates": 1 },
+      "moduleIds": ["demographic_boundary"],
+      "decisionSupported": "Answer demographic-performance questions honestly by separating workflow demonstration, measured evidence, and pilot replacement work.",
+      "askPrompts": ["What is simulated?", "What official cuts are needed?", "Add the demographic caveat"],
+      "triggerTerms": ["demographic", "age cohort", "gen z", "millennial", "segment performance", "official cuts", "simulated demographic"],
+      "sourceBasis": ["simulated demographic equity records", "demographic data foundation plan", "Kate/Lydia transcript feedback"]
+    },
+    {
+      "assetId": "leadership-provocation-questions",
+      "titlePrefix": "Leadership Provocation Questions",
+      "coverTitlePrefix": "Leadership Questions",
+      "approvedSkillId": "create_growth_provocations",
+      "approvedTemplateId": "executive-asset-leadership-provocations",
+      "audience": "cmo",
+      "objective": "decision_read",
+      "sourcePrompt": "Create a CMO-grade leadership question stack with evidence to use, evidence still needed, and source-owner asks.",
+      "summary": "Turns the deck into governed leadership questions and source-owner asks so the asset ends with better decisions, not generic brainstorming.",
+      "proofSummary": { "evidence": 5, "gaps": 3, "gates": 1 },
+      "moduleIds": ["provocation_questions"],
+      "decisionSupported": "End the read with better leadership questions and source-owner asks, not generic brainstorming.",
+      "askPrompts": ["Which question leads?", "What evidence answers it?", "Create source-owner asks"],
+      "triggerTerms": ["leadership questions", "provocation questions", "cmo questions", "source-owner asks", "better questions", "executive questions"],
+      "sourceBasis": ["2026 Q1 US Snacks PPTX", "V7 direction", "Kate/Lydia transcript feedback"]
+    }
+  ],
+  "moduleDefinitions": [
+    {
+      "moduleId": "executive_verdict",
+      "title": "Executive Verdict",
+      "visualPattern": "hero_verdict",
+      "focusLevel": "slide_like",
+      "outputMode": "diagnostic_read",
+      "outputModeRationale": "A Kate-calibrated product interpretation of the current BBE/Growth Navigator packet, not a verbatim deck slide.",
+      "requiredSourceModuleIds": [
+        "executive_verdict",
+        "equity_reasoning_read"
+      ],
+      "requiredProofKinds": [
+        "headline_verdict",
+        "decision_implication",
+        "primary_watchout",
+        "evidence_card"
+      ],
+      "minPrimaryEvidence": 4,
+      "minExpandableProof": 2,
+      "minEvidenceNeeded": 1,
+      "minBlockedOverclaims": 2,
+      "minNextActions": 2,
+      "sourcePostureRequired": true,
+      "blockedClaimSignalGroups": [
+        [
+          "strong",
+          "full profile"
+        ],
+        [
+          "prescription",
+          "final"
+        ]
+      ],
+      "evidenceNeededSignalGroups": [
+        [
+          "source",
+          "proof",
+          "evidence"
+        ]
+      ],
+      "allowedRevisionTypes": [
+        "reframe_for_cmo",
+        "reframe_for_insights_lead",
+        "increase_proof_depth",
+        "reduce_top_level_density"
+      ],
+      "nextOperationCandidates": [
+        "evidence_read",
+        "source_owner_ask_list"
+      ]
+    },
+    {
+      "moduleId": "benchmark_lens_read",
+      "title": "Benchmark Lens Read",
+      "visualPattern": "lens_sequence",
+      "focusLevel": "slide_like",
+      "outputMode": "diagnostic_read",
+      "outputModeRationale": "Applies current-state deck doctrine and Kate feedback to explain how Momentum, Ahead/Behind, and category context should be interpreted.",
+      "requiredSourceModuleIds": [
+        "benchmark_lens_explainer",
+        "bbe_deck_doctrine"
+      ],
+      "requiredProofKinds": [
+        "momentum_lens",
+        "ahead_behind_lens",
+        "category_context_lens"
+      ],
+      "minPrimaryEvidence": 3,
+      "minExpandableProof": 3,
+      "minEvidenceNeeded": 1,
+      "minBlockedOverclaims": 2,
+      "minNextActions": 2,
+      "sourcePostureRequired": true,
+      "blockedClaimSignalGroups": [
+        [
+          "category",
+          "health proof"
+        ],
+        [
+          "strength",
+          "positive lens"
+        ]
+      ],
+      "evidenceNeededSignalGroups": [
+        [
+          "proof",
+          "source",
+          "diagnostic"
+        ]
+      ],
+      "allowedRevisionTypes": [
+        "lead_with_momentum",
+        "reframe_for_cmo",
+        "increase_proof_depth"
+      ],
+      "nextOperationCandidates": [
+        "evidence_read"
+      ]
+    },
+    {
+      "moduleId": "primary_chart_read",
+      "title": "Primary Chart Read",
+      "visualPattern": "chart_read",
+      "focusLevel": "slide_like",
+      "outputMode": "source_recreation",
+      "outputModeRationale": "Recreates and explains a current PPT/source-deck chart pattern while keeping reconciliation and source-owner approval visible.",
+      "requiredSourceModuleIds": [
+        "chart_read",
+        "deck_chart_ledger"
+      ],
+      "requiredProofKinds": [
+        "source_slide",
+        "metric_point",
+        "reconciliation_status"
+      ],
+      "minPrimaryEvidence": 2,
+      "minExpandableProof": 4,
+      "minEvidenceNeeded": 1,
+      "minBlockedOverclaims": 1,
+      "minNextActions": 2,
+      "sourcePostureRequired": true,
+      "blockedClaimSignalGroups": [
+        [
+          "chart",
+          "approval",
+          "recreation"
+        ],
+        [
+          "unsupported",
+          "claims"
+        ]
+      ],
+      "evidenceNeededSignalGroups": [
+        [
+          "chart",
+          "source",
+          "reconciliation"
+        ]
+      ],
+      "allowedRevisionTypes": [
+        "increase_proof_depth",
+        "reduce_top_level_density"
+      ],
+      "nextOperationCandidates": [
+        "evidence_read",
+        "source_owner_ask_list"
+      ]
+    },
+    {
+      "moduleId": "driver_diagnosis",
+      "title": "Driver Diagnosis",
+      "visualPattern": "driver_map",
+      "focusLevel": "slide_like",
+      "outputMode": "diagnostic_read",
+      "outputModeRationale": "Interprets the current metric profile through governed M/D/S and Perceived Value rules rather than reproducing a single source slide.",
+      "requiredSourceModuleIds": [
+        "equity_reasoning_read",
+        "bbe_deck_doctrine"
+      ],
+      "requiredProofKinds": [
+        "demand_power_driver",
+        "perceived_value_driver",
+        "mds_tension",
+        "treatment_implication"
+      ],
+      "minPrimaryEvidence": 3,
+      "minExpandableProof": 2,
+      "minEvidenceNeeded": 2,
+      "minBlockedOverclaims": 2,
+      "minNextActions": 2,
+      "sourcePostureRequired": true,
+      "blockedClaimSignalGroups": [
+        [
+          "isolated",
+          "metric"
+        ],
+        [
+          "sku-level",
+          "pricing"
+        ],
+        [
+          "causality",
+          "causal"
+        ]
+      ],
+      "evidenceNeededSignalGroups": [
+        [
+          "M/D/S",
+          "Perceived Value",
+          "driver"
+        ],
+        [
+          "weights",
+          "movement",
+          "significance"
+        ]
+      ],
+      "allowedRevisionTypes": [
+        "increase_proof_depth",
+        "reframe_for_insights_lead",
+        "open_treatment_path_workspace"
+      ],
+      "nextOperationCandidates": [
+        "treatment_path_workspace",
+        "evidence_read"
+      ]
+    },
+    {
+      "moduleId": "demographic_boundary",
+      "title": "Demographic Diagnostic Boundary",
+      "visualPattern": "boundary_state",
+      "focusLevel": "slide_like",
+      "outputMode": "future_extension",
+      "outputModeRationale": "Shows the intended demographic diagnostic workflow and current boundary; it is not measured current-state segment evidence until official cuts are loaded.",
+      "requiredSourceModuleIds": [
+        "demographic_diagnostic_state"
+      ],
+      "requiredProofKinds": [
+        "measured_availability_state",
+        "simulated_workflow_state",
+        "official_source_requirement"
+      ],
+      "minPrimaryEvidence": 2,
+      "minExpandableProof": 2,
+      "minEvidenceNeeded": 2,
+      "minBlockedOverclaims": 2,
+      "minNextActions": 2,
+      "sourcePostureRequired": true,
+      "blockedClaimSignalGroups": [
+        [
+          "simulated",
+          "measured"
+        ],
+        [
+          "demographic",
+          "total-market"
+        ]
+      ],
+      "evidenceNeededSignalGroups": [
+        [
+          "official",
+          "demographic",
+          "source"
+        ],
+        [
+          "replacement",
+          "measured",
+          "pilot"
+        ]
+      ],
+      "allowedRevisionTypes": [
+        "add_demographic_caveat",
+        "increase_proof_depth",
+        "create_source_owner_ask_list"
+      ],
+      "nextOperationCandidates": [
+        "source_owner_ask_list"
+      ]
+    },
+    {
+      "moduleId": "provocation_questions",
+      "title": "Leadership Questions",
+      "visualPattern": "question_stack",
+      "focusLevel": "slide_like",
+      "outputMode": "future_extension",
+      "outputModeRationale": "Turns current-state source reads and Kate/V7 feedback into governed next questions and source-owner asks beyond the static PPT.",
+      "requiredSourceModuleIds": [
+        "provocation_questions"
+      ],
+      "requiredProofKinds": [
+        "priority_question",
+        "evidence_to_use",
+        "evidence_needed"
+      ],
+      "minPrimaryEvidence": 3,
+      "minExpandableProof": 2,
+      "minEvidenceNeeded": 2,
+      "minBlockedOverclaims": 2,
+      "minNextActions": 2,
+      "sourcePostureRequired": true,
+      "blockedClaimSignalGroups": [
+        [
+          "generic",
+          "brainstorm"
+        ],
+        [
+          "unsupported",
+          "causal"
+        ]
+      ],
+      "evidenceNeededSignalGroups": [
+        [
+          "evidence",
+          "source",
+          "answer"
+        ]
+      ],
+      "allowedRevisionTypes": [
+        "create_source_owner_ask_list",
+        "reframe_for_cmo",
+        "increase_proof_depth"
+      ],
+      "nextOperationCandidates": [
+        "source_owner_ask_list",
+        "treatment_path_workspace"
+      ]
+    },
+    {
+      "moduleId": "treatment_paths",
+      "title": "Treatment Paths To Consider",
+      "visualPattern": "treatment_options",
+      "focusLevel": "slide_like",
+      "outputMode": "diagnostic_read",
+      "outputModeRationale": "Uses the governed current diagnostic read and treatment library to suggest paths to test, without claiming a final business prescription.",
+      "requiredSourceModuleIds": [
+        "executive_verdict",
+        "treatment_library"
+      ],
+      "requiredProofKinds": [
+        "treatment_option",
+        "why_consider",
+        "inspect_before_action",
+        "evidence_need"
+      ],
+      "minPrimaryEvidence": 2,
+      "minExpandableProof": 1,
+      "minEvidenceNeeded": 1,
+      "minBlockedOverclaims": 2,
+      "minNextActions": 2,
+      "sourcePostureRequired": true,
+      "blockedClaimSignalGroups": [
+        [
+          "final prescription",
+          "final prescriptions"
+        ],
+        [
+          "owners",
+          "dates",
+          "task plans"
+        ]
+      ],
+      "evidenceNeededSignalGroups": [
+        [
+          "evidence",
+          "inspect",
+          "action"
+        ]
+      ],
+      "allowedRevisionTypes": [
+        "open_treatment_path_workspace",
+        "increase_proof_depth",
+        "reframe_for_cmo"
+      ],
+      "nextOperationCandidates": [
+        "treatment_path_workspace"
+      ]
+    },
+    {
+      "moduleId": "source_readiness_next_proof",
+      "title": "Source Readiness And Next Proof",
+      "visualPattern": "proof_and_handoff",
+      "focusLevel": "action_panel",
+      "outputMode": "future_extension",
+      "outputModeRationale": "Converts current evidence gaps into source-owner handoff work and pilot-readiness actions beyond the current PPT deliverable.",
+      "requiredSourceModuleIds": [
+        "source_readiness",
+        "momentum_source_readiness",
+        "strategic_context_readiness"
+      ],
+      "requiredProofKinds": [
+        "source_block",
+        "handoff_requirement",
+        "next_proof",
+        "blocked_use"
+      ],
+      "minPrimaryEvidence": 2,
+      "minExpandableProof": 2,
+      "minEvidenceNeeded": 2,
+      "minBlockedOverclaims": 2,
+      "minNextActions": 2,
+      "sourcePostureRequired": true,
+      "blockedClaimSignalGroups": [
+        [
+          "official",
+          "approval"
+        ],
+        [
+          "canonical",
+          "runtime"
+        ]
+      ],
+      "evidenceNeededSignalGroups": [
+        [
+          "source",
+          "proof",
+          "handoff"
+        ],
+        [
+          "pilot",
+          "approval",
+          "owner"
+        ]
+      ],
+      "allowedRevisionTypes": [
+        "create_source_owner_ask_list",
+        "increase_proof_depth",
+        "reframe_for_insights_lead"
+      ],
+      "nextOperationCandidates": [
+        "source_owner_ask_list",
+        "external_context_lane"
+      ]
+    }
+  ]
+}

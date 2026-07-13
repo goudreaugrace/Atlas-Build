@@ -1,0 +1,154 @@
+[
+  {
+    "id": "mental_availability",
+    "title": "Mental Availability",
+    "shortTitle": "Mental",
+    "question": "Is the brand easy to think of in buying situations?",
+    "definition": "The brand's ability to come to mind for category buyers across useful category entry points.",
+    "hbgRole": "Core How Brands Grow growth lever.",
+    "coreEvidence": [
+      "Salient",
+      "Demand Power",
+      "Occasion scores",
+      "Mental Market Share",
+      "Mental Penetration",
+      "Network Size",
+      "Share of Mind",
+      "CEP advantages/disadvantages"
+    ],
+    "missingEvidenceToImprove": [
+      "Mental Market Share",
+      "Mental Penetration",
+      "Network Size",
+      "Share of Mind",
+      "Category Entry Point association data",
+      "Buyer/non-buyer split"
+    ],
+    "guardrail": "Do not reduce this to generic awareness. Mental availability is about useful retrieval paths in buying situations."
+  },
+  {
+    "id": "distinctive_memory_structures",
+    "title": "Distinctive Memory Structures",
+    "shortTitle": "Distinctive",
+    "question": "Is the brand easy to recognize as itself?",
+    "definition": "The brand's recognizable assets, codes, packaging, and creative cues that help people notice and retrieve the brand.",
+    "hbgRole": "Makes mental availability easier to build and refresh.",
+    "coreEvidence": [
+      "Distinctive asset recognition",
+      "Asset uniqueness",
+      "Brand linkage",
+      "Creative branding quality",
+      "Packaging recognition",
+      "BBE Different as adjacent evidence"
+    ],
+    "missingEvidenceToImprove": [
+      "Distinctive asset measurement",
+      "Creative branding quality",
+      "Packaging recognition",
+      "Asset consistency audit"
+    ],
+    "guardrail": "BBE Different is not the same as distinctive asset strength. Treat Different as adjacent equity evidence only."
+  },
+  {
+    "id": "physical_availability",
+    "title": "Physical Availability",
+    "shortTitle": "Physical",
+    "question": "Is the brand easy to find and buy?",
+    "definition": "The brand's presence, prominence, portfolio availability, and buyability across channels and retailers.",
+    "hbgRole": "Core How Brands Grow growth lever alongside mental availability.",
+    "coreEvidence": [
+      "Growth Navigator Available & Visible signals",
+      "Distribution",
+      "Retailer presence",
+      "Shelf prominence",
+      "Ecommerce search rank",
+      "Pack availability",
+      "In-stock rate"
+    ],
+    "missingEvidenceToImprove": [
+      "Distribution/ACV",
+      "Retailer presence",
+      "Shelf/search prominence",
+      "Pack availability",
+      "In-stock rate",
+      "Digital shelf content"
+    ],
+    "guardrail": "Do not infer physical availability from equity scores. It requires commercial, retail, or ecommerce evidence."
+  },
+  {
+    "id": "momentum",
+    "title": "Momentum",
+    "shortTitle": "Momentum",
+    "question": "Is the brand getting healthier, or merely large today?",
+    "definition": "The directional read of whether equity, mental availability, commercial conversion, and follow-up proof are compounding.",
+    "hbgRole": "Prevents the system from confusing current size with future health.",
+    "coreEvidence": [
+      "BBE Momentum",
+      "Metric trends",
+      "Mental availability movement",
+      "CEP gains/losses",
+      "Growth Navigator trends",
+      "Treatment outcome signals"
+    ],
+    "missingEvidenceToImprove": [
+      "Complete BBE momentum",
+      "Mental Availability trend",
+      "CEP change over time",
+      "Growth Navigator trend",
+      "Post-treatment follow-up waves"
+    ],
+    "guardrail": "Do not call one period a durable trend. Momentum needs repeated evidence or a clear recency caveat."
+  },
+  {
+    "id": "machine_availability",
+    "title": "Machine Availability",
+    "shortTitle": "Machine",
+    "question": "Is the brand easy for AI, search, retail algorithms, and answer engines to understand and recommend?",
+    "definition": "The brand's discoverability, retrievability, and actionability through AI-mediated and algorithmic shopping environments.",
+    "hbgRole": "A 2026 applied extension of availability, not an official HBG law.",
+    "coreEvidence": [
+      "AI answer visibility",
+      "Search visibility",
+      "Retail search rank",
+      "Structured data completeness",
+      "Product feed quality",
+      "Source authority",
+      "Review quality",
+      "Direct purchase path"
+    ],
+    "missingEvidenceToImprove": [
+      "AI visibility audit",
+      "Structured data audit",
+      "Retail feed quality",
+      "Search visibility",
+      "Source authority",
+      "Direct path-to-purchase readiness"
+    ],
+    "guardrail": "Label this as an AI-era availability read. Do not present it as an official Ehrenberg-Bass construct."
+  },
+  {
+    "id": "portfolio_growth_availability",
+    "title": "Portfolio Growth Availability",
+    "shortTitle": "Portfolio",
+    "question": "Does the portfolio catch buyers as needs, occasions, and life contexts evolve?",
+    "definition": "The portfolio-level view of brand roles, CEP coverage, whitespace, overlap, and growth pools.",
+    "hbgRole": "Applies availability thinking across brands rather than treating each brand as isolated.",
+    "coreEvidence": [
+      "Portfolio role",
+      "CEP coverage by brand",
+      "Category lens",
+      "Occasion coverage",
+      "Mental competition",
+      "Physical availability by channel",
+      "Market/category growth pools"
+    ],
+    "missingEvidenceToImprove": [
+      "Validated portfolio roles",
+      "CEP coverage by brand",
+      "Portfolio whitespace map",
+      "Market/category growth pools",
+      "Physical availability by brand/channel"
+    ],
+    "guardrail": "Portfolio overlap is not cannibalization proof. Treat it as a strategic question, not a measured migration fact."
+  }
+]

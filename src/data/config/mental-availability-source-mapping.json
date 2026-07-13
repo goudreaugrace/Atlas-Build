@@ -1,0 +1,125 @@
+{
+  "id": "mental_availability_source_mapping_v1",
+  "label": "Mental Availability / CEP Source Mapping",
+  "acceptedFormats": [
+    {
+      "id": "json_packet",
+      "label": "JSON packet",
+      "description": "Preferred prototype contract. Upload a full Mental Availability packet with measures and CEP rows already structured."
+    },
+    {
+      "id": "csv_rows",
+      "label": "CSV rows",
+      "description": "Lightweight import for research exports. One row per CEP; optional measure columns can repeat on each row."
+    }
+  ],
+  "requiredPacketFields": [
+    "brandId",
+    "period",
+    "sourceLabel",
+    "topline.label",
+    "topline.read",
+    "topline.strategicQuestion",
+    "ceps[].id",
+    "ceps[].name",
+    "ceps[].role",
+    "ceps[].priority"
+  ],
+  "measureFields": [
+    "mental_penetration",
+    "mental_market_share",
+    "network_size",
+    "share_of_mind"
+  ],
+  "csvColumns": [
+    {
+      "column": "brandId",
+      "required": true,
+      "mapsTo": "brandId"
+    },
+    {
+      "column": "period",
+      "required": true,
+      "mapsTo": "period"
+    },
+    {
+      "column": "sourceLabel",
+      "required": true,
+      "mapsTo": "sourceLabel"
+    },
+    {
+      "column": "cepId",
+      "required": true,
+      "mapsTo": "ceps[].id"
+    },
+    {
+      "column": "cepName",
+      "required": true,
+      "mapsTo": "ceps[].name"
+    },
+    {
+      "column": "role",
+      "required": true,
+      "mapsTo": "ceps[].role"
+    },
+    {
+      "column": "priority",
+      "required": true,
+      "mapsTo": "ceps[].priority"
+    },
+    {
+      "column": "consumerQuestion",
+      "required": false,
+      "mapsTo": "ceps[].consumerQuestion"
+    },
+    {
+      "column": "relevance",
+      "required": false,
+      "mapsTo": "ceps[].relevance"
+    },
+    {
+      "column": "brandAssociation",
+      "required": false,
+      "mapsTo": "ceps[].brandAssociation"
+    },
+    {
+      "column": "competitorPressure",
+      "required": false,
+      "mapsTo": "ceps[].competitorPressure"
+    },
+    {
+      "column": "interpretation",
+      "required": false,
+      "mapsTo": "ceps[].interpretation"
+    },
+    {
+      "column": "action",
+      "required": false,
+      "mapsTo": "ceps[].action"
+    },
+    {
+      "column": "evidence",
+      "required": false,
+      "mapsTo": "ceps[].evidence",
+      "delimiter": "|"
+    },
+    {
+      "column": "missingInputs",
+      "required": false,
+      "mapsTo": "ceps[].missingInputs",
+      "delimiter": "|"
+    },
+    {
+      "column": "caveat",
+      "required": false,
+      "mapsTo": "ceps[].caveat"
+    }
+  ],
+  "governanceRules": [
+    "Accepted packets must keep an evidenceMode label.",
+    "Measured packets must name a sourceLabel that does not contain simulated.",
+    "CSV imports are normalized to the same packet shape as JSON imports before preview or acceptance.",
+    "Accepting a packet creates a local browser version; it does not overwrite repo JSON.",
+    "Production ingestion should replace browser storage with a governed data provider and approval workflow."
+  ]
+}

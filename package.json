@@ -1,0 +1,42 @@
+{
+  "name": "atlas-intelligence",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "build:sites": "vinext build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit",
+    "extract:source-ledger": "node scripts/extract-bbe-deck-chart-ledger.mjs",
+    "validate:data": "node scripts/validate-data.mjs",
+    "eval:calibration": "node scripts/eval-diagnostic-calibration.mjs",
+    "eval:kate": "node scripts/eval-kate-golden-tests.mjs",
+    "eval:assistant": "node scripts/eval-assistant-acceptance.mjs",
+    "eval:mlv": "node scripts/eval-mlv-checkpoint.mjs",
+    "eval:agent": "node scripts/eval-agent.mjs"
+  },
+  "dependencies": {
+    "@openai/agents": "^0.11.6",
+    "lucide-react": "latest",
+    "next": "latest",
+    "openai": "^6.42.0",
+    "react": "latest",
+    "react-dom": "latest",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@cloudflare/vite-plugin": "^1.44.0",
+    "@types/node": "latest",
+    "@types/react": "latest",
+    "@types/react-dom": "latest",
+    "@vinext/cloudflare": "1.0.0-beta.1",
+    "@vitejs/plugin-rsc": "^0.5.27",
+    "react-server-dom-webpack": "^19.2.7",
+    "typescript": "latest",
+    "vinext": "1.0.0-beta.1",
+    "vite": "^8.1.4",
+    "wrangler": "^4.110.0"
+  }
+}

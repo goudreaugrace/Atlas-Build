@@ -1,0 +1,33 @@
+{
+  "principle": "Use color to clarify benchmark posture, but reserve verdict emphasis for Momentum. Ahead/Behind and Vs Category are context lenses and must not look like final health verdicts without explanation.",
+  "verdictPolicy": {
+    "headlineVerdictLens": "Momentum",
+    "contextLenses": ["Ahead/Behind", "Vs Category"],
+    "rule": "Momentum can carry the strongest red/amber/green verdict treatment. Ahead/Behind and Vs Category should use quieter context styling unless a source-approved policy explicitly elevates them."
+  },
+  "tones": [
+    {
+      "id": "good",
+      "label": "Validated / strength context",
+      "colorRole": "green",
+      "useFor": ["Ahead", "Category Leading", "Gaining", "support"]
+    },
+    {
+      "id": "watch",
+      "label": "Watch / caveat",
+      "colorRole": "orange",
+      "useFor": ["Holding", "Unknown", "watch", "missing"]
+    },
+    {
+      "id": "bad",
+      "label": "Pressure / risk context",
+      "colorRole": "red",
+      "useFor": ["Not Ahead", "Category Lagging", "Declining", "pressure"]
+    }
+  ],
+  "benchmarkLabels": {
+    "categoryBand": "Vs Category",
+    "ahead": "Ahead/Behind Size Check",
+    "momentum": "Momentum"
+  }
+}

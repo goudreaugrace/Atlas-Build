@@ -1,0 +1,56 @@
+[
+  {
+    "id": "overview",
+    "title": "System Overview",
+    "file": "00-overview.md",
+    "summary": "What Brand Doctor is, who it serves, and how the end-to-end journey works."
+  },
+  {
+    "id": "data-model",
+    "title": "Data Model",
+    "file": "01-data-model.md",
+    "summary": "How Brand Health Records, metrics, trends, occasions, and GN bridge signals fit together."
+  },
+  {
+    "id": "diagnosis-engine",
+    "title": "Diagnosis Engine",
+    "file": "02-diagnosis-engine.md",
+    "summary": "How deterministic diagnosis rules fire, how evidence is attached, and how confidence is read."
+  },
+  {
+    "id": "treatment-library",
+    "title": "Treatment Library",
+    "file": "03-treatment-library.md",
+    "summary": "How treatment paths are configured, linked to diagnoses, ranked, and shown as options to test."
+  },
+  {
+    "id": "no-magic-ai",
+    "title": "No Magic AI",
+    "file": "04-no-magic-ai.md",
+    "summary": "What comes from observed data, deterministic logic, and AI interpretation."
+  },
+  {
+    "id": "personas",
+    "title": "AI Personas",
+    "file": "05-personas.md",
+    "summary": "How the six assistant personalities change tone and reasoning posture without changing facts."
+  },
+  {
+    "id": "live-consult",
+    "title": "Live Consult",
+    "file": "06-live-consult.md",
+    "summary": "How voice, prompt chips, screen actions, and evidence chips work together."
+  },
+  {
+    "id": "guardrails",
+    "title": "Guardrails",
+    "file": "07-guardrails.md",
+    "summary": "The non-negotiable interpretation boundaries for BBE, Pricing Power, category lens, and causality."
+  },
+  {
+    "id": "operator-guide",
+    "title": "Operator Guide",
+    "file": "08-operator-guide.md",
+    "summary": "How to safely update JSON config, validate data, and keep the prototype trustworthy."
+  }
+]

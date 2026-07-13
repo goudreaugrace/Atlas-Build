@@ -1,0 +1,31 @@
+{
+  "labels": [
+    {
+      "id": "aligned",
+      "label": "aligned",
+      "description": "BBE and commercial source periods describe the same or directly matched read."
+    },
+    {
+      "id": "directionally_comparable",
+      "label": "directionally comparable",
+      "description": "Sources are close enough to inform the read directionally, but should not be treated as a strict causal proof."
+    },
+    {
+      "id": "lagged",
+      "label": "lagged",
+      "description": "One source appears to lag the other and should be interpreted as context, not a synchronized read."
+    },
+    {
+      "id": "not_comparable",
+      "label": "not comparable",
+      "description": "Sources do not share a compatible lens or period."
+    },
+    {
+      "id": "insufficient",
+      "label": "insufficient",
+      "description": "The active packet does not contain enough source-period evidence to connect BBE and GN."
+    }
+  ],
+  "defaultWithGrowthNavigator": "directionally_comparable",
+  "defaultWithoutGrowthNavigator": "insufficient"
+}

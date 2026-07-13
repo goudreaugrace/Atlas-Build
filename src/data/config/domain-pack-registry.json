@@ -1,0 +1,75 @@
+[
+  {
+    "id": "bbe-brand-equity",
+    "name": "BBE Brand Equity",
+    "version": "0.1.0",
+    "status": "active_prototype",
+    "purpose": "Diagnose PepsiCo brand equity signals and translate them into evidence-backed action paths.",
+    "centralRecordType": "BrandHealthRecord",
+    "reasoningReadType": "EquityReasoningRead",
+    "sourceRecordTypes": [
+      "BrandHealthRecord",
+      "BrandEquityMetricRecord",
+      "SourceEvidenceRecord",
+      "DemographicEquityCutRecord",
+      "BrandStrategicContextPacket",
+      "MomentumIntelligenceSourcePacket"
+    ],
+    "knowledgeArtifacts": [
+      "docs/data/DATA_DICTIONARY.md",
+      "docs/data/BBE_DATA_FOUNDATION_HARDENING_PLAN.md",
+      "docs/data/SIMULATED_DEMOGRAPHIC_DIAGNOSTICS_PLAN.md",
+      "docs/product/archive/2026-07-foundation-and-calibration-history/DIAGNOSTIC_REASONING_CALIBRATION_PRD.md",
+      "docs/product/REUSABLE_GOVERNED_INTELLIGENCE_SHELL_ARCHITECTURE.md"
+    ],
+    "reasoningArtifacts": [
+      "src/data/config/momentum_policy.json",
+      "src/data/config/bbe-deck-doctrine.json",
+      "src/data/config/diagnosis_rules.json",
+      "src/data/config/output-quality-standards.json",
+      "src/data/config/pricing_power_guardrails.json"
+    ],
+    "skillIds": [
+      "answer_brand_question",
+      "explain_diagnosis_evidence",
+      "bbe_momentum_intelligence_read",
+      "create_growth_provocations",
+      "draft_meeting_story",
+      "inspect_foundation_readiness"
+    ],
+    "viewIds": [
+      "data_basis_inspector",
+      "momentum_ladder",
+      "evidence_ledger",
+      "diagnosis_trace_summary",
+      "treatment_path_card",
+      "data_gap_panel"
+    ],
+    "outputModuleIds": [
+      "benchmark_lens_explainer",
+      "chart_read",
+      "executive_verdict",
+      "mds_dashboard",
+      "demand_power_deep_dive",
+      "pricing_power_deep_dive",
+      "demographic_diagnostic_state",
+      "source_readiness",
+      "provocation_questions"
+    ],
+    "guardrails": [
+      "Do not call a brand strong because it over-indexes versus category.",
+      "Do not hide red or deteriorating Momentum behind brand scale.",
+      "Treat Category index as context, Ahead/Behind as size-adjusted check, and Momentum as trajectory verdict.",
+      "Treat Pricing Power as broad equity-based price justification, not SKU-level pricing guidance.",
+      "Label simulated demographic diagnostics as prototype workflow data and block official-use claims."
+    ],
+    "pilotReadinessGates": [
+      "canonical_metric_schema",
+      "source_governance_metadata",
+      "equity_reasoning_read",
+      "demographic_evidence_gate",
+      "golden_read_evals",
+      "source_owner_approval"
+    ]
+  }
+]

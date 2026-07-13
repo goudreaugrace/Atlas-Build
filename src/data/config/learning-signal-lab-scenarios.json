@@ -1,0 +1,290 @@
+[
+  {
+    "id": "strong-but-slipping-demand",
+    "title": "Strong But Slipping",
+    "moduleId": "momentum-ambition",
+    "brandExample": "Large salty snack brand",
+    "prompt": "Demand Power is above category and still ahead of peers, but Momentum is declining.",
+    "signals": [
+      {
+        "label": "Vs Category",
+        "value": "Above category",
+        "tone": "good"
+      },
+      {
+        "label": "Ahead",
+        "value": "Ahead of peer ambition",
+        "tone": "good"
+      },
+      {
+        "label": "Momentum",
+        "value": "Declining",
+        "tone": "bad"
+      }
+    ],
+    "choices": [
+      {
+        "id": "healthy-no-action",
+        "label": "The brand is healthy. No action needed.",
+        "read": "Over-weights current strength and ignores trajectory.",
+        "nextLens": "None",
+        "isCorrect": false
+      },
+      {
+        "id": "trajectory-watchout",
+        "label": "Strong current read, but a trajectory watchout.",
+        "read": "Current strength is good, but Momentum says the equity system may be losing energy.",
+        "nextLens": "Check which input KPI is pulling the outcome down.",
+        "isCorrect": true
+      },
+      {
+        "id": "conversion-only",
+        "label": "Treat this only as a commercial conversion issue.",
+        "read": "Moves outside the BBE read too quickly.",
+        "nextLens": "Growth Navigator can help later, but first read the BBE inputs.",
+        "isCorrect": false
+      }
+    ],
+    "coaching": "The best read separates current strength from trajectory. A strong brand can still need attention if Momentum shows the brand is getting less healthy."
+  },
+  {
+    "id": "category-parity-gaining",
+    "title": "Not Ahead Yet, But Building",
+    "moduleId": "three-benchmarks",
+    "brandExample": "Emerging snack brand",
+    "prompt": "Demand Power is only at category parity, not Ahead, but Momentum is gaining significantly.",
+    "signals": [
+      {
+        "label": "Vs Category",
+        "value": "At category",
+        "tone": "watch"
+      },
+      {
+        "label": "Ahead",
+        "value": "Not ahead",
+        "tone": "bad"
+      },
+      {
+        "label": "Momentum",
+        "value": "Gaining",
+        "tone": "good"
+      }
+    ],
+    "choices": [
+      {
+        "id": "failure-read",
+        "label": "The brand is failing because it is not Ahead.",
+        "read": "Too harsh. Ahead matters, but Momentum changes the story.",
+        "nextLens": "Check whether gains are concentrated in Salient, Meaningful, or Different.",
+        "isCorrect": false
+      },
+      {
+        "id": "promising-trajectory",
+        "label": "The brand is not advantaged yet, but the trajectory is promising.",
+        "read": "This keeps the benchmark conflict intact: current ambition gap plus positive movement.",
+        "nextLens": "Ask what evidence would show the momentum is durable.",
+        "isCorrect": true
+      },
+      {
+        "id": "celebrate-complete",
+        "label": "Momentum is gaining, so the brand has solved the issue.",
+        "read": "Over-celebrates movement before the brand reaches an advantaged position.",
+        "nextLens": "Keep checking current strength and peer ambition.",
+        "isCorrect": false
+      }
+    ],
+    "coaching": "This is a benchmark-conflict read. The brand has work to do, but the direction is encouraging."
+  },
+  {
+    "id": "salient-but-generic",
+    "title": "Easy To Think Of, Hard To Justify",
+    "moduleId": "bbe-system-one-picture",
+    "brandExample": "Mainstream beverage brand",
+    "prompt": "Salient is above category, Different is weak, and Perceived Value is not ahead.",
+    "signals": [
+      {
+        "label": "Salient",
+        "value": "Above category",
+        "tone": "good"
+      },
+      {
+        "label": "Different",
+        "value": "Weak",
+        "tone": "bad"
+      },
+      {
+        "label": "Perceived Value",
+        "value": "Not ahead",
+        "tone": "bad"
+      }
+    ],
+    "choices": [
+      {
+        "id": "media-reach",
+        "label": "The first issue is likely media reach.",
+        "read": "Salient is already comparatively strong, so reach may not be the first hypothesis.",
+        "nextLens": "Check choice advantage and distinctive meaning first.",
+        "isCorrect": false
+      },
+      {
+        "id": "generic-value-watchout",
+        "label": "The brand may be mentally available but not distinctive enough to defend value.",
+        "read": "This connects weak Different with weak Perceived Value without losing Salient.",
+        "nextLens": "Check distinctive asset evidence and brand-meaning evidence before choosing treatment.",
+        "isCorrect": true
+      },
+      {
+        "id": "pricing-action",
+        "label": "The team should lower price immediately.",
+        "read": "Blocked. Brand Doctor does not prescribe SKU-level pricing moves.",
+        "nextLens": "Bring RGM and elasticity evidence into the decision.",
+        "isCorrect": false
+      }
+    ],
+    "coaching": "The pattern says retrieval may not be the main problem. The sharper question is whether the brand has enough difference and meaning to justify value."
+  },
+  {
+    "id": "pricing-power-with-missing-rgm",
+    "title": "Premium Permission, Not Price Guidance",
+    "moduleId": "pricing-power-guardrail",
+    "brandExample": "Premium-positioned brand",
+    "prompt": "Perceived Value is above category and gaining, but no elasticity, pack architecture, or RGM test evidence is loaded.",
+    "signals": [
+      {
+        "label": "Perceived Value",
+        "value": "Above category",
+        "tone": "good"
+      },
+      {
+        "label": "Momentum",
+        "value": "Gaining",
+        "tone": "good"
+      },
+      {
+        "label": "RGM evidence",
+        "value": "Missing",
+        "tone": "watch"
+      }
+    ],
+    "choices": [
+      {
+        "id": "broad-permission",
+        "label": "The brand has broad equity permission, but price action needs RGM evidence.",
+        "read": "This keeps Perceived Value in its proper brand-equity lane.",
+        "nextLens": "Bring RGM, elasticity, pack, and market-test evidence into the pricing decision.",
+        "isCorrect": true
+      },
+      {
+        "id": "raise-price",
+        "label": "Raise price because Perceived Value is gaining.",
+        "read": "Blocked. This jumps from brand-equity permission to a SKU or pack decision.",
+        "nextLens": "Use RGM decision evidence.",
+        "isCorrect": false
+      },
+      {
+        "id": "ignore-pricing",
+        "label": "Ignore Perceived Value because RGM evidence is missing.",
+        "read": "Too dismissive. The equity signal is useful, but incomplete for price execution.",
+        "nextLens": "Keep the BBE read and request the missing commercial evidence.",
+        "isCorrect": false
+      }
+    ],
+    "coaching": "A good read keeps the useful signal and the guardrail together: broad equity permission, not exact price recommendation."
+  },
+  {
+    "id": "bbe-strong-gn-availability-weak",
+    "title": "Equity Strength, Conversion Constraint",
+    "moduleId": "growth-navigator-connection",
+    "brandExample": "High-equity snack brand",
+    "prompt": "Demand Power is strong and stable, but Growth Navigator Available & Visible is weak.",
+    "signals": [
+      {
+        "label": "Demand Power",
+        "value": "Strong / stable",
+        "tone": "good"
+      },
+      {
+        "label": "Meaningful",
+        "value": "Ahead",
+        "tone": "good"
+      },
+      {
+        "label": "Available & Visible",
+        "value": "Weak",
+        "tone": "bad"
+      }
+    ],
+    "choices": [
+      {
+        "id": "availability-leak",
+        "label": "Equity may be healthy, but availability could be limiting conversion.",
+        "read": "This uses GN as a support lens around a strong BBE read.",
+        "nextLens": "Check distribution, shelf, search, and shopper visibility evidence.",
+        "isCorrect": true
+      },
+      {
+        "id": "equity-diagnosis-wrong",
+        "label": "The BBE diagnosis must be wrong because availability is weak.",
+        "read": "Overreach. Commercial friction can coexist with strong equity.",
+        "nextLens": "Read BBE and GN as different parts of the health record.",
+        "isCorrect": false
+      },
+      {
+        "id": "only-brand-campaign",
+        "label": "Launch a brand campaign because Demand Power is strong.",
+        "read": "Not the best first implication. The visible constraint is availability.",
+        "nextLens": "Check buyability and visibility before choosing a treatment.",
+        "isCorrect": false
+      }
+    ],
+    "coaching": "This is the BBE-to-action bridge: the brand may have equity pull, but the commercial system may not be letting that pull convert."
+  },
+  {
+    "id": "weak-salience-cep-gaps",
+    "title": "Retrieval Breadth Question",
+    "moduleId": "connecting-bbe-to-action",
+    "brandExample": "Brand with weak non-buyer retrieval",
+    "prompt": "Salient is weak, and Mental Availability evidence shows non-buyers link the brand to very few Category Entry Points.",
+    "signals": [
+      {
+        "label": "Salient",
+        "value": "Weak",
+        "tone": "bad"
+      },
+      {
+        "label": "Non-buyer CEP links",
+        "value": "Low",
+        "tone": "bad"
+      },
+      {
+        "label": "Network Size",
+        "value": "Narrow",
+        "tone": "watch"
+      }
+    ],
+    "choices": [
+      {
+        "id": "retrieval-breadth",
+        "label": "The next question is retrieval breadth among category buyers and non-buyers.",
+        "read": "This uses Mental Availability / CEPs to explain and act on the BBE Salience read.",
+        "nextLens": "Prioritize CEP relevance, competitiveness, and buyer/non-buyer gaps.",
+        "isCorrect": true
+      },
+      {
+        "id": "replace-bbe",
+        "label": "Ignore Salient and use Mental Availability as the only score.",
+        "read": "Overreach. Mental Availability supports the BBE read; it does not replace it.",
+        "nextLens": "Keep BBE as the diagnostic spine.",
+        "isCorrect": false
+      },
+      {
+        "id": "distinctive-assets-only",
+        "label": "This proves distinctive assets are weak.",
+        "read": "Missing evidence. Retrieval breadth and asset recognition are related but different.",
+        "nextLens": "Check distinctive asset recognition evidence separately.",
+        "isCorrect": false
+      }
+    ],
+    "coaching": "The strongest read connects Salience to retrievability in buying situations, then asks which CEPs are relevant and winnable."
+  }
+]

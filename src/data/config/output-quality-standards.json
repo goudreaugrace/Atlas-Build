@@ -1,0 +1,56 @@
+[
+  {
+    "id": "leads-with-point",
+    "label": "Leads with the point",
+    "appliesTo": ["executive_read", "treatment_recommendation", "brief_story", "data_inspector"],
+    "guardrail": "Every governed output should open with the conclusion, tension, or decision implication."
+  },
+  {
+    "id": "interprets-not-narrates",
+    "label": "Interprets, does not narrate",
+    "appliesTo": ["executive_read", "treatment_recommendation", "brief_story"],
+    "guardrail": "Do not restate charts without adding the so what and now what."
+  },
+  {
+    "id": "honest-certainty",
+    "label": "Honest about certainty",
+    "appliesTo": ["executive_read", "treatment_recommendation", "brief_story", "data_inspector"],
+    "guardrail": "Confident where evidence is strong; caveated where evidence is mixed, directional, prototype, or missing."
+  },
+  {
+    "id": "grounded-in-category",
+    "label": "Grounded in category",
+    "appliesTo": ["executive_read", "treatment_recommendation", "brief_story"],
+    "guardrail": "Read the brand against its category lens, source period, market context, and peer basis when available."
+  },
+  {
+    "id": "grounded-in-real-brand",
+    "label": "Grounded in the real brand",
+    "appliesTo": ["executive_read", "treatment_recommendation", "brief_story"],
+    "guardrail": "Use approved or reviewed brand strategic context; label prototype context before executive or agency use."
+  },
+  {
+    "id": "right-comparison-set",
+    "label": "Right comparison set",
+    "appliesTo": ["executive_read", "data_inspector", "brief_story"],
+    "guardrail": "Show tracker/peer-set basis and peer count wherever Ahead/Behind or comparisons influence the read."
+  },
+  {
+    "id": "names-watchout",
+    "label": "Names a watch-out",
+    "appliesTo": ["executive_read", "treatment_recommendation", "brief_story"],
+    "guardrail": "Surface uncomfortable signals, missing proof, contraindications, or overclaim risks instead of smoothing them over."
+  },
+  {
+    "id": "ends-in-provocation",
+    "label": "Ends in a provocation",
+    "appliesTo": ["executive_read", "treatment_recommendation", "brief_story"],
+    "guardrail": "Frame the next move as a sharp question, treatment path to test, or decision to inspect."
+  },
+  {
+    "id": "treatment-boundary",
+    "label": "Treatment boundary clear",
+    "appliesTo": ["treatment_recommendation", "brief_story"],
+    "guardrail": "Treatments are global library paths ranked for the active brand, not final prescriptions or task-level action plans."
+  }
+]

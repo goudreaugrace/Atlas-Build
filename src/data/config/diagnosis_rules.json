@@ -1,0 +1,489 @@
+[
+  {
+    "id": "strong_but_slipping_core",
+    "diagnosisId": "strong_but_slipping",
+    "description": "Established strength with declining demand or meaning momentum.",
+    "priority": 1,
+    "severity": "watch",
+    "all": [
+      {
+        "metric": "Demand Power",
+        "field": "categoryBand",
+        "op": "in",
+        "value": ["Category Leading"],
+        "evidence": "Demand Power is category-leading, so the brand is still structurally strong.",
+        "missingEvidence": "Demand Power is not category-leading, so the strong-but-slipping rule should not be primary."
+      }
+    ],
+    "any": [
+      {
+        "metric": "Demand Power",
+        "field": "momentum",
+        "op": "equals",
+        "value": "Declining",
+        "evidence": "Demand Power momentum is declining.",
+        "missingEvidence": "Demand Power momentum is not declining."
+      },
+      {
+        "metric": "Meaningful",
+        "field": "momentum",
+        "op": "equals",
+        "value": "Declining",
+        "evidence": "Meaningful momentum is declining, pointing to relevance erosion.",
+        "missingEvidence": "Meaningful momentum is not declining."
+      }
+    ],
+    "minAnyMatches": 1,
+    "counter": [
+      {
+        "metric": "Demand Power",
+        "field": "categoryBand",
+        "op": "equals",
+        "value": "Category Lagging",
+        "evidence": "Demand Power is category-lagging, which argues against a strong-base diagnosis."
+      }
+    ],
+    "evidenceSummary": "The brand has a strong demand base, but demand or relevance momentum is slipping."
+  },
+  {
+    "id": "salient_but_generic_core",
+    "diagnosisId": "salient_but_generic",
+    "description": "Memory or scale exists, but Difference and/or Pricing Power are not carrying enough choice power.",
+    "priority": 3,
+    "severity": "watch",
+    "all": [
+      {
+        "metric": "Salient",
+        "field": "categoryBand",
+        "op": "notIn",
+        "value": ["Category Lagging"],
+        "evidence": "Salience is not category-lagging, so the brand has a usable memory base.",
+        "missingEvidence": "Salience is category-lagging, which makes generic salience less likely than a broader foundation issue."
+      }
+    ],
+    "any": [
+      {
+        "metric": "Different",
+        "field": "ahead",
+        "op": "equals",
+        "value": "Not Ahead",
+        "evidence": "Different is not ahead of the benchmark, so the reason to choose may be underpowered.",
+        "missingEvidence": "Different is ahead, which weakens the generic-salience read."
+      },
+      {
+        "metric": "Different",
+        "field": "categoryBand",
+        "op": "equals",
+        "value": "Category Lagging",
+        "evidence": "Different is category-lagging, indicating a weak point of difference.",
+        "missingEvidence": "Different is not category-lagging."
+      },
+      {
+        "metric": "Pricing Power",
+        "field": "ahead",
+        "op": "equals",
+        "value": "Not Ahead",
+        "evidence": "Pricing Power is not ahead, suggesting familiarity may not be translating into price justification.",
+        "missingEvidence": "Pricing Power is ahead."
+      }
+    ],
+    "minAnyMatches": 2,
+    "counter": [
+      {
+        "metric": "Different",
+        "field": "ahead",
+        "op": "equals",
+        "value": "Ahead",
+        "evidence": "Different is ahead, which complicates a generic-salience diagnosis."
+      }
+    ],
+    "evidenceSummary": "The brand has enough memory presence to work with, but Difference and/or Pricing Power are not strong enough."
+  },
+  {
+    "id": "meaningful_but_invisible_core",
+    "diagnosisId": "meaningful_but_invisible",
+    "description": "Relevance is strong, but Salience is weaker than the relevance base.",
+    "priority": 2,
+    "severity": "opportunity",
+    "all": [
+      {
+        "metric": "Meaningful",
+        "field": "categoryBand",
+        "op": "equals",
+        "value": "Category Leading",
+        "evidence": "Meaningful is category-leading, so relevance is a strength.",
+        "missingEvidence": "Meaningful is not category-leading, so the brand may need relevance work before salience work."
+      }
+    ],
+    "any": [
+      {
+        "metric": "Salient",
+        "field": "categoryBand",
+        "op": "notIn",
+        "value": ["Category Leading"],
+        "evidence": "Salience is not category-leading, so mental availability trails relevance.",
+        "missingEvidence": "Salience is category-leading."
+      },
+      {
+        "metric": "Salient",
+        "field": "ahead",
+        "op": "equals",
+        "value": "Not Ahead",
+        "evidence": "Salience is not ahead of the benchmark.",
+        "missingEvidence": "Salience is ahead."
+      }
+    ],
+    "minAnyMatches": 1,
+    "counter": [
+      {
+        "metric": "Meaningful",
+        "field": "ahead",
+        "op": "equals",
+        "value": "Not Ahead",
+        "evidence": "Meaningful is not ahead, which means relevance may not be strong enough to call the brand merely invisible."
+      }
+    ],
+    "evidenceSummary": "The brand appears relevant to consumers who know it, but needs stronger mental availability."
+  },
+  {
+    "id": "different_but_niche_core",
+    "diagnosisId": "different_but_niche",
+    "description": "Difference is the standout strength, but Meaningful or Salient lag.",
+    "priority": 2,
+    "severity": "opportunity",
+    "all": [
+      {
+        "metric": "Different",
+        "field": "categoryBand",
+        "op": "equals",
+        "value": "Category Leading",
+        "evidence": "Different is category-leading, so the brand has a distinctive edge.",
+        "missingEvidence": "Different is not category-leading."
+      }
+    ],
+    "any": [
+      {
+        "metric": "Meaningful",
+        "field": "categoryBand",
+        "op": "equals",
+        "value": "Category Lagging",
+        "evidence": "Meaningful is category-lagging, so the difference may not yet be broadly relevant.",
+        "missingEvidence": "Meaningful is not category-lagging."
+      },
+      {
+        "metric": "Salient",
+        "field": "categoryBand",
+        "op": "equals",
+        "value": "Category Lagging",
+        "evidence": "Salience is category-lagging, so the difference is not yet easy to recall.",
+        "missingEvidence": "Salience is not category-lagging."
+      },
+      {
+        "metric": "Demand Power",
+        "field": "categoryBand",
+        "op": "equals",
+        "value": "Category Lagging",
+        "evidence": "Demand Power is category-lagging despite high Difference, indicating niche distinctiveness.",
+        "missingEvidence": "Demand Power is not category-lagging."
+      }
+    ],
+    "minAnyMatches": 1,
+    "counter": [
+      {
+        "metric": "Meaningful",
+        "field": "categoryBand",
+        "op": "equals",
+        "value": "Category Leading",
+        "evidence": "Meaningful is category-leading, which suggests the difference may already be broadly relevant."
+      }
+    ],
+    "evidenceSummary": "Difference is a real asset, but the brand has not fully translated it into broad relevance, salience, or demand."
+  },
+  {
+    "id": "foundation_deficit_core",
+    "diagnosisId": "foundation_deficit",
+    "description": "Multiple core equity metrics are category-lagging, indicating foundational repair before optimization.",
+    "priority": 1,
+    "severity": "priority",
+    "all": [
+      {
+        "metric": "Demand Power",
+        "field": "ahead",
+        "op": "equals",
+        "value": "Not Ahead",
+        "evidence": "Demand Power is not ahead, so the brand does not have a clear demand advantage.",
+        "missingEvidence": "Demand Power is ahead."
+      }
+    ],
+    "any": [
+      {
+        "metric": "Demand Power",
+        "field": "categoryBand",
+        "op": "equals",
+        "value": "Category Lagging",
+        "evidence": "Demand Power is category-lagging.",
+        "missingEvidence": "Demand Power is not category-lagging."
+      },
+      {
+        "metric": "Meaningful",
+        "field": "categoryBand",
+        "op": "equals",
+        "value": "Category Lagging",
+        "evidence": "Meaningful is category-lagging.",
+        "missingEvidence": "Meaningful is not category-lagging."
+      },
+      {
+        "metric": "Different",
+        "field": "categoryBand",
+        "op": "equals",
+        "value": "Category Lagging",
+        "evidence": "Different is category-lagging.",
+        "missingEvidence": "Different is not category-lagging."
+      },
+      {
+        "metric": "Salient",
+        "field": "categoryBand",
+        "op": "equals",
+        "value": "Category Lagging",
+        "evidence": "Salient is category-lagging.",
+        "missingEvidence": "Salient is not category-lagging."
+      }
+    ],
+    "minAnyMatches": 3,
+    "counter": [
+      {
+        "metric": "Demand Power",
+        "field": "categoryBand",
+        "op": "equals",
+        "value": "Category Leading",
+        "evidence": "Demand Power is category-leading, which argues against a foundation deficit."
+      }
+    ],
+    "evidenceSummary": "The brand is weak across enough foundational equity signals that basic brand-building should come before optimization."
+  },
+  {
+    "id": "underbuilt_equity_core",
+    "diagnosisId": "underbuilt_equity",
+    "description": "Demand Power is below ambition and at least two M/D/S inputs are not ahead or category-lagging.",
+    "priority": 4,
+    "severity": "priority",
+    "all": [
+      {
+        "metric": "Demand Power",
+        "field": "ahead",
+        "op": "equals",
+        "value": "Not Ahead",
+        "evidence": "Demand Power is not ahead, so scaled growth expectations need caution.",
+        "missingEvidence": "Demand Power is ahead."
+      }
+    ],
+    "any": [
+      {
+        "metric": "Meaningful",
+        "field": "ahead",
+        "op": "equals",
+        "value": "Not Ahead",
+        "evidence": "Meaningful is not ahead.",
+        "missingEvidence": "Meaningful is ahead."
+      },
+      {
+        "metric": "Different",
+        "field": "ahead",
+        "op": "equals",
+        "value": "Not Ahead",
+        "evidence": "Different is not ahead.",
+        "missingEvidence": "Different is ahead."
+      },
+      {
+        "metric": "Salient",
+        "field": "ahead",
+        "op": "equals",
+        "value": "Not Ahead",
+        "evidence": "Salience is not ahead.",
+        "missingEvidence": "Salience is ahead."
+      },
+      {
+        "metric": "Demand Power",
+        "field": "categoryBand",
+        "op": "equals",
+        "value": "Category Lagging",
+        "evidence": "Demand Power is category-lagging.",
+        "missingEvidence": "Demand Power is not category-lagging."
+      }
+    ],
+    "minAnyMatches": 2,
+    "counter": [
+      {
+        "metric": "Demand Power",
+        "field": "categoryBand",
+        "op": "equals",
+        "value": "Category Leading",
+        "evidence": "Demand Power is category-leading, which means this is not a broad underbuilt-equity read."
+      }
+    ],
+    "evidenceSummary": "Demand Power is below ambition and multiple equity inputs are not doing enough work."
+  },
+  {
+    "id": "price_value_vulnerability_core",
+    "diagnosisId": "price_value_vulnerability",
+    "description": "Pricing Power is not ahead, with weak Difference or Meaningful support.",
+    "priority": 3,
+    "severity": "watch",
+    "all": [
+      {
+        "metric": "Pricing Power",
+        "field": "ahead",
+        "op": "equals",
+        "value": "Not Ahead",
+        "evidence": "Pricing Power is not ahead, so broad equity price justification needs attention.",
+        "missingEvidence": "Pricing Power is ahead."
+      }
+    ],
+    "any": [
+      {
+        "metric": "Different",
+        "field": "ahead",
+        "op": "equals",
+        "value": "Not Ahead",
+        "evidence": "Different is not ahead, limiting distinct price justification.",
+        "missingEvidence": "Different is ahead."
+      },
+      {
+        "metric": "Meaningful",
+        "field": "ahead",
+        "op": "equals",
+        "value": "Not Ahead",
+        "evidence": "Meaningful is not ahead, limiting relevance-based price justification.",
+        "missingEvidence": "Meaningful is ahead."
+      },
+      {
+        "metric": "Pricing Power",
+        "field": "categoryBand",
+        "op": "equals",
+        "value": "Category Lagging",
+        "evidence": "Pricing Power is category-lagging.",
+        "missingEvidence": "Pricing Power is not category-lagging."
+      }
+    ],
+    "minAnyMatches": 1,
+    "counter": [
+      {
+        "metric": "Pricing Power",
+        "field": "ahead",
+        "op": "equals",
+        "value": "Ahead",
+        "evidence": "Pricing Power is ahead, which argues against a price-value vulnerability."
+      }
+    ],
+    "evidenceSummary": "Pricing Power is not supported strongly enough by the current equity pattern."
+  },
+  {
+    "id": "healthy_or_watch_core",
+    "diagnosisId": "healthy_or_watch",
+    "description": "No major ailment: core demand, pricing, and M/D/S signals are ahead or at least not category-lagging.",
+    "priority": 7,
+    "severity": "monitor",
+    "all": [
+      {
+        "metric": "Demand Power",
+        "field": "categoryBand",
+        "op": "notIn",
+        "value": ["Category Lagging"],
+        "evidence": "Demand Power is not category-lagging.",
+        "missingEvidence": "Demand Power is category-lagging."
+      },
+      {
+        "metric": "Pricing Power",
+        "field": "categoryBand",
+        "op": "notIn",
+        "value": ["Category Lagging"],
+        "evidence": "Pricing Power is not category-lagging.",
+        "missingEvidence": "Pricing Power is category-lagging."
+      },
+      {
+        "metric": "Meaningful",
+        "field": "categoryBand",
+        "op": "notIn",
+        "value": ["Category Lagging"],
+        "evidence": "Meaningful is not category-lagging.",
+        "missingEvidence": "Meaningful is category-lagging."
+      },
+      {
+        "metric": "Different",
+        "field": "categoryBand",
+        "op": "notIn",
+        "value": ["Category Lagging"],
+        "evidence": "Different is not category-lagging.",
+        "missingEvidence": "Different is category-lagging."
+      },
+      {
+        "metric": "Salient",
+        "field": "categoryBand",
+        "op": "notIn",
+        "value": ["Category Lagging"],
+        "evidence": "Salience is not category-lagging.",
+        "missingEvidence": "Salience is category-lagging."
+      }
+    ],
+    "any": [
+      {
+        "metric": "Demand Power",
+        "field": "ahead",
+        "op": "equals",
+        "value": "Ahead",
+        "evidence": "Demand Power is ahead of the benchmark.",
+        "missingEvidence": "Demand Power is not ahead."
+      },
+      {
+        "metric": "Pricing Power",
+        "field": "ahead",
+        "op": "equals",
+        "value": "Ahead",
+        "evidence": "Pricing Power is ahead of the benchmark.",
+        "missingEvidence": "Pricing Power is not ahead."
+      },
+      {
+        "metric": "Meaningful",
+        "field": "ahead",
+        "op": "equals",
+        "value": "Ahead",
+        "evidence": "Meaningful is ahead of the benchmark.",
+        "missingEvidence": "Meaningful is not ahead."
+      },
+      {
+        "metric": "Different",
+        "field": "ahead",
+        "op": "equals",
+        "value": "Ahead",
+        "evidence": "Different is ahead of the benchmark.",
+        "missingEvidence": "Different is not ahead."
+      },
+      {
+        "metric": "Salient",
+        "field": "ahead",
+        "op": "equals",
+        "value": "Ahead",
+        "evidence": "Salience is ahead of the benchmark.",
+        "missingEvidence": "Salience is not ahead."
+      }
+    ],
+    "minAnyMatches": 3,
+    "counter": [
+      {
+        "metric": "Demand Power",
+        "field": "momentum",
+        "op": "equals",
+        "value": "Declining",
+        "evidence": "Demand Power momentum is declining, so monitor status needs caution."
+      },
+      {
+        "metric": "Meaningful",
+        "field": "momentum",
+        "op": "equals",
+        "value": "Declining",
+        "evidence": "Meaningful momentum is declining, so monitor status needs caution."
+      }
+    ],
+    "evidenceSummary": "No high-priority ailment fires from the current rule set; maintain and monitor."
+  }
+]

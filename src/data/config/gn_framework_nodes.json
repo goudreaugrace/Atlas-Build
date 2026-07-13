@@ -1,0 +1,32 @@
+[
+  {
+    "id": "proposition",
+    "label": "Proposition",
+    "description": "Whether the offer and brand idea are clear, motivating, and connected to consumer needs.",
+    "signalAliases": ["Proposition", "Partition performance", "Product experience", "Occasion fit"]
+  },
+  {
+    "id": "reach",
+    "label": "Reach",
+    "description": "Whether enough consumers are being reached with enough continuity to convert equity into growth.",
+    "signalAliases": ["Reach", "Reach continuity", "A&M working ratio", "Paid reach"]
+  },
+  {
+    "id": "resonance",
+    "label": "Resonance",
+    "description": "Whether the brand message and experience are creating a meaningful response.",
+    "signalAliases": ["Resonance", "Penetration quality", "Repeat", "Engagement"]
+  },
+  {
+    "id": "available_visible",
+    "label": "Available & Visible",
+    "description": "Whether shoppers can find and notice the brand where demand should convert.",
+    "signalAliases": ["Available & Visible", "Distribution depth", "Visibility", "TDP"]
+  },
+  {
+    "id": "value",
+    "label": "Value",
+    "description": "Whether the price, pack, mix, and value equation support conversion.",
+    "signalAliases": ["Value", "Value realization", "Price/value delivery", "Delivering Value", "Active mix"]
+  }
+]
