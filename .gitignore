@@ -14,9 +14,9 @@ out/
 .wrangler/
 .vinext/
 dist/
-Atlas/
-Atlas-intelligence-/
-Atlas Build/
+/Atlas/
+/Atlas-intelligence-/
+/Atlas Build/
 
 # TypeScript / tooling caches
 *.tsbuildinfo
