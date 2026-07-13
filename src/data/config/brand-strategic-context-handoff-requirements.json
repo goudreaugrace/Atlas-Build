@@ -1,0 +1,68 @@
+{
+  "id": "brand-strategic-context-handoff-requirements-v1",
+  "lastReviewed": "2026-06-29",
+  "purpose": "Define the source-owner handoff blocks required before Brand Strategic Context can be treated as official brand strategy for executive or agency-facing use.",
+  "requirements": [
+    {
+      "id": "approved-brand-strategic-context-source",
+      "checkId": "source-owner-review-status",
+      "label": "Approved Brand Strategic Context source",
+      "sourceOwnerRole": "Marketing, Insights, or Brand Strategy source owner",
+      "acceptedSourceTypes": ["brand_book", "brand_dna", "strategy_brief", "annual_planning_doc", "creative_brief"],
+      "requiredFields": ["brandId", "sourceType", "reviewStatus", "sourceLabel", "sourceOwner", "sourceDate"],
+      "validationRules": ["reviewStatus must be approved_source", "brandId must match the active Brand Health Record", "sourceDate must be present and traceable", "sourceOwner must identify the accountable owner"],
+      "promotionGate": "source_owner_approval",
+      "canonicalUseCondition": "Only source-owner approved Brand Strategic Context packets can be treated as official brand strategy.",
+      "guardrails": ["Draft, prototype, browser-local, or reviewed-local packets cannot satisfy this gate.", "Approved-looking local packets remain review candidates until promoted through governed source ownership."],
+      "starterQuestion": "Who is the accountable source owner for the official brand book, brand DNA, or strategy brief?"
+    },
+    {
+      "id": "brand-foundations-source",
+      "checkId": "brand-foundations-source",
+      "label": "Brand foundations and DNA",
+      "sourceOwnerRole": "Brand Marketing / Brand Strategy source owner",
+      "acceptedSourceTypes": ["brand_book", "brand_dna", "strategy_brief"],
+      "requiredFields": ["brandStatement", "brandDna", "portfolioContext"],
+      "validationRules": ["brandStatement must be a source-provided statement, not inferred from BBE metrics", "brandDna must contain explicit source-provided foundations", "portfolioContext must be caveated if it comes from prototype or planning assumptions"],
+      "promotionGate": "brand_foundations_approval",
+      "canonicalUseCondition": "Brand foundations can be used as official strategy only when source-owner approved fields are loaded.",
+      "guardrails": ["Do not infer brand DNA from demand power, SMD, pricing power, or typology.", "Do not turn portfolio role metadata into official brand strategy without source approval."],
+      "starterQuestion": "Which approved source owns the brand statement, DNA, and portfolio role for this planning period?"
+    },
+    {
+      "id": "positioning-objectives-source",
+      "checkId": "positioning-objectives-source",
+      "label": "Positioning, objectives, and planning priorities",
+      "sourceOwnerRole": "Brand Marketing / Annual Planning owner",
+      "acceptedSourceTypes": ["brand_book", "strategy_brief", "annual_planning_doc"],
+      "requiredFields": ["positioning", "objectives", "planningPriorities"],
+      "validationRules": ["positioning must be source-provided when used in executive or agency-facing outputs", "objectives must be tied to an approved annual planning or strategy source", "planning priorities must stay distinct from diagnostic recommendations"],
+      "promotionGate": "positioning_objectives_approval",
+      "canonicalUseCondition": "Positioning, objectives, and planning priorities can guide generated workspaces only after approved source-owner review.",
+      "guardrails": ["If positioning is missing, do not infer it from equity diagnosis.", "If objectives are missing, present questions and gaps rather than strategic intent."],
+      "starterQuestion": "Which approved planning or strategy source owns positioning, annual objectives, and current priorities?"
+    },
+    {
+      "id": "creative-platform-claims-source",
+      "checkId": "creative-platform-claims-source",
+      "label": "Creative platform and approved claims",
+      "sourceOwnerRole": "Brand Marketing / Creative or Legal Review owner",
+      "acceptedSourceTypes": ["brand_book", "creative_brief", "strategy_brief"],
+      "requiredFields": ["creativePlatform", "approvedClaims", "claimsNotToMake"],
+      "validationRules": ["creativePlatform must be source-provided before agency brief language can cite it", "approvedClaims must list allowed claims or explicitly state none are approved", "claimsNotToMake must include known claim boundaries when available"],
+      "promotionGate": "creative_claims_approval",
+      "canonicalUseCondition": "Creative platform and claim language remain human-review drafts until approved source fields and claim boundaries are loaded.",
+      "guardrails": ["Do not invent campaign platforms or claims from BBE evidence.", "Do not present treatment language as approved claim language."],
+      "starterQuestion": "Which approved creative brief, brand book, or claim-review source owns platform language and claim boundaries?"
+    }
+  ],
+  "guardrails": [
+    "The handoff registry is a source-owner checklist, not permission to write canonical brand strategy automatically.",
+    "Brand Strategic Context may guide generated workspaces only at the status explicitly supported by its source packet and review state.",
+    "Canonical source writes, runtime auto-consumption, and enterprise strategy promotion remain disabled until governance enables them."
+  ],
+  "caveats": [
+    "This registry defines the official-context handoff contract; it does not prove that official brand sources exist.",
+    "Prototype-reviewed context can support demo behavior, but must remain visibly caveated in executive or agency-facing experiences."
+  ]
+}

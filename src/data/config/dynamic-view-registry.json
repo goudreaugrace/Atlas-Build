@@ -1,0 +1,568 @@
+[
+  {
+    "id": "kpi_strip",
+    "name": "KPI Strip",
+    "family": "metric_summary",
+    "purpose": "Show the five core BBE signals with value, benchmark, Ahead/Behind, and momentum in a compact read.",
+    "requiredData": ["brand.metrics"],
+    "supportedModes": ["brand_manager", "insights_lead", "voice_canvas"],
+    "claimTypes": ["metric_fact", "benchmark_context"],
+    "evidenceRequired": true,
+    "allowedSkillIds": ["answer_brand_question", "recommend_dynamic_view", "teach_brand_growth_concept"],
+    "guardrails": ["Do not imply a master brand health score unless an approved source provides one."]
+  },
+  {
+    "id": "momentum_ladder",
+    "name": "Momentum Ladder",
+    "family": "momentum",
+    "purpose": "Show whether the brand is gaining, holding, declining, or missing momentum evidence across outcome and input metrics.",
+    "requiredData": ["momentumMonitor"],
+    "supportedModes": ["brand_manager", "insights_lead", "voice_canvas"],
+    "claimTypes": ["momentum_verdict", "metric_fact"],
+    "evidenceRequired": true,
+    "allowedSkillIds": ["bbe_momentum_intelligence_read", "recommend_dynamic_view", "plan_executive_pilot"],
+    "guardrails": ["Red momentum must remain visible and plainly labeled."]
+  },
+  {
+    "id": "momentum_room_to_grow_grid",
+    "name": "Momentum x Room To Grow Grid",
+    "family": "momentum",
+    "purpose": "Cross equity momentum with room-to-grow context to help size urgency and strategic upside.",
+    "requiredData": ["momentumRead", "roomToGrowRead"],
+    "supportedModes": ["brand_manager", "insights_lead", "voice_canvas"],
+    "claimTypes": ["opportunity_context", "momentum_verdict"],
+    "evidenceRequired": true,
+    "allowedSkillIds": ["bbe_momentum_intelligence_read", "recommend_dynamic_view", "draft_meeting_story", "plan_executive_pilot"],
+    "guardrails": ["Do not substitute Ahead/Behind for room-to-grow inputs when penetration, share, or category growth data is missing."]
+  },
+  {
+    "id": "smd_driver_map",
+    "name": "SMD Driver Map",
+    "family": "diagnosis",
+    "purpose": "Explain how Salient, Meaningful, and Different reinforce or contradict the observed outcome pattern.",
+    "requiredData": ["brand.metrics", "diagnosisResult"],
+    "supportedModes": ["insights_lead", "voice_canvas"],
+    "claimTypes": ["diagnosis_interpretation", "metric_fact"],
+    "evidenceRequired": true,
+    "allowedSkillIds": ["bbe_momentum_intelligence_read", "explain_diagnosis_evidence", "test_understanding"],
+    "guardrails": ["Do not treat SMD as three siloed scorecards when synthesizing the why."]
+  },
+  {
+    "id": "evidence_ledger",
+    "name": "Evidence Ledger",
+    "family": "evidence",
+    "purpose": "Show supporting evidence, complicating evidence, source periods, source files, and missing evidence behind a read.",
+    "requiredData": ["diagnosisEvidence", "evidenceConfidence"],
+    "supportedModes": ["brand_manager", "insights_lead", "voice_canvas"],
+    "claimTypes": ["evidence", "data_gap", "source_context"],
+    "evidenceRequired": true,
+    "allowedSkillIds": ["answer_brand_question", "explain_diagnosis_evidence", "create_growth_provocations", "compare_brands_or_competitors", "draft_meeting_story", "facilitate_live_meeting", "inspect_pilot_learning", "inspect_quiet_proactivity"],
+    "guardrails": ["Evidence should be visible behind each diagnosis, provocation, and treatment recommendation."]
+  },
+  {
+    "id": "data_basis_inspector",
+    "name": "Data Basis Inspector",
+    "family": "evidence",
+    "purpose": "Show the actual brand packet data, source posture, peer basis, proof labels, and missing inputs behind a request.",
+    "requiredData": ["brand.metrics", "sourceFiles", "dataCoverage", "diagnosisEvidence", "evidenceGaps"],
+    "supportedModes": ["brand_manager", "insights_lead", "voice_canvas"],
+    "claimTypes": ["metric_fact", "source_context", "evidence", "data_gap", "governance_state"],
+    "evidenceRequired": true,
+    "allowedSkillIds": ["answer_brand_question", "bbe_momentum_intelligence_read", "explain_diagnosis_evidence", "create_growth_provocations", "draft_meeting_story", "recommend_dynamic_view"],
+    "guardrails": [
+      "Show the source metric names and user-facing labels separately when they differ.",
+      "Do not fill missing data with assumptions.",
+      "Keep reviewed-local, prototype, and approved source states visibly separated."
+    ]
+  },
+  {
+    "id": "evidence_spotlight_panel",
+    "name": "Evidence Spotlight Panel",
+    "family": "evidence",
+    "purpose": "Show persisted claim-to-proof continuity across governed turns, including supported claims, missing evidence, guardrail claims, reviewed working context, source candidates, and disabled canonical claim promotion.",
+    "requiredData": ["sessionEvidenceSpotlightSummary", "evidenceSpotlight", "brandIntelligencePacket.evidence", "sessionLedger"],
+    "supportedModes": ["insights_lead", "voice_canvas"],
+    "claimTypes": ["evidence", "data_gap", "source_context", "governance_state"],
+    "evidenceRequired": false,
+    "allowedSkillIds": ["answer_brand_question", "bbe_momentum_intelligence_read", "explain_diagnosis_evidence", "create_growth_provocations", "compare_brands_or_competitors", "draft_meeting_story", "facilitate_live_meeting", "review_session_state", "inspect_foundation_readiness", "plan_executive_pilot", "recommend_dynamic_view"],
+    "guardrails": [
+      "Evidence spotlight is a claim-to-proof audit, not a new source of truth.",
+      "Missing evidence and reviewed working context must remain visible instead of being smoothed into supported claims.",
+      "This view cannot promote source candidates, create canonical facts, or enable unsupported claim generation."
+    ]
+  },
+  {
+    "id": "diagnosis_trace_summary",
+    "name": "Diagnosis Trace Summary",
+    "family": "evidence",
+    "purpose": "Summarize the deterministic rule that fired, matched conditions, missing conditions, counter-evidence, and treatment links.",
+    "requiredData": ["diagnosisRuleTrace"],
+    "supportedModes": ["insights_lead", "voice_canvas"],
+    "claimTypes": ["rule_logic", "evidence"],
+    "evidenceRequired": true,
+    "allowedSkillIds": ["answer_brand_question", "explain_diagnosis_evidence"],
+    "guardrails": ["Expose enough logic for trust without encouraging users to game scoring."]
+  },
+  {
+    "id": "growth_provocation_list",
+    "name": "Growth Provocation List",
+    "family": "planning",
+    "purpose": "Show prioritized what / so what / now what provocations with evidence, urgency, horizon, and caveats.",
+    "requiredData": ["growthProvocations"],
+    "supportedModes": ["brand_manager", "insights_lead", "voice_canvas"],
+    "claimTypes": ["provocation", "planning_option"],
+    "evidenceRequired": true,
+    "allowedSkillIds": ["bbe_momentum_intelligence_read", "create_growth_provocations", "draft_meeting_story", "facilitate_live_meeting"],
+    "guardrails": ["Provocations are questions or paths to test, not final commands."]
+  },
+  {
+    "id": "treatment_path_card",
+    "name": "Treatment Path Card",
+    "family": "planning",
+    "purpose": "Show the first governed treatment recommendation to pressure-test, ranking reasons, proof signals, contraindications, and follow-up signals.",
+    "requiredData": ["treatmentPlanOptions", "treatmentPlanDraft"],
+    "supportedModes": ["brand_manager", "insights_lead", "voice_canvas"],
+    "claimTypes": ["treatment_option", "planning_option"],
+    "evidenceRequired": true,
+    "allowedSkillIds": ["create_growth_provocations", "draft_meeting_story"],
+    "guardrails": ["Treatment language must remain options to consider or paths to test."]
+  },
+  {
+    "id": "peer_comparison",
+    "name": "Peer Comparison",
+    "family": "comparison",
+    "purpose": "Compare brands or competitors using approved peer-set context, pattern similarity, and source caveats.",
+    "requiredData": ["comparisonSet", "patternRadar"],
+    "supportedModes": ["insights_lead", "voice_canvas"],
+    "claimTypes": ["comparison", "source_context"],
+    "evidenceRequired": true,
+    "allowedSkillIds": ["compare_brands_or_competitors", "recommend_dynamic_view"],
+    "guardrails": ["Surface peer-set size and avoid cannibalization or portfolio migration claims without measured evidence."]
+  },
+  {
+    "id": "pattern_radar_brief",
+    "name": "Pattern Radar Brief",
+    "family": "portfolio_intelligence",
+    "purpose": "Show similar brands, recurring patterns, evidence gaps, and treatment memory as associative portfolio intelligence.",
+    "requiredData": ["patternRadar"],
+    "supportedModes": ["insights_lead", "voice_canvas"],
+    "claimTypes": ["portfolio_pattern", "association"],
+    "evidenceRequired": true,
+    "allowedSkillIds": ["recommend_dynamic_view", "compare_brands_or_competitors"],
+    "guardrails": ["Always state that pattern similarity is associative, not causal."]
+  },
+  {
+    "id": "source_readiness_panel",
+    "name": "Source Readiness Panel",
+    "family": "evidence",
+    "purpose": "Show Momentum and Brand Strategic Context source-owner readiness checks, blockers, required sources, source labels, and executive-use caveats.",
+    "requiredData": ["momentumSourceReadiness", "strategicContextReadiness"],
+    "supportedModes": ["insights_lead", "voice_canvas"],
+    "claimTypes": ["source_context", "data_gap", "governance_state"],
+    "evidenceRequired": true,
+    "allowedSkillIds": ["bbe_momentum_intelligence_read", "recommend_dynamic_view", "explain_diagnosis_evidence", "plan_executive_pilot"],
+    "guardrails": [
+      "Do not treat prototype-reviewed or reviewed-local source records as canonical executive-use evidence.",
+      "Name the required source-owner extract or approved brand strategy source before closing a readiness blocker."
+    ]
+  },
+  {
+    "id": "source_runtime_ingestion_panel",
+    "name": "Source Runtime Ingestion Panel",
+    "family": "evidence",
+    "purpose": "Show source-owner runtime file-drop coverage, missing file kinds, governance blockers, and disabled default runtime source wiring before any source files can become canonical runtime evidence.",
+    "requiredData": ["sessionSourceRuntimeIngestionSummary", "sourceGovernanceManifest", "momentumRuntimeSourceFileDropReadiness", "strategicContextRuntimeSourceFileDropReadiness", "momentumSourceReadiness"],
+    "supportedModes": ["insights_lead", "voice_canvas"],
+    "claimTypes": ["governance_state", "source_context", "data_gap"],
+    "evidenceRequired": false,
+    "allowedSkillIds": ["bbe_momentum_intelligence_read", "inspect_source_promotion_readiness", "inspect_foundation_readiness", "plan_executive_pilot", "recommend_dynamic_view"],
+    "guardrails": [
+      "Source runtime ingestion inspection cannot wire source-owner files into the default runtime source path.",
+      "Audited source-owner files are not canonical facts or answer evidence until source-owner approval and canonical-use governance clear.",
+      "Runtime source auto-consumption, file-drop consumption, canonical source writes, and source-data writes remain disabled."
+    ]
+  },
+  {
+    "id": "data_gap_panel",
+    "name": "Data Gap Panel",
+    "family": "evidence",
+    "purpose": "Make unavailable or incomplete views explicit and explain what source would improve the read.",
+    "requiredData": ["evidenceGaps"],
+    "supportedModes": ["brand_manager", "insights_lead", "voice_canvas"],
+    "claimTypes": ["data_gap", "source_context"],
+    "evidenceRequired": false,
+    "allowedSkillIds": ["bbe_momentum_intelligence_read", "explain_diagnosis_evidence", "compare_brands_or_competitors", "draft_meeting_story", "facilitate_live_meeting", "review_session_state", "inspect_experience_architecture", "inspect_source_promotion_readiness", "inspect_artifact_readiness", "inspect_pilot_learning", "inspect_quiet_proactivity", "inspect_voice_readiness", "inspect_persistence_readiness", "inspect_treatment_outcome_readiness", "inspect_runtime_governance", "inspect_foundation_readiness", "plan_executive_pilot"],
+    "guardrails": ["Do not fill missing data with unsupported assumptions."]
+  },
+  {
+    "id": "learning_explainer",
+    "name": "Learning Explainer",
+    "family": "learning",
+    "purpose": "Teach a concept with plain language, a brand example, a visual cue, and common misreads.",
+    "requiredData": ["learningModule"],
+    "supportedModes": ["brand_manager", "insights_lead", "voice_canvas"],
+    "claimTypes": ["education", "definition"],
+    "evidenceRequired": false,
+    "allowedSkillIds": ["teach_brand_growth_concept", "test_understanding", "recommend_dynamic_view"],
+    "guardrails": ["Teaching examples must be clearly separated from measured brand facts."]
+  },
+  {
+    "id": "quiz_card",
+    "name": "Quiz Card",
+    "family": "learning",
+    "purpose": "Ask the user to classify a read, interpret a signal, or choose the next evidence lens.",
+    "requiredData": ["learningAssessment"],
+    "supportedModes": ["brand_manager", "insights_lead", "voice_canvas"],
+    "claimTypes": ["education", "assessment"],
+    "evidenceRequired": false,
+    "allowedSkillIds": ["test_understanding", "teach_brand_growth_concept"],
+    "guardrails": ["Explain the answer and the overclaim risk after the user responds."]
+  },
+  {
+    "id": "meeting_takeaway_panel",
+    "name": "Meeting Takeaway Panel",
+    "family": "meeting",
+    "purpose": "Capture a review-required meeting takeaway with provisional decision, evidence, unresolved gaps, and next proof signal.",
+    "requiredData": ["meetingTakeaway", "diagnosisEvidence", "evidenceGaps"],
+    "supportedModes": ["brand_manager", "insights_lead", "voice_canvas"],
+    "claimTypes": ["draft_output", "planning_option", "evidence", "data_gap"],
+    "evidenceRequired": true,
+    "allowedSkillIds": ["facilitate_live_meeting"],
+    "guardrails": [
+      "Separate captured decisions from AI suggestions.",
+      "Meeting takeaways require human review before final circulation."
+    ]
+  },
+  {
+    "id": "qbr_story_draft",
+    "name": "QBR Story Draft",
+    "family": "storytelling",
+    "purpose": "Render a draft executive narrative, talk track, slide outline, or agency brief from accepted evidence and provocations.",
+    "requiredData": ["decisionPackageDraft"],
+    "supportedModes": ["brand_manager", "insights_lead", "voice_canvas"],
+    "claimTypes": ["draft_output", "planning_option"],
+    "evidenceRequired": true,
+    "allowedSkillIds": ["draft_meeting_story", "facilitate_live_meeting"],
+    "guardrails": ["Drafts require human review before circulation."]
+  },
+  {
+    "id": "review_workflow_panel",
+    "name": "Review Workflow Panel",
+    "family": "evidence",
+    "purpose": "Show the governed local review queue, reviewed decisions, blocked capability gates, and disabled approval/write/export states for the active session.",
+    "requiredData": ["sessionReviewWorkflowSummary", "confirmationGates", "memory", "audit"],
+    "supportedModes": ["insights_lead", "voice_canvas"],
+    "claimTypes": ["governance_state", "source_context"],
+    "evidenceRequired": false,
+    "allowedSkillIds": ["review_session_state", "recommend_dynamic_view", "facilitate_live_meeting"],
+    "guardrails": [
+      "Review workflow state is prototype-local and not official enterprise approval.",
+      "Blocked capability gates require governance/config changes and cannot be cleared by local review.",
+      "Accepted memory remains working context, not source truth."
+    ]
+  },
+  {
+    "id": "memory_audit_panel",
+    "name": "Memory Audit Panel",
+    "family": "evidence",
+    "purpose": "Show session memory continuity, accepted working context, review decisions, audit coverage, and disabled memory-write promotion paths without accepting or promoting memory.",
+    "requiredData": ["sessionMemoryAuditSummary", "sessionReviewWorkflowSummary", "workingContextManifest", "audit", "confirmationGates"],
+    "supportedModes": ["insights_lead", "voice_canvas"],
+    "claimTypes": ["governance_state", "source_context", "data_gap"],
+    "evidenceRequired": false,
+    "allowedSkillIds": ["review_session_state", "inspect_persistence_readiness", "inspect_foundation_readiness", "plan_executive_pilot", "recommend_dynamic_view"],
+    "guardrails": [
+      "Memory audit inspection is read-only and cannot accept, edit, reject, or promote memory.",
+      "Accepted memory is working context only; it is not source truth, official approval, or canonical brand knowledge.",
+      "Auto-accept memory, reviewed-memory writes, canonical memory writes, and enterprise memory storage remain disabled."
+    ]
+  },
+  {
+    "id": "audit_trail_panel",
+    "name": "Audit Trail Panel",
+    "family": "evidence",
+    "purpose": "Show persisted runtime audit continuity across turn lifecycle, evidence use, view requests, artifacts, memory suggestions, source governance, runtime quality, latest records, and disabled audit export/canonical-write/enterprise-store paths.",
+    "requiredData": ["sessionAuditSummary", "audit", "experiencePlan.viewManifest", "runtimeQualityChecks", "confirmationGates"],
+    "supportedModes": ["insights_lead", "voice_canvas"],
+    "claimTypes": ["governance_state", "source_context", "data_gap"],
+    "evidenceRequired": false,
+    "allowedSkillIds": ["review_session_state", "inspect_foundation_readiness", "plan_executive_pilot", "recommend_dynamic_view"],
+    "guardrails": [
+      "Audit trail inspection cannot export audit logs, create official approvals, or write canonical records.",
+      "Audit records are prototype local JSON runtime evidence; they do not certify production compliance.",
+      "Enterprise audit storage, canonical audit writes, and audit export remain disabled until governance approves them."
+    ]
+  },
+  {
+    "id": "review_identity_panel",
+    "name": "Review Identity Panel",
+    "family": "evidence",
+    "purpose": "Show prototype review identity, local reviewer-label limits, related gates, blocked enterprise approval types, required identity/access steps, and disabled official-approval paths.",
+    "requiredData": ["reviewIdentityManifest", "sessionPersistenceGovernanceSummary", "sessionReviewWorkflowSummary", "confirmationGates"],
+    "supportedModes": ["insights_lead", "voice_canvas"],
+    "claimTypes": ["governance_state", "source_context", "data_gap"],
+    "evidenceRequired": false,
+    "allowedSkillIds": ["review_session_state", "inspect_persistence_readiness", "inspect_foundation_readiness", "plan_executive_pilot", "recommend_dynamic_view"],
+    "guardrails": [
+      "Review identity inspection is read-only and cannot authenticate users, assign enterprise roles, or create official approvals.",
+      "The prototype human_review label supports local workflow only; it is not accountable enterprise identity.",
+      "Enterprise identity, role access, brand access control, audit export, and official approval remain disabled until governance approves them."
+    ]
+  },
+  {
+    "id": "pilot_learning_panel",
+    "name": "Pilot Learning Panel",
+    "family": "learning",
+    "purpose": "Show reviewed-only pilot learning signals, session-level signal counts, blocked learning paths, and next proof needs without promoting them to outcome learning or canonical memory/source truth.",
+    "requiredData": ["sessionPilotLearningSummary", "pilotLearningManifest"],
+    "supportedModes": ["insights_lead", "voice_canvas"],
+    "claimTypes": ["governance_state", "education", "data_gap"],
+    "evidenceRequired": false,
+    "allowedSkillIds": ["inspect_pilot_learning", "recommend_dynamic_view"],
+    "guardrails": [
+      "Learning signals are review inputs, not treatment outcome evidence.",
+      "Do not convert learning signals into accepted pattern memory, source truth, or canonical writes.",
+      "Autonomous learning and outcome learning remain disabled."
+    ]
+  },
+  {
+    "id": "proactivity_panel",
+    "name": "Quiet Proactivity Panel",
+    "family": "planning",
+    "purpose": "Show review-required follow-up suggestions, held notices, related gates/artifacts/gaps, and disabled reminder/notification/autonomous-action rails.",
+    "requiredData": ["proactivityManifest", "confirmationGates", "evidenceGaps"],
+    "supportedModes": ["insights_lead", "voice_canvas"],
+    "claimTypes": ["planning_option", "governance_state", "data_gap"],
+    "evidenceRequired": false,
+    "allowedSkillIds": ["inspect_quiet_proactivity", "recommend_dynamic_view"],
+    "guardrails": [
+      "Follow-up suggestions are not scheduled work.",
+      "Reminder creation, background checks, external sends, and autonomous actions remain disabled.",
+      "Suggestions require human review before becoming accepted memory, artifacts, or source actions."
+    ]
+  },
+  {
+    "id": "voice_readiness_panel",
+    "name": "Voice Readiness Panel",
+    "family": "evidence",
+    "purpose": "Show governed push-to-talk state, provider adapter readiness, voice orchestration promotion gates, interruption limits, and blocked full-voice capabilities.",
+    "requiredData": ["voiceRuntimeManifest", "providerAdapterManifest", "voiceOrchestrationReadinessManifest", "interruptionRecoveryManifest"],
+    "supportedModes": ["insights_lead", "voice_canvas"],
+    "claimTypes": ["governance_state", "source_context", "data_gap"],
+    "evidenceRequired": false,
+    "allowedSkillIds": ["inspect_voice_readiness", "recommend_dynamic_view"],
+    "guardrails": [
+      "Push-to-talk readiness is not approval for continuous listening.",
+      "Realtime voice and TTS remain gated until runtime parity, consent, privacy, interruption, and storage blockers are cleared.",
+      "Voice cannot bypass approved ExperiencePlan views, evidence, memory, audit, or confirmation gates."
+    ]
+  },
+  {
+    "id": "provider_adapter_panel",
+    "name": "Provider Adapter Panel",
+    "family": "evidence",
+    "purpose": "Show governed provider adapter readiness across text reasoning, SSE streaming, browser speech-to-text prototype input, Realtime candidate gates, TTS disabled state, and provider-bypass blockers.",
+    "requiredData": ["providerAdapterManifest", "sessionProviderAdapterSummary", "voiceRuntimeManifest", "voiceSkillViewContractManifest"],
+    "supportedModes": ["insights_lead", "voice_canvas"],
+    "claimTypes": ["governance_state", "source_context", "data_gap"],
+    "evidenceRequired": false,
+    "allowedSkillIds": ["inspect_voice_readiness", "inspect_runtime_governance", "inspect_foundation_readiness", "plan_executive_pilot", "recommend_dynamic_view"],
+    "guardrails": [
+      "Provider adapter inspection is read-only and cannot connect a provider, enable Realtime voice, enable TTS, or bypass the governed runtime.",
+      "Ready text/SSE adapters are prototype runtime paths, not production provider certification.",
+      "Browser speech-to-text remains prototype client-side input; continuous voice, autonomous speaking, Realtime runtime connection, and TTS remain gated or disabled."
+    ]
+  },
+  {
+    "id": "capability_readiness_panel",
+    "name": "Capability Readiness Panel",
+    "family": "evidence",
+    "purpose": "Show disabled risky capability flags, blocked confirmation gates, admin override requirements, and hard-disabled export, circulation, memory-write, source-write, source-promotion, external-ingest, continuous-voice, and runtime-bypass paths.",
+    "requiredData": ["sessionCapabilityReadinessSummary", "capabilities", "confirmationGates", "runtimeControlManifest"],
+    "supportedModes": ["insights_lead", "voice_canvas"],
+    "claimTypes": ["governance_state", "data_gap"],
+    "evidenceRequired": false,
+    "allowedSkillIds": ["review_session_state", "inspect_runtime_governance", "inspect_foundation_readiness", "plan_executive_pilot", "recommend_dynamic_view"],
+    "guardrails": [
+      "Capability readiness inspection is read-only and cannot enable disabled capabilities or clear blocked gates.",
+      "Local review cannot approve blocked capability gates that require governance or config changes.",
+      "Export, circulation, memory writes, source writes, source promotion, external ingest, continuous voice, and runtime bypass remain disabled until their capability flags and governance gates are approved."
+    ]
+  },
+  {
+    "id": "persistence_readiness_panel",
+    "name": "Persistence Readiness Panel",
+    "family": "evidence",
+    "purpose": "Show browser/local JSON persistence state, review-action readiness, accepted memory context, source-candidate non-canonical posture, and blocked enterprise promotion requirements.",
+    "requiredData": ["persistenceReadinessManifest", "sessionReviewWorkflowSummary", "workingContextManifest"],
+    "supportedModes": ["insights_lead", "voice_canvas"],
+    "claimTypes": ["governance_state", "source_context", "data_gap"],
+    "evidenceRequired": false,
+    "allowedSkillIds": ["inspect_persistence_readiness", "recommend_dynamic_view"],
+    "guardrails": [
+      "Local persistence readiness is not enterprise persistence approval.",
+      "Canonical writes and source runtime auto-consumption remain disabled.",
+      "Enterprise schema, identity/access, retention/privacy, backup/recovery, and canonical promotion blockers must remain visible."
+    ]
+  },
+  {
+    "id": "treatment_outcome_readiness_panel",
+    "name": "Treatment Outcome Readiness Panel",
+    "family": "evidence",
+    "purpose": "Show treatment outcome learning promotion gates, related treatment paths and follow-up signals, efficacy-rule blockers, portfolio learning storage blockers, and disabled outcome-learning states.",
+    "requiredData": ["treatmentOutcomeReadinessManifest", "pilotLearningManifest", "sessionPilotLearningSummary", "sessionTreatmentOutcomeReadinessSummary"],
+    "supportedModes": ["insights_lead", "voice_canvas"],
+    "claimTypes": ["governance_state", "planning_option", "data_gap"],
+    "evidenceRequired": false,
+    "allowedSkillIds": ["inspect_treatment_outcome_readiness", "recommend_dynamic_view"],
+    "guardrails": [
+      "Outcome readiness is not proof that a treatment happened or worked.",
+      "Follow-up signals are not causal treatment evidence without approved methodology.",
+      "Outcome learning, treatment efficacy claims, accepted outcome records, and canonical learning writes remain disabled."
+    ]
+  },
+  {
+    "id": "source_promotion_readiness_panel",
+    "name": "Source Promotion Readiness Panel",
+    "family": "evidence",
+    "purpose": "Show reviewed-local source promotion records, extracted source claims, source-review gates, canonical fact blockers, and disabled runtime source consumption.",
+    "requiredData": ["sourcePromotionContext", "sourceClaimContext", "workingContextManifest", "confirmationGates", "capabilities"],
+    "supportedModes": ["insights_lead", "voice_canvas"],
+    "claimTypes": ["governance_state", "source_context", "data_gap"],
+    "evidenceRequired": false,
+    "allowedSkillIds": ["inspect_source_promotion_readiness", "recommend_dynamic_view"],
+    "guardrails": [
+      "Reviewed-local source candidates are not canonical facts.",
+      "Extracted source claims are not runtime evidence.",
+      "Canonical writes and runtime auto-consumption remain disabled until source-owner and enterprise governance approve promotion."
+    ]
+  },
+  {
+    "id": "artifact_readiness_panel",
+    "name": "Artifact Readiness Panel",
+    "family": "evidence",
+    "purpose": "Show generated artifact readiness, reviewer roles, evidence/source-view coverage, language approvals, circulation blockers, and disabled export gates.",
+    "requiredData": ["experiencePlan.artifacts", "artifactReadinessRequirements", "capabilities", "confirmationGates"],
+    "supportedModes": ["insights_lead", "voice_canvas"],
+    "claimTypes": ["governance_state", "draft_output", "source_context", "data_gap"],
+    "evidenceRequired": false,
+    "allowedSkillIds": ["inspect_artifact_readiness", "recommend_dynamic_view"],
+    "guardrails": [
+      "Artifact readiness inspection cannot enable export, copy, circulation, or official approval.",
+      "Generated artifacts require human review before circulation.",
+      "Export remains blocked until stakeholder language, artifact shape, and capability gates are approved."
+    ]
+  },
+  {
+    "id": "experience_architecture_panel",
+    "name": "Experience Architecture Panel",
+    "family": "evidence",
+    "purpose": "Show ExperiencePlan template coverage, audience/objective support, approved skill/view inventory, dynamic UI guardrails, and workspace composition blockers.",
+    "requiredData": ["experienceTemplateRegistry", "agentSkillRegistry", "dynamicViewRegistry", "experiencePlan", "canvasStateManifest"],
+    "supportedModes": ["insights_lead", "voice_canvas"],
+    "claimTypes": ["governance_state", "source_context", "data_gap"],
+    "evidenceRequired": false,
+    "allowedSkillIds": ["inspect_experience_architecture", "recommend_dynamic_view"],
+    "guardrails": [
+      "Experience architecture inspection cannot generate arbitrary UI or unregistered views.",
+      "Role-specific workspaces must be composed from approved templates, skills, views, and evidence needs.",
+      "Unsupported audiences, objectives, metrics, or artifacts must fail closed into review or data-gap states."
+    ]
+  },
+  {
+    "id": "canvas_continuity_panel",
+    "name": "Canvas Continuity Panel",
+    "family": "evidence",
+    "purpose": "Show persisted canvas continuity across approved rendered views, fallbacks, focused views, compatible voice-canvas views, proof rails, visible presence signals, interruption recovery, and disabled arbitrary UI/voice capabilities.",
+    "requiredData": ["sessionCanvasContinuitySummary", "canvasStateManifest", "experiencePlan.viewManifest", "reasoningStatusManifest", "conversationPresenceManifest", "interruptionRecoveryManifest"],
+    "supportedModes": ["insights_lead", "voice_canvas"],
+    "claimTypes": ["governance_state", "source_context", "data_gap"],
+    "evidenceRequired": false,
+    "allowedSkillIds": ["inspect_experience_architecture", "inspect_foundation_readiness", "inspect_runtime_governance", "plan_executive_pilot", "recommend_dynamic_view"],
+    "guardrails": [
+      "Canvas continuity inspection cannot generate arbitrary UI, unregistered views, unsupported metrics, or new source claims.",
+      "The canvas can preserve approved rendered state across interruptions, but it cannot expose private reasoning or enable server-side provider cancellation.",
+      "Continuous listening, background wake word, autonomous speaking, continuous voice barge-in, and arbitrary view IDs remain disabled."
+    ]
+  },
+  {
+    "id": "runtime_governance_panel",
+    "name": "Runtime Governance Panel",
+    "family": "evidence",
+    "purpose": "Show governed runtime surface readiness, default versus opt-in state, kill-switch posture, disabled capabilities, provider gates, and promotion blockers.",
+    "requiredData": ["runtimeControlManifest", "capabilities", "providerAdapterManifest", "governedRuntimeSurfaceRegistry"],
+    "supportedModes": ["insights_lead", "voice_canvas"],
+    "claimTypes": ["governance_state", "source_context", "data_gap"],
+    "evidenceRequired": false,
+    "allowedSkillIds": ["inspect_runtime_governance", "recommend_dynamic_view", "plan_executive_pilot"],
+    "guardrails": [
+      "Runtime governance inspection cannot enable disabled capabilities or alter runtime policy.",
+      "Ready surfaces are governed prototype surfaces, not production approvals.",
+      "Gated Realtime, continuous voice, TTS, export, source write, and canonical promotion states must stay visible."
+    ]
+  },
+  {
+    "id": "runtime_quality_panel",
+    "name": "Runtime Quality Panel",
+    "family": "evidence",
+    "purpose": "Show persisted runtime self-check coverage, pass/watch/blocked quality counts, latest checks, human-review-required items, and consistency guardrails before any surface or capability is promoted.",
+    "requiredData": ["sessionRuntimeQualitySummary", "runtimeQualityChecks", "experiencePlan.viewManifest", "capabilities"],
+    "supportedModes": ["insights_lead", "voice_canvas"],
+    "claimTypes": ["governance_state", "source_context", "data_gap"],
+    "evidenceRequired": false,
+    "allowedSkillIds": ["inspect_runtime_governance", "inspect_foundation_readiness", "inspect_experience_architecture", "plan_executive_pilot", "recommend_dynamic_view"],
+    "guardrails": [
+      "Runtime quality inspection cannot override, dismiss, or mark a quality check as passed.",
+      "Watch and blocked checks are promotion blockers until the underlying evidence, governance, or runtime gap is resolved.",
+      "Passing checks do not permit exports, canonical writes, full voice, provider bypass, arbitrary UI, or official approval."
+    ]
+  },
+  {
+    "id": "foundation_readiness_panel",
+    "name": "Foundation Readiness Panel",
+    "family": "evidence",
+    "purpose": "Show cross-rail Brand Growth Intelligence foundation readiness across approved experience architecture, evidence grounding, review/memory, source governance, audit/quality, runtime, surfaces, providers, voice, persistence, artifacts, and outcome-readiness.",
+    "requiredData": ["sessionFoundationReadinessSummary", "experienceArchitectureSummary", "runtimeControlSummary", "sourceGovernanceSummary", "persistenceGovernanceSummary"],
+    "supportedModes": ["insights_lead", "voice_canvas"],
+    "claimTypes": ["governance_state", "source_context", "data_gap"],
+    "evidenceRequired": false,
+    "allowedSkillIds": ["inspect_foundation_readiness", "recommend_dynamic_view", "plan_executive_pilot"],
+    "guardrails": [
+      "Foundation readiness inspection cannot enable enterprise persistence, official approvals, canonical writes, exports, full voice, autonomous learning, or arbitrary UI generation.",
+      "Ready and prototype states are promotion evidence, not production authorization.",
+      "Gated paths must remain visible beside the foundation readiness signal."
+    ]
+  },
+  {
+    "id": "executive_pilot_runbook_panel",
+    "name": "Executive Pilot Runbook Panel",
+    "family": "storytelling",
+    "purpose": "Show the read-only CMO/sponsor pilot sequence, proof moments, governed workspace assembly, funding asks, and disabled promotion gates from the current Brand Growth Intelligence foundation.",
+    "requiredData": ["brandIntelligencePacket", "experiencePlan", "sessionFoundationReadinessSummary", "runtimeControlManifest", "sessionReviewWorkflowSummary"],
+    "supportedModes": ["insights_lead", "voice_canvas"],
+    "claimTypes": ["draft_output", "governance_state", "planning_option", "data_gap"],
+    "evidenceRequired": false,
+    "allowedSkillIds": ["plan_executive_pilot", "recommend_dynamic_view"],
+    "guardrails": [
+      "The pilot runbook is inspection-only and cannot be exported, circulated, or treated as an official funding document.",
+      "Runbook steps must use approved ExperiencePlan templates, skills, and dynamic views.",
+      "Source, persistence, voice, artifact, approval, learning, and arbitrary-UI gates must remain visible."
+    ]
+  },
+  {
+    "id": "promotion_gate_panel",
+    "name": "Promotion Gate Panel",
+    "family": "evidence",
+    "purpose": "Show whether the current foundation is ready for CMO demo, ready for pilot review, or still production-blocked, with demo proof, critical gates, enabled demo rails, next pilot steps, and funding rationale.",
+    "requiredData": ["sessionPromotionGateSummary", "sessionFoundationReadinessSummary", "sessionExecutivePilotSummary", "sessionRuntimeSurfaceSummary", "sessionRuntimeQualitySummary"],
+    "supportedModes": ["insights_lead", "voice_canvas"],
+    "claimTypes": ["governance_state", "planning_option", "data_gap"],
+    "evidenceRequired": false,
+    "allowedSkillIds": ["inspect_foundation_readiness", "plan_executive_pilot", "recommend_dynamic_view"],
+    "guardrails": [
+      "Promotion gate inspection cannot certify production readiness or approve funding by itself.",
+      "CMO-demo and pilot-review readiness are prototype promotion signals, not permission to enable gated capabilities.",
+      "Enterprise persistence, official approvals, canonical writes, artifact export, full voice, autonomous learning, and arbitrary UI generation must remain blocked until governance clears them."
+    ]
+  }
+]

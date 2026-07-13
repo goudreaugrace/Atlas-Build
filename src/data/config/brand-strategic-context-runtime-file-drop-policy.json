@@ -1,0 +1,37 @@
+{
+  "id": "brand-strategic-context-runtime-file-drop-policy-v1",
+  "lastReviewed": "2026-06-29",
+  "purpose": "Define the disabled-by-default runtime file-drop path for approved Brand Strategic Context source-owner bundles before any canonical brand-strategy consumption is enabled.",
+  "defaultRuntimeConsumptionEnabled": false,
+  "canonicalUseEnabled": false,
+  "acceptedBundleType": "brand_strategic_context_source_owner_file_bundle",
+  "expectedSourceDirectory": "src/data/source/brand-strategic-context-source-owner-files/",
+  "templatePath": "public/templates/brand-strategic-context-source-owner-file-bundle-template.json",
+  "requiredFileKinds": [
+    "brand_foundations_file",
+    "positioning_objectives_file",
+    "creative_platform_claims_file"
+  ],
+  "promotionRequirements": [
+    "Source owners provide approved_source file bundles using the accepted template shape.",
+    "Validation confirms brand IDs, source owners, dates, source types, brand foundations, positioning, objectives, planning priorities, creative platform, approved claims, and claims not to make.",
+    "Canonical-use governance approves runtime consumption for the source directory.",
+    "Persistence readiness clears canonical source promotion, identity/access, retention/privacy, and backup/recovery blockers.",
+    "The runtime keeps Brand Strategic Context caveats, no-inferred-positioning guardrails, and human-review requirements attached to every strategy-facing workspace."
+  ],
+  "disabledReasons": [
+    "No approved Brand Strategic Context source-owner file drops are loaded in the repository.",
+    "Canonical runtime consumption of brand strategy files has not been approved.",
+    "Enterprise source promotion governance is still blocked by persistence readiness requirements."
+  ],
+  "guardrails": [
+    "Do not auto-consume Brand Strategic Context source-owner files as packet facts until canonical-use governance is approved.",
+    "Do not treat prototype seeds, browser-local promoted packets, or reviewed-local records as canonical brand strategy.",
+    "Do not present approved_source file examples as live source data unless they are loaded from the governed source directory and pass validation.",
+    "Keep official brand strategy source files separate from React components and dynamic views; services load and validate, components render."
+  ],
+  "caveats": [
+    "This policy defines the future Brand Strategic Context runtime landing zone; it does not prove that approved brand strategy source files exist.",
+    "The current Brand Strategic Context importer supports review and preview, not default runtime source replacement."
+  ]
+}

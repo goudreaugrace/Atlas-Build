@@ -1,0 +1,147 @@
+{
+  "id": "persistence-readiness-requirements-v1",
+  "lastReviewed": "2026-06-28",
+  "purpose": "Define the storage, review, governance, and migration gates required before Agent Lab memory, artifacts, audit logs, gates, source candidates, and source claims can move from prototype-local persistence to enterprise storage.",
+  "mode": "storage_promotion_checklist",
+  "requirements": [
+    {
+      "id": "browser-local-ledger",
+      "label": "Browser-local session ledger",
+      "owner": "Prototype experience owner",
+      "requiredFor": ["session_resume", "agent_lab_review"],
+      "recordTypes": ["turn_ids", "memory", "audit", "artifacts", "confirmation_gates", "reviews"],
+      "status": "ready",
+      "evidenceSourceIds": ["agent-session-ledger-v1", "localStorage"],
+      "acceptanceCriteria": ["Agent Lab can merge turns into a browser-local ledger.", "Reloaded sessions preserve memory, artifacts, audit, confirmation gates, and reviews."],
+      "blockers": [],
+      "nextAction": "Keep browser-local storage as a convenience cache, not the enterprise source of truth.",
+      "guardrails": ["Browser-local storage is not enterprise persistence."]
+    },
+    {
+      "id": "local-json-session-store",
+      "label": "Local JSON session store",
+      "owner": "Prototype runtime owner",
+      "requiredFor": ["session_resume", "agent_lab_review", "skill_routed_chat"],
+      "recordTypes": ["turn_ids", "memory", "audit", "artifacts", "confirmation_gates", "reviews"],
+      "status": "prototype_ready",
+      "evidenceSourceIds": [".runtime/agent-session-ledgers.json", "/api/agent/session-ledger"],
+      "acceptanceCriteria": ["Turns with a sessionId persist to local JSON.", "Session ledger API can read and merge persisted ledgers."],
+      "blockers": ["Local JSON is ignored prototype storage and is not enterprise database persistence."],
+      "nextAction": "Use local JSON for prototype continuity while enterprise persistence requirements are defined.",
+      "guardrails": ["Do not treat local JSON records as enterprise-approved records."]
+    },
+    {
+      "id": "review-actions-workflow",
+      "label": "Reviewed actions workflow",
+      "owner": "Agent governance owner",
+      "requiredFor": ["memory_acceptance", "artifact_review", "gate_review"],
+      "recordTypes": ["memory", "artifacts", "confirmation_gates", "reviews"],
+      "status": "ready",
+      "evidenceSourceIds": ["/api/agent/session-ledger/review", "agent-review-record-v1"],
+      "acceptanceCriteria": ["Memory can be accepted, edited, or rejected.", "Artifacts can be approved for prototype use without enabling export.", "Blocked capability gates cannot be approved."],
+      "blockers": [],
+      "nextAction": "Preserve review history when moving to enterprise storage.",
+      "guardrails": ["Human review actions do not bypass disabled capability gates."]
+    },
+    {
+      "id": "accepted-memory-context",
+      "label": "Accepted memory context injection",
+      "owner": "Agent runtime owner",
+      "requiredFor": ["future_turn_context"],
+      "recordTypes": ["memory"],
+      "status": "ready",
+      "evidenceSourceIds": ["agent-working-context-manifest-v1", "accepted_memory_loaded"],
+      "acceptanceCriteria": ["Only accepted active-brand memory loads into future turns.", "Suggested, rejected, and blocked memory remains excluded."],
+      "blockers": [],
+      "nextAction": "Keep accepted memory scoped by brand and review status.",
+      "guardrails": ["Suggested memory must never auto-promote into working context."]
+    },
+    {
+      "id": "source-candidates-non-canonical",
+      "label": "Source candidates stay non-canonical",
+      "owner": "Source governance owner",
+      "requiredFor": ["source_review"],
+      "recordTypes": ["source_promotion_records", "source_claim_records"],
+      "status": "ready",
+      "evidenceSourceIds": ["sourcePromotionContext", "sourceClaimContext"],
+      "acceptanceCriteria": ["Reviewed-local source packets are visible as candidates.", "Extracted source claims are visible as review records.", "Canonical writes and runtime auto-consumption remain disabled."],
+      "blockers": [],
+      "nextAction": "Define canonical promotion workflow before any source candidate becomes runtime evidence.",
+      "guardrails": ["Reviewed-local source candidates and claims are not packet facts."]
+    },
+    {
+      "id": "enterprise-database-schema",
+      "label": "Enterprise database schema",
+      "owner": "Data platform owner",
+      "requiredFor": ["enterprise_persistence"],
+      "recordTypes": ["turn_ids", "memory", "audit", "artifacts", "artifact_readiness", "confirmation_gates", "reviews", "source_promotion_records", "source_claim_records"],
+      "status": "blocked",
+      "evidenceSourceIds": ["future_enterprise_database"],
+      "acceptanceCriteria": ["Enterprise tables or document stores exist for all runtime record types.", "Schema preserves relationships between turns, evidence, gates, reviews, artifacts, and source candidates."],
+      "blockers": ["No enterprise database provider or schema is connected for session memory, artifacts, audit, gates, reviews, source candidates, or source claims."],
+      "nextAction": "Design the enterprise persistence schema after pilot governance confirms required record types and retention rules.",
+      "guardrails": ["Do not migrate prototype records into enterprise truth without schema and owner approval."]
+    },
+    {
+      "id": "reviewer-identity-access-control",
+      "label": "Reviewer identity and access control",
+      "owner": "Security and governance owner",
+      "requiredFor": ["enterprise_persistence", "memory_acceptance", "artifact_review", "source_review"],
+      "recordTypes": ["memory", "artifacts", "confirmation_gates", "reviews", "source_promotion_records", "source_claim_records"],
+      "status": "blocked",
+      "evidenceSourceIds": ["future_identity_provider"],
+      "acceptanceCriteria": ["Reviewer identity is tied to enterprise auth.", "Brand/category access rules are enforced.", "Review actions record accountable user and role."],
+      "blockers": ["Current prototype records reviewer as human_review without enterprise identity or role-based access control."],
+      "nextAction": "Connect review workflows to enterprise identity before treating reviews as official approvals.",
+      "guardrails": ["Prototype review identity is not sufficient for enterprise approvals."]
+    },
+    {
+      "id": "retention-privacy-policy",
+      "label": "Retention and privacy policy",
+      "owner": "Privacy and legal owner",
+      "requiredFor": ["enterprise_persistence", "voice_transcripts", "source_claim_records"],
+      "recordTypes": ["memory", "audit", "reviews", "source_claim_records", "voice_transcripts"],
+      "status": "blocked",
+      "evidenceSourceIds": ["future_retention_policy"],
+      "acceptanceCriteria": ["Retention duration is approved.", "Deletion and export rules are defined.", "Voice transcripts and pasted source text have approved handling."],
+      "blockers": ["Retention, deletion, and transcript/source-text handling are not yet approved."],
+      "nextAction": "Define retention and privacy rules before enterprise persistence or continuous voice transcript storage.",
+      "guardrails": ["Do not store voice transcripts or pasted source text in enterprise systems without approved retention rules."]
+    },
+    {
+      "id": "backup-recovery-migration",
+      "label": "Backup, recovery, and migration",
+      "owner": "Runtime operations owner",
+      "requiredFor": ["enterprise_persistence"],
+      "recordTypes": ["turn_ids", "memory", "audit", "artifacts", "confirmation_gates", "reviews", "source_promotion_records", "source_claim_records"],
+      "status": "blocked",
+      "evidenceSourceIds": ["future_operations_runbook"],
+      "acceptanceCriteria": ["Enterprise storage has backup and recovery behavior.", "Prototype-local records have an approved migration or discard policy.", "No unsupported local records are silently promoted."],
+      "blockers": ["No enterprise backup/recovery or local-record migration policy exists yet."],
+      "nextAction": "Write the operations runbook before migrating local JSON records.",
+      "guardrails": ["Local prototype records require review before migration or deletion."]
+    },
+    {
+      "id": "canonical-source-promotion-governance",
+      "label": "Canonical source promotion governance",
+      "owner": "Source owner governance",
+      "requiredFor": ["source_review", "canonical_source_write"],
+      "recordTypes": ["source_promotion_records", "source_claim_records"],
+      "status": "blocked",
+      "evidenceSourceIds": ["source_data_write", "source_claim_promotion"],
+      "acceptanceCriteria": ["Source-owner approvals define which records can become canonical.", "Runtime auto-consumption rules are approved.", "Promotion actions are reversible and audited."],
+      "blockers": ["Source data writes and source claim promotion capabilities remain disabled."],
+      "nextAction": "Define source-owner promotion workflow before enabling canonical writes or runtime auto-consumption.",
+      "guardrails": ["Review gates are review state only until canonical promotion governance is approved."]
+    }
+  ],
+  "guardrails": [
+    "Prototype persistence can support demos and review workflows, but it is not enterprise storage.",
+    "Accepted memory, reviewed artifacts, source candidates, and extracted claims must remain auditable, reversible, and scoped.",
+    "Canonical writes, runtime auto-consumption, and enterprise promotion remain disabled until governance approves them."
+  ],
+  "caveats": [
+    "This registry defines readiness for persistence promotion; it does not create enterprise storage.",
+    "Local JSON records under .runtime are ignored prototype state and should not be treated as official source truth."
+  ]
+}

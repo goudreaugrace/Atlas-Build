@@ -1,0 +1,20 @@
+[
+  {
+    "id": "foundation_first",
+    "name": "Foundation First Treatment Path",
+    "sequence": ["stabilize_diagnosis", "select_foundation_treatment", "define_follow_up_labs", "review_momentum"],
+    "principle": "Do not recommend acceleration before foundation when core equity is weak."
+  },
+  {
+    "id": "momentum_building",
+    "name": "Momentum-Building Treatment Path",
+    "sequence": ["protect_strength", "target_declining_input", "monitor_next_wave", "scale_if_validated"],
+    "principle": "Strong brands with slipping momentum need renewal before the weakness compounds."
+  },
+  {
+    "id": "conversion_vitals",
+    "name": "Conversion Vitals Treatment Path",
+    "sequence": ["check_gn_vitals", "separate_equity_from_conversion", "route_to_owner", "monitor_bbe_and_gn"],
+    "principle": "When equity and commercial vitals conflict, separate brand ailment from conversion leak."
+  }
+]

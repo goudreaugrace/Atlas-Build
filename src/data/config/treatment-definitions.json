@@ -1,0 +1,583 @@
+[
+  {
+    "id": "clarify_proposition",
+    "name": "Clarify the brand proposition",
+    "tier": "Foundation",
+    "family": "Meaningful",
+    "description": "Define the core consumer job, benefit, and reason-to-believe in plain language before scaling spend.",
+    "bestFor": [
+      "underbuilt_equity",
+      "foundation_deficit",
+      "different_but_niche"
+    ],
+    "notFor": [
+      "strong_but_slipping when proposition is already clear"
+    ],
+    "timeToImpact": "3\u20139 months",
+    "cost": "Low to Medium",
+    "difficulty": "Medium",
+    "likelihood": "High if leadership aligns",
+    "owners": [
+      "Brand",
+      "Insights"
+    ],
+    "pros": [
+      "Creates a clear base for every other treatment",
+      "Low cost relative to media or innovation"
+    ],
+    "cons": [
+      "Can stall if the team debates positioning too broadly"
+    ],
+    "dependencies": [
+      "Category lens",
+      "Portfolio role",
+      "Consumer need-state clarity"
+    ],
+    "expectedMetricMovement": [
+      "Meaningful",
+      "Different",
+      "Consideration"
+    ],
+    "followUpSignals": [
+      "Meaningful momentum",
+      "Image association fit",
+      "Consideration"
+    ]
+  },
+  {
+    "id": "refresh_relevance",
+    "name": "Refresh relevance for current category tensions",
+    "tier": "Foundation / Acceleration",
+    "family": "Meaningful",
+    "description": "Update the brand\u2019s meaning for today\u2019s consumer context without breaking core equity.",
+    "bestFor": [
+      "strong_but_slipping",
+      "salient_but_generic"
+    ],
+    "notFor": [
+      "foundation_deficit without a clear proposition"
+    ],
+    "timeToImpact": "6\u201318 months",
+    "cost": "Medium to High",
+    "difficulty": "Medium",
+    "likelihood": "Medium",
+    "owners": [
+      "Brand",
+      "Creative",
+      "Insights"
+    ],
+    "pros": [
+      "Protects mature brands from slow relevance erosion",
+      "Can re-energize iconic assets"
+    ],
+    "cons": [
+      "Requires disciplined creative judgment and patience"
+    ],
+    "dependencies": [
+      "Category context",
+      "Creative effectiveness",
+      "Distinctive assets"
+    ],
+    "expectedMetricMovement": [
+      "Meaningful",
+      "Demand Power"
+    ],
+    "followUpSignals": [
+      "Meaningful momentum",
+      "Demand Power momentum",
+      "Creative lift"
+    ]
+  },
+  {
+    "id": "sharpen_point_of_difference",
+    "name": "Sharpen the point of difference",
+    "tier": "Foundation",
+    "family": "Different",
+    "description": "Make the brand\u2019s reason to choose sharper, more concrete, and harder to substitute.",
+    "bestFor": [
+      "salient_but_generic",
+      "underbuilt_equity",
+      "price_value_vulnerability"
+    ],
+    "notFor": [
+      "meaningful_but_invisible when Different is already strong"
+    ],
+    "timeToImpact": "6\u201318 months",
+    "cost": "Medium",
+    "difficulty": "High",
+    "likelihood": "Medium",
+    "owners": [
+      "Brand",
+      "Innovation",
+      "Creative"
+    ],
+    "pros": [
+      "Supports both choice and pricing power",
+      "Reduces commoditization risk"
+    ],
+    "cons": [
+      "Can become empty language without product or asset support"
+    ],
+    "dependencies": [
+      "Competitive set",
+      "Brand assets",
+      "Product truth"
+    ],
+    "expectedMetricMovement": [
+      "Different",
+      "Pricing Power"
+    ],
+    "followUpSignals": [
+      "Different",
+      "Pricing Power",
+      "Uniqueness imagery"
+    ]
+  },
+  {
+    "id": "distinctive_brand_assets",
+    "name": "Strengthen distinctive brand assets",
+    "tier": "Foundation",
+    "family": "Different + Salient",
+    "description": "Create clarity, consistency, and communication discipline around recognizable brand codes.",
+    "bestFor": [
+      "salient_but_generic",
+      "underbuilt_equity",
+      "strong_but_slipping"
+    ],
+    "notFor": [],
+    "timeToImpact": "6\u201324 months",
+    "cost": "Medium",
+    "difficulty": "Medium",
+    "likelihood": "High if executed consistently",
+    "owners": [
+      "Brand",
+      "Design",
+      "Creative",
+      "Media"
+    ],
+    "pros": [
+      "Builds memory structures and instant recognition",
+      "Works across channels"
+    ],
+    "cons": [
+      "Benefits erode if assets are constantly changed"
+    ],
+    "dependencies": [
+      "Asset audit",
+      "Creative guidelines",
+      "Media consistency"
+    ],
+    "expectedMetricMovement": [
+      "Salient",
+      "Different"
+    ],
+    "followUpSignals": [
+      "Salient",
+      "DBA recognition",
+      "Creative consistency"
+    ]
+  },
+  {
+    "id": "build_salience",
+    "name": "Build mental availability",
+    "tier": "Acceleration",
+    "family": "Salient",
+    "description": "Increase the brand\u2019s likelihood of coming to mind in the right consumption occasions.",
+    "bestFor": [
+      "meaningful_but_invisible",
+      "underbuilt_equity",
+      "different_but_niche"
+    ],
+    "notFor": [
+      "salient_but_generic without message clarity"
+    ],
+    "timeToImpact": "6\u201318 months",
+    "cost": "Medium to High",
+    "difficulty": "Medium",
+    "likelihood": "Medium",
+    "owners": [
+      "Brand",
+      "Media",
+      "Creative"
+    ],
+    "pros": [
+      "Can drive penetration when relevance exists",
+      "Clear media and creative levers"
+    ],
+    "cons": [
+      "Wasteful if proposition and assets are weak"
+    ],
+    "dependencies": [
+      "Occasion priority",
+      "Distinctive assets",
+      "Media continuity"
+    ],
+    "expectedMetricMovement": [
+      "Salient",
+      "Demand Power"
+    ],
+    "followUpSignals": [
+      "Salient",
+      "Unaided awareness",
+      "Reach",
+      "Continuity"
+    ]
+  },
+  {
+    "id": "occasion_memory_structures",
+    "name": "Build occasion memory structures",
+    "tier": "Acceleration",
+    "family": "Salient",
+    "description": "Anchor the brand to the highest-value occasions where it should be top of mind.",
+    "bestFor": [
+      "meaningful_but_invisible",
+      "strong_but_slipping",
+      "different_but_niche"
+    ],
+    "notFor": [],
+    "timeToImpact": "6\u201318 months",
+    "cost": "Medium",
+    "difficulty": "Medium",
+    "likelihood": "Medium",
+    "owners": [
+      "Brand",
+      "Media",
+      "Commercial"
+    ],
+    "pros": [
+      "Makes salience more strategic than broad awareness",
+      "Connects to usage jobs"
+    ],
+    "cons": [
+      "Requires strong category/occasion discipline"
+    ],
+    "dependencies": [
+      "Occasion scores",
+      "Category context",
+      "Media plan"
+    ],
+    "expectedMetricMovement": [
+      "Salient",
+      "Demand Power",
+      "Occasion association"
+    ],
+    "followUpSignals": [
+      "Occasion salience",
+      "Demand Power",
+      "Penetration"
+    ]
+  },
+  {
+    "id": "product_experience_check",
+    "name": "Check product and experience delivery",
+    "tier": "Foundation / Specialist",
+    "family": "Meaningful",
+    "description": "Validate that the product experience, pack, or use experience is not blocking relevance or repeat.",
+    "bestFor": [
+      "underbuilt_equity",
+      "foundation_deficit",
+      "price_value_vulnerability"
+    ],
+    "notFor": [],
+    "timeToImpact": "3\u201318 months",
+    "cost": "Medium to High",
+    "difficulty": "High",
+    "likelihood": "Medium",
+    "owners": [
+      "Insights",
+      "R&D",
+      "Brand",
+      "Commercial"
+    ],
+    "pros": [
+      "Addresses real delivery issues, not just comms",
+      "Can improve repeat and worth"
+    ],
+    "cons": [
+      "May require cross-functional investment"
+    ],
+    "dependencies": [
+      "Consumer diagnostics",
+      "Sensory/product data",
+      "Review themes"
+    ],
+    "expectedMetricMovement": [
+      "Meaningful",
+      "Worth perception",
+      "Repeat"
+    ],
+    "followUpSignals": [
+      "Meets needs",
+      "Affinity",
+      "Experience diagnostics"
+    ]
+  },
+  {
+    "id": "premium_justification",
+    "name": "Build premium justification",
+    "tier": "Premium / Margin",
+    "family": "Pricing Power",
+    "description": "Strengthen the consumer evidence that the brand earns its price through quality, leadership, benefit, or emotional value.",
+    "bestFor": [
+      "price_value_vulnerability",
+      "salient_but_generic"
+    ],
+    "notFor": [
+      "foundation_deficit until proposition is fixed"
+    ],
+    "timeToImpact": "6\u201324 months",
+    "cost": "Medium to High",
+    "difficulty": "High",
+    "likelihood": "Medium",
+    "owners": [
+      "Brand",
+      "RGM",
+      "Innovation",
+      "Creative"
+    ],
+    "pros": [
+      "Can protect margin and reduce promo dependency",
+      "Improves strategic value capture"
+    ],
+    "cons": [
+      "Cannot compensate for weak product delivery or RGM misfit"
+    ],
+    "dependencies": [
+      "Worth perception",
+      "Different",
+      "Quality cues",
+      "RGM data"
+    ],
+    "expectedMetricMovement": [
+      "Pricing Power",
+      "Different",
+      "Perceived worth"
+    ],
+    "followUpSignals": [
+      "Pricing Power",
+      "Worth-more",
+      "RGM price positioning"
+    ]
+  },
+  {
+    "id": "value_delivery_check",
+    "name": "Check value delivery and price-pack fit",
+    "tier": "Specialist / Commercial",
+    "family": "GN Delivering Value",
+    "description": "Review whether the commercial offer, pack architecture, promo, or value communication is undermining brand equity conversion.",
+    "bestFor": [
+      "price_value_vulnerability",
+      "strong_but_slipping",
+      "under_leveraged_equity"
+    ],
+    "notFor": [],
+    "timeToImpact": "1\u20136 months for diagnosis; 3\u201312 months for action",
+    "cost": "Medium",
+    "difficulty": "Medium",
+    "likelihood": "Medium",
+    "owners": [
+      "RGM",
+      "Commercial",
+      "Brand"
+    ],
+    "pros": [
+      "Can reveal conversion leaks outside brand equity",
+      "Connects BBE to GN and RGM"
+    ],
+    "cons": [
+      "Requires commercial data and decision rights"
+    ],
+    "dependencies": [
+      "RGM data",
+      "Price positioning",
+      "Promo effectiveness"
+    ],
+    "expectedMetricMovement": [
+      "Pricing Power",
+      "Value realization",
+      "Penetration"
+    ],
+    "followUpSignals": [
+      "Price positioning",
+      "Active mix",
+      "Promo effectiveness",
+      "Pricing Power"
+    ]
+  },
+  {
+    "id": "physical_presence",
+    "name": "Improve physical availability and visibility",
+    "tier": "Acceleration / Commercial",
+    "family": "Salient + GN Available & Visible",
+    "description": "Make the brand easier to find and more visible in the channels and contexts where equity should convert.",
+    "bestFor": [
+      "meaningful_but_invisible",
+      "under_leveraged_equity",
+      "underbuilt_equity"
+    ],
+    "notFor": [],
+    "timeToImpact": "1\u201312 months",
+    "cost": "Medium to High",
+    "difficulty": "High",
+    "likelihood": "Medium",
+    "owners": [
+      "Commercial",
+      "Category",
+      "Brand",
+      "Customer teams"
+    ],
+    "pros": [
+      "Often faster than long-term equity building",
+      "Directly supports conversion"
+    ],
+    "cons": [
+      "Can mask weak equity if used alone"
+    ],
+    "dependencies": [
+      "Distribution data",
+      "Channel priorities",
+      "Retailer execution"
+    ],
+    "expectedMetricMovement": [
+      "Salient",
+      "Penetration",
+      "Share",
+      "Availability"
+    ],
+    "followUpSignals": [
+      "Weighted distribution",
+      "TDP",
+      "SKU/store",
+      "Visibility"
+    ]
+  },
+  {
+    "id": "rgm_referral",
+    "name": "Refer to RGM pricing study",
+    "tier": "Specialist Referral",
+    "family": "Pricing Power",
+    "description": "Use detailed pricing methods for SKU/pack decisions when BBE indicates broad price-equity risk or opportunity.",
+    "bestFor": [
+      "price_value_vulnerability"
+    ],
+    "notFor": [
+      "Any use case seeking SKU price points directly from BBE Pricing Power"
+    ],
+    "timeToImpact": "4\u201312 weeks for study",
+    "cost": "Medium",
+    "difficulty": "Medium",
+    "likelihood": "High for diagnosis clarity",
+    "owners": [
+      "RGM",
+      "Data Science",
+      "Commercial"
+    ],
+    "pros": [
+      "Prevents misuse of BBE Pricing Power",
+      "Produces actionable price/pack guidance"
+    ],
+    "cons": [
+      "Additional workstream and data required"
+    ],
+    "dependencies": [
+      "RGM data",
+      "Conjoint/trade-off/MMM where appropriate"
+    ],
+    "expectedMetricMovement": [
+      "Price realization",
+      "Margin",
+      "Volume response"
+    ],
+    "followUpSignals": [
+      "RGM outputs",
+      "Promo ROI",
+      "Price elasticity"
+    ]
+  },
+  {
+    "id": "specialist_research_referral",
+    "name": "Run specialist research deep dive",
+    "tier": "Specialist Referral",
+    "family": "Research",
+    "description": "Commission the right deeper diagnostic when BBE shows an issue but root cause evidence is incomplete.",
+    "bestFor": [
+      "underbuilt_equity",
+      "strong_but_slipping",
+      "price_value_vulnerability",
+      "salient_but_generic"
+    ],
+    "notFor": [
+      "Clear cases where existing evidence is sufficient"
+    ],
+    "timeToImpact": "4\u201312 weeks",
+    "cost": "Medium to High",
+    "difficulty": "Medium",
+    "likelihood": "High for evidence clarity",
+    "owners": [
+      "Insights",
+      "Kantar/Research partner",
+      "Brand"
+    ],
+    "pros": [
+      "Improves confidence before major investment",
+      "Targets the next research dollar"
+    ],
+    "cons": [
+      "Can slow action if overused"
+    ],
+    "dependencies": [
+      "Specific hypothesis",
+      "Budget",
+      "Method selection"
+    ],
+    "expectedMetricMovement": [
+      "Confidence rather than immediate BBE movement"
+    ],
+    "followUpSignals": [
+      "Research output",
+      "Diagnosis confidence",
+      "Treatment selection confidence"
+    ]
+  },
+  {
+    "id": "maintain_distinctive_assets",
+    "name": "Maintain and protect distinctive assets",
+    "tier": "Maintenance",
+    "family": "Salient + Different",
+    "description": "Protect the assets and memory structures already working while monitoring for category or role shifts.",
+    "bestFor": [
+      "healthy_or_watch",
+      "strong_but_slipping"
+    ],
+    "notFor": [],
+    "timeToImpact": "Ongoing",
+    "cost": "Low to Medium",
+    "difficulty": "Low",
+    "likelihood": "High",
+    "owners": [
+      "Brand",
+      "Creative",
+      "Media"
+    ],
+    "pros": [
+      "Prevents erosion from unnecessary change",
+      "Keeps equity efficient"
+    ],
+    "cons": [
+      "Can become complacent if context shifts are ignored"
+    ],
+    "dependencies": [
+      "Asset performance tracking",
+      "Creative governance"
+    ],
+    "expectedMetricMovement": [
+      "Salient stability",
+      "Different stability"
+    ],
+    "followUpSignals": [
+      "Momentum",
+      "Asset consistency",
+      "Creative performance"
+    ]
+  }
+]

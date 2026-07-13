@@ -1,0 +1,1502 @@
+[
+  {
+    "id": "executive-qbr-decision-read",
+    "name": "Meeting Prep Intelligence Asset",
+    "audience": "executive",
+    "objective": "decide",
+    "layout": "command_center",
+    "purpose": "Create the fastest leadership-ready read of what is changing, why it matters, what proof exists, what not to overclaim, and which decision path needs human review.",
+    "triggerTerms": ["cmo", "executive", "leadership", "qbr", "bgs", "meeting prep", "meeting read", "decision", "boardroom"],
+    "requiredSkillIds": ["bbe_momentum_intelligence_read", "draft_meeting_story"],
+    "zones": [
+      {
+        "id": "verdict",
+        "title": "Verdict",
+        "purpose": "Show the headline momentum read and red signals.",
+        "viewId": "momentum_ladder",
+        "requiredSkillId": "bbe_momentum_intelligence_read",
+        "evidenceRequired": true,
+        "priority": 1
+      },
+      {
+        "id": "proof",
+        "title": "Proof",
+        "purpose": "Keep source-backed evidence beside the executive read.",
+        "viewId": "evidence_ledger",
+        "requiredSkillId": "explain_diagnosis_evidence",
+        "evidenceRequired": true,
+        "priority": 2
+      },
+      {
+        "id": "claim-proof",
+        "title": "Claim Proof",
+        "purpose": "Show which generated claims are supported, missing evidence, guardrails, reviewed context, or non-evidence planning language.",
+        "viewId": "evidence_spotlight_panel",
+        "requiredSkillId": "draft_meeting_story",
+        "evidenceRequired": false,
+        "priority": 3
+      },
+      {
+        "id": "decision-story",
+        "title": "Decision Story",
+        "purpose": "Draft the QBR narrative as a human-review artifact.",
+        "viewId": "qbr_story_draft",
+        "requiredSkillId": "draft_meeting_story",
+        "evidenceRequired": true,
+        "priority": 4
+      },
+      {
+        "id": "gaps",
+        "title": "Gaps Before Action",
+        "purpose": "Name missing source inputs before circulation.",
+        "viewId": "data_gap_panel",
+        "requiredSkillId": "bbe_momentum_intelligence_read",
+        "evidenceRequired": false,
+        "priority": 5
+      }
+    ],
+    "artifactTypes": ["qbr_story_draft", "talk_track", "decision_note"],
+    "guardrails": [
+      "Executive artifacts require human review before circulation.",
+      "Do not claim causality without causal evidence.",
+      "Keep red momentum and missing evidence visible."
+    ],
+    "humanApproval": "required_before_circulation",
+    "pilotPriority": "p0"
+  },
+  {
+    "id": "insights-evidence-lab",
+    "name": "Insights Evidence Lab",
+    "audience": "insights_lead",
+    "objective": "challenge",
+    "layout": "evidence_lab",
+    "purpose": "Pressure-test the diagnosis with the actual data basis, deterministic rule trace, evidence, counter-evidence, source gaps, and interpretation caveats.",
+    "triggerTerms": ["insights", "evidence", "proof", "trace", "rule", "challenge", "pressure-test", "complicate", "actual data", "data basis", "data behind", "working with", "source data"],
+    "requiredSkillIds": ["explain_diagnosis_evidence", "answer_brand_question"],
+    "zones": [
+      {
+        "id": "data-basis",
+        "title": "Data Basis",
+        "purpose": "Show the active metrics, source posture, peer basis, proof labels, and missing inputs behind the request.",
+        "viewId": "data_basis_inspector",
+        "requiredSkillId": "explain_diagnosis_evidence",
+        "evidenceRequired": true,
+        "priority": 1
+      },
+      {
+        "id": "trace",
+        "title": "Rule Trace",
+        "purpose": "Expose the deterministic diagnosis rule and matched conditions.",
+        "viewId": "diagnosis_trace_summary",
+        "requiredSkillId": "explain_diagnosis_evidence",
+        "evidenceRequired": true,
+        "priority": 2
+      },
+      {
+        "id": "evidence",
+        "title": "Evidence Ledger",
+        "purpose": "Show supporting, missing, and complicating evidence.",
+        "viewId": "evidence_ledger",
+        "requiredSkillId": "explain_diagnosis_evidence",
+        "evidenceRequired": true,
+        "priority": 3
+      },
+      {
+        "id": "claim-proof",
+        "title": "Claim Proof",
+        "purpose": "Inspect claim-level support, missing evidence, guardrail claims, and reviewed context separation.",
+        "viewId": "evidence_spotlight_panel",
+        "requiredSkillId": "explain_diagnosis_evidence",
+        "evidenceRequired": false,
+        "priority": 4
+      },
+      {
+        "id": "drivers",
+        "title": "SMD Drivers",
+        "purpose": "Inspect Salient, Meaningful, and Different movement behind the read.",
+        "viewId": "smd_driver_map",
+        "requiredSkillId": "explain_diagnosis_evidence",
+        "evidenceRequired": true,
+        "priority": 5
+      },
+      {
+        "id": "gaps",
+        "title": "Data Gaps",
+        "purpose": "Identify evidence required before action.",
+        "viewId": "data_gap_panel",
+        "requiredSkillId": "explain_diagnosis_evidence",
+        "evidenceRequired": false,
+        "priority": 6
+      }
+    ],
+    "artifactTypes": ["evidence_packet"],
+    "guardrails": [
+      "Do not let the LLM choose or revise the deterministic diagnosis.",
+      "Separate facts, interpretation, and caveats.",
+      "Do not turn diagnosis into treatment before the planning step."
+    ],
+    "humanApproval": "not_required",
+    "pilotPriority": "p0"
+  },
+  {
+    "id": "marketer-treatment-planning",
+    "name": "Marketer Treatment Planning",
+    "audience": "marketer",
+    "objective": "decide",
+    "layout": "planning_workshop",
+    "purpose": "Help a brand manager move from diagnosis to treatment recommendations, areas to inspect, proof needs, and follow-up signals.",
+    "triggerTerms": ["marketer", "brand manager", "treatment", "action", "test first", "now what", "prescribe"],
+    "requiredSkillIds": ["create_growth_provocations", "answer_brand_question"],
+    "zones": [
+      {
+        "id": "provocations",
+        "title": "Growth Provocations",
+        "purpose": "Translate evidence into what / so what / now what prompts.",
+        "viewId": "growth_provocation_list",
+        "requiredSkillId": "create_growth_provocations",
+        "evidenceRequired": true,
+        "priority": 1
+      },
+      {
+        "id": "treatment",
+        "title": "Treatment Path",
+        "purpose": "Show the first governed treatment recommendation to pressure-test.",
+        "viewId": "treatment_path_card",
+        "requiredSkillId": "create_growth_provocations",
+        "evidenceRequired": true,
+        "priority": 2
+      },
+      {
+        "id": "proof",
+        "title": "Proof",
+        "purpose": "Keep evidence visible behind the treatment recommendation.",
+        "viewId": "evidence_ledger",
+        "requiredSkillId": "create_growth_provocations",
+        "evidenceRequired": true,
+        "priority": 3
+      }
+    ],
+    "artifactTypes": ["decision_note"],
+    "guardrails": [
+      "Treatment recommendations are options to consider or tests to run, not final commands.",
+      "Every provocation needs evidence or a data-gap note.",
+      "Humans decide whether to adopt, revise, or reject the path."
+    ],
+    "humanApproval": "review_before_publish",
+    "pilotPriority": "p0"
+  },
+  {
+    "id": "learning-coach",
+    "name": "Learning Coach",
+    "audience": "learner",
+    "objective": "teach",
+    "layout": "learning_studio",
+    "purpose": "Teach or test a BBE concept using approved learning content and active brand examples only when evidence exists.",
+    "triggerTerms": ["teach", "learn", "explain concept", "quiz", "test me", "practice"],
+    "requiredSkillIds": ["teach_brand_growth_concept", "test_understanding"],
+    "zones": [
+      {
+        "id": "explainer",
+        "title": "Concept Explainer",
+        "purpose": "Explain the concept in approved language.",
+        "viewId": "learning_explainer",
+        "requiredSkillId": "teach_brand_growth_concept",
+        "evidenceRequired": false,
+        "priority": 1
+      },
+      {
+        "id": "practice",
+        "title": "Practice",
+        "purpose": "Invite a short interpretation check.",
+        "viewId": "quiz_card",
+        "requiredSkillId": "test_understanding",
+        "evidenceRequired": false,
+        "priority": 2
+      },
+      {
+        "id": "brand-example",
+        "title": "Brand Example",
+        "purpose": "Ground the lesson in the active brand only where source data exists.",
+        "viewId": "kpi_strip",
+        "requiredSkillId": "teach_brand_growth_concept",
+        "evidenceRequired": true,
+        "priority": 3
+      }
+    ],
+    "artifactTypes": ["learning_practice"],
+    "guardrails": [
+      "Teaching examples must be clearly separated from measured brand facts.",
+      "Correct common misreads directly.",
+      "Do not score users on unsupported facts."
+    ],
+    "humanApproval": "not_required",
+    "pilotPriority": "p1"
+  },
+  {
+    "id": "competitive-comparison-lab",
+    "name": "Competitive Comparison Lab",
+    "audience": "insights_lead",
+    "objective": "compare",
+    "layout": "evidence_lab",
+    "purpose": "Compare the active brand against approved peers and associative Pattern Radar matches while keeping evidence, peer-set basis, and overclaim caveats visible.",
+    "triggerTerms": ["compare", "competitor", "competitors", "peer", "peers", "benchmark", "versus"],
+    "requiredSkillIds": ["compare_brands_or_competitors", "explain_diagnosis_evidence"],
+    "zones": [
+      {
+        "id": "peer-read",
+        "title": "Peer Read",
+        "purpose": "Show approved peer-set basis and Pattern Radar matches.",
+        "viewId": "peer_comparison",
+        "requiredSkillId": "compare_brands_or_competitors",
+        "evidenceRequired": true,
+        "priority": 1
+      },
+      {
+        "id": "pattern-radar",
+        "title": "Pattern Radar",
+        "purpose": "Show associative pattern similarity and portfolio signals.",
+        "viewId": "pattern_radar_brief",
+        "requiredSkillId": "compare_brands_or_competitors",
+        "evidenceRequired": true,
+        "priority": 2
+      },
+      {
+        "id": "proof",
+        "title": "Evidence",
+        "purpose": "Keep source evidence and caveats beside comparison claims.",
+        "viewId": "evidence_ledger",
+        "requiredSkillId": "compare_brands_or_competitors",
+        "evidenceRequired": true,
+        "priority": 3
+      },
+      {
+        "id": "gaps",
+        "title": "Comparison Gaps",
+        "purpose": "Name missing peer-set, source, and market context before action.",
+        "viewId": "data_gap_panel",
+        "requiredSkillId": "compare_brands_or_competitors",
+        "evidenceRequired": false,
+        "priority": 4
+      }
+    ],
+    "artifactTypes": ["evidence_packet"],
+    "guardrails": [
+      "Separate approved peer facts from reviewed source claims and unreviewed research.",
+      "Pattern similarity is associative, not causal.",
+      "Do not infer cannibalization, portfolio migration, or occasion substitution without measured evidence."
+    ],
+    "humanApproval": "review_before_publish",
+    "pilotPriority": "p1"
+  },
+  {
+    "id": "source-readiness-lab",
+    "name": "Source Readiness Lab",
+    "audience": "insights_lead",
+    "objective": "research",
+    "layout": "evidence_lab",
+    "purpose": "Inspect Momentum source-owner readiness before executive use, showing the active data basis, required extracts, blockers, source labels, and source-governance caveats without promoting prototype data.",
+    "triggerTerms": ["source readiness", "source owner", "source-owner", "readiness blocker", "readiness blocks", "executive use", "approved extract", "actual data", "data basis", "data behind", "working with"],
+    "requiredSkillIds": ["bbe_momentum_intelligence_read", "explain_diagnosis_evidence"],
+    "zones": [
+      {
+        "id": "data-basis",
+        "title": "Data Basis",
+        "purpose": "Show the active metrics, source posture, peer basis, proof labels, and missing inputs behind the request.",
+        "viewId": "data_basis_inspector",
+        "requiredSkillId": "explain_diagnosis_evidence",
+        "evidenceRequired": true,
+        "priority": 1
+      },
+      {
+        "id": "readiness",
+        "title": "Source Readiness",
+        "purpose": "Show Momentum source-owner readiness checks and executive-use blockers.",
+        "viewId": "source_readiness_panel",
+        "requiredSkillId": "bbe_momentum_intelligence_read",
+        "evidenceRequired": true,
+        "priority": 2
+      },
+      {
+        "id": "room-to-grow",
+        "title": "Room To Grow Inputs",
+        "purpose": "Inspect whether market/share/penetration inputs are source-backed or still blocked.",
+        "viewId": "momentum_room_to_grow_grid",
+        "requiredSkillId": "bbe_momentum_intelligence_read",
+        "evidenceRequired": true,
+        "priority": 3
+      },
+      {
+        "id": "runtime-ingestion",
+        "title": "Runtime Ingestion Gate",
+        "purpose": "Show source-owner file coverage and disabled default runtime source wiring before any source promotion.",
+        "viewId": "source_runtime_ingestion_panel",
+        "requiredSkillId": "bbe_momentum_intelligence_read",
+        "evidenceRequired": false,
+        "priority": 4
+      },
+      {
+        "id": "drivers",
+        "title": "Contribution Weights",
+        "purpose": "Inspect SMD contribution weights and their source caveats.",
+        "viewId": "smd_driver_map",
+        "requiredSkillId": "bbe_momentum_intelligence_read",
+        "evidenceRequired": true,
+        "priority": 5
+      },
+      {
+        "id": "gaps",
+        "title": "Source Gaps",
+        "purpose": "Name remaining source-owner extracts required before executive circulation.",
+        "viewId": "data_gap_panel",
+        "requiredSkillId": "bbe_momentum_intelligence_read",
+        "evidenceRequired": false,
+        "priority": 6
+      }
+    ],
+    "artifactTypes": ["evidence_packet"],
+    "guardrails": [
+      "Approved source-owner extracts are required before treating Momentum Intelligence as executive-use source truth.",
+      "Reviewed-local and prototype records can guide handoff, but they are not canonical evidence.",
+      "Do not close readiness blockers without the named required source."
+    ],
+    "humanApproval": "review_before_publish",
+    "pilotPriority": "p1"
+  },
+  {
+    "id": "source-owner-intake-workbench",
+    "name": "Source Owner Intake Workbench",
+    "audience": "insights_lead",
+    "objective": "research",
+    "layout": "evidence_lab",
+    "purpose": "Prepare the Momentum source-owner handoff by showing required bundle blocks, loaded prototype blocks, missing approved extracts, and import-ready caveats before any source promotion.",
+    "triggerTerms": ["source bundle", "extract bundle", "source intake", "source-owner intake", "handoff bundle", "import bundle", "upload extract", "approved source files"],
+    "requiredSkillIds": ["bbe_momentum_intelligence_read", "explain_diagnosis_evidence"],
+    "zones": [
+      {
+        "id": "handoff",
+        "title": "Handoff Checklist",
+        "purpose": "Show required source-owner bundle blocks and their current approval status.",
+        "viewId": "source_readiness_panel",
+        "requiredSkillId": "bbe_momentum_intelligence_read",
+        "evidenceRequired": true,
+        "priority": 1
+      },
+      {
+        "id": "market-block",
+        "title": "Market / Share / Penetration",
+        "purpose": "Inspect whether room-to-grow inputs are loaded from an approved source-owner block.",
+        "viewId": "momentum_room_to_grow_grid",
+        "requiredSkillId": "bbe_momentum_intelligence_read",
+        "evidenceRequired": true,
+        "priority": 2
+      },
+      {
+        "id": "runtime-ingestion",
+        "title": "Runtime Ingestion Gate",
+        "purpose": "Show required source-owner runtime files, missing file kinds, and disabled runtime/canonical consumption.",
+        "viewId": "source_runtime_ingestion_panel",
+        "requiredSkillId": "bbe_momentum_intelligence_read",
+        "evidenceRequired": false,
+        "priority": 3
+      },
+      {
+        "id": "contribution-block",
+        "title": "Contribution Weights",
+        "purpose": "Inspect BBE contribution-weight source status and caveats.",
+        "viewId": "smd_driver_map",
+        "requiredSkillId": "bbe_momentum_intelligence_read",
+        "evidenceRequired": true,
+        "priority": 4
+      },
+      {
+        "id": "proof-and-gaps",
+        "title": "Proof And Remaining Gaps",
+        "purpose": "Keep source evidence and missing approved blocks visible before promotion.",
+        "viewId": "data_gap_panel",
+        "requiredSkillId": "bbe_momentum_intelligence_read",
+        "evidenceRequired": false,
+        "priority": 5
+      }
+    ],
+    "artifactTypes": ["evidence_packet"],
+    "guardrails": [
+      "The source-owner bundle template is an intake contract, not permission to write canonical facts.",
+      "Prototype-reviewed bundle blocks can support handoff review but cannot satisfy executive-use readiness.",
+      "Canonical writes and runtime auto-consumption remain disabled until source-owner governance enables them."
+    ],
+    "humanApproval": "review_before_publish",
+    "pilotPriority": "p1"
+  },
+  {
+    "id": "review-operations-cockpit",
+    "name": "Review Operations Cockpit",
+    "audience": "insights_lead",
+    "objective": "monitor",
+    "layout": "command_center",
+    "purpose": "Inspect the governed local review workflow for the active brand/session, including pending memory, artifacts, confirmation gates, audit context, blocked capability gates, and disabled enterprise approval/write/export states.",
+    "triggerTerms": ["review queue", "review workflow", "review operations", "audit session", "pending approvals", "pending review", "what needs review", "review state", "session review"],
+    "requiredSkillIds": ["review_session_state", "explain_diagnosis_evidence"],
+    "zones": [
+      {
+        "id": "workflow",
+        "title": "Review Workflow",
+        "purpose": "Show pending, reviewed, and blocked local review state.",
+        "viewId": "review_workflow_panel",
+        "requiredSkillId": "review_session_state",
+        "evidenceRequired": false,
+        "priority": 1
+      },
+      {
+        "id": "memory-audit",
+        "title": "Memory Audit",
+        "purpose": "Show memory continuity, review decisions, audit coverage, and disabled memory-write paths.",
+        "viewId": "memory_audit_panel",
+        "requiredSkillId": "review_session_state",
+        "evidenceRequired": false,
+        "priority": 2
+      },
+      {
+        "id": "audit-trail",
+        "title": "Audit Trail",
+        "purpose": "Show runtime audit continuity for lifecycle, evidence, views, artifacts, memory, source governance, and runtime quality before review state is trusted.",
+        "viewId": "audit_trail_panel",
+        "requiredSkillId": "review_session_state",
+        "evidenceRequired": false,
+        "priority": 3
+      },
+      {
+        "id": "review-identity",
+        "title": "Review Identity",
+        "purpose": "Show prototype reviewer-label limits, blocked enterprise approval types, and required identity/access steps before review state is trusted.",
+        "viewId": "review_identity_panel",
+        "requiredSkillId": "review_session_state",
+        "evidenceRequired": false,
+        "priority": 4
+      },
+      {
+        "id": "proof",
+        "title": "Evidence Context",
+        "purpose": "Keep brand evidence visible beside review decisions.",
+        "viewId": "evidence_ledger",
+        "requiredSkillId": "explain_diagnosis_evidence",
+        "evidenceRequired": true,
+        "priority": 5
+      },
+      {
+        "id": "claim-proof",
+        "title": "Claim Proof",
+        "purpose": "Show claim-level proof, missing evidence, guardrails, and reviewed-context separation before accepting review state.",
+        "viewId": "evidence_spotlight_panel",
+        "requiredSkillId": "review_session_state",
+        "evidenceRequired": false,
+        "priority": 6
+      },
+      {
+        "id": "gaps",
+        "title": "Open Gaps",
+        "purpose": "Name source and evidence gaps before accepting memory or artifacts.",
+        "viewId": "data_gap_panel",
+        "requiredSkillId": "review_session_state",
+        "evidenceRequired": false,
+        "priority": 7
+      }
+    ],
+    "artifactTypes": ["evidence_packet"],
+    "guardrails": [
+      "Local review decisions are prototype workflow state, not official enterprise approvals.",
+      "Do not auto-accept memory, source candidates, or extracted claims.",
+      "Do not enable export, circulation, canonical writes, or runtime source consumption from this workspace."
+    ],
+    "humanApproval": "not_required",
+    "pilotPriority": "p1"
+  },
+  {
+    "id": "pilot-learning-cockpit",
+    "name": "Pilot Learning Cockpit",
+    "audience": "insights_lead",
+    "objective": "monitor",
+    "layout": "command_center",
+    "purpose": "Inspect what the governed runtime is learning from the active session as reviewed-only signals, blocked learning paths, and next proof needs without creating outcome claims or canonical writes.",
+    "triggerTerms": ["pilot learning", "learning summary", "session learning", "learning signals", "what are we learning", "what did we learn", "learn from this session"],
+    "requiredSkillIds": ["inspect_pilot_learning", "review_session_state"],
+    "zones": [
+      {
+        "id": "learning",
+        "title": "Pilot Learning",
+        "purpose": "Show reviewed-only learning signals, blocked learning paths, and next proof needs.",
+        "viewId": "pilot_learning_panel",
+        "requiredSkillId": "inspect_pilot_learning",
+        "evidenceRequired": false,
+        "priority": 1
+      },
+      {
+        "id": "review-state",
+        "title": "Review State",
+        "purpose": "Keep local review workflow state beside learning signals.",
+        "viewId": "review_workflow_panel",
+        "requiredSkillId": "review_session_state",
+        "evidenceRequired": false,
+        "priority": 2
+      },
+      {
+        "id": "proof",
+        "title": "Evidence Context",
+        "purpose": "Keep brand evidence visible while reviewing what should be learned.",
+        "viewId": "evidence_ledger",
+        "requiredSkillId": "inspect_pilot_learning",
+        "evidenceRequired": true,
+        "priority": 3
+      },
+      {
+        "id": "gaps",
+        "title": "Proof Needs",
+        "purpose": "Name missing proof before any learning signal can become stronger evidence.",
+        "viewId": "data_gap_panel",
+        "requiredSkillId": "inspect_pilot_learning",
+        "evidenceRequired": false,
+        "priority": 4
+      }
+    ],
+    "artifactTypes": ["learning_practice"],
+    "guardrails": [
+      "Pilot learning is reviewed-signal state, not autonomous learning.",
+      "Do not claim treatment outcomes, efficacy, or causality from learning signals.",
+      "Do not enable canonical memory writes, canonical source writes, or enterprise learning storage from this workspace."
+    ],
+    "humanApproval": "not_required",
+    "pilotPriority": "p1"
+  },
+  {
+    "id": "quiet-proactivity-cockpit",
+    "name": "Quiet Proactivity Cockpit",
+    "audience": "insights_lead",
+    "objective": "monitor",
+    "layout": "command_center",
+    "purpose": "Inspect review-required follow-up suggestions and held notices while proving that reminders, notifications, background runs, external sends, and autonomous actions remain disabled.",
+    "triggerTerms": ["quiet proactivity", "follow up", "follow-up", "followups", "held notice", "held notices", "reminder", "reminders", "what should we revisit", "what should happen next", "next follow-up"],
+    "requiredSkillIds": ["inspect_quiet_proactivity", "review_session_state"],
+    "zones": [
+      {
+        "id": "proactivity",
+        "title": "Quiet Follow-Ups",
+        "purpose": "Show suggestions and held notices without scheduling or external action.",
+        "viewId": "proactivity_panel",
+        "requiredSkillId": "inspect_quiet_proactivity",
+        "evidenceRequired": false,
+        "priority": 1
+      },
+      {
+        "id": "review-state",
+        "title": "Review State",
+        "purpose": "Keep local review gates visible beside follow-up suggestions.",
+        "viewId": "review_workflow_panel",
+        "requiredSkillId": "review_session_state",
+        "evidenceRequired": false,
+        "priority": 2
+      },
+      {
+        "id": "proof",
+        "title": "Evidence Context",
+        "purpose": "Keep brand evidence visible while deciding whether a follow-up is worth accepting.",
+        "viewId": "evidence_ledger",
+        "requiredSkillId": "inspect_quiet_proactivity",
+        "evidenceRequired": true,
+        "priority": 3
+      },
+      {
+        "id": "gaps",
+        "title": "Proof Needs",
+        "purpose": "Name evidence gaps that generated follow-up suggestions.",
+        "viewId": "data_gap_panel",
+        "requiredSkillId": "inspect_quiet_proactivity",
+        "evidenceRequired": false,
+        "priority": 4
+      }
+    ],
+    "artifactTypes": ["decision_note"],
+    "guardrails": [
+      "Quiet proactivity is review-required suggestion state, not scheduled work.",
+      "Do not create reminders, external notifications, background checks, or autonomous actions from this workspace.",
+      "Do not treat follow-up suggestions as accepted memory, source truth, or approved work until reviewed."
+    ],
+    "humanApproval": "review_before_publish",
+    "pilotPriority": "p1"
+  },
+  {
+    "id": "voice-readiness-cockpit",
+    "name": "Voice Readiness Cockpit",
+    "audience": "insights_lead",
+    "objective": "monitor",
+    "layout": "command_center",
+    "purpose": "Inspect whether the governed runtime is ready for Jarvis-style voice interaction by showing push-to-talk status, provider adapter readiness, full-voice blockers, interruption limits, and policy gates before any provider activation.",
+    "triggerTerms": ["voice readiness", "voice gates", "jarvis readiness", "jarvis-style", "realtime voice", "continuous voice", "tts", "provider adapter", "provider adapters", "wake listen", "wake/listen"],
+    "requiredSkillIds": ["inspect_voice_readiness", "review_session_state"],
+    "zones": [
+      {
+        "id": "voice-readiness",
+        "title": "Voice Readiness",
+        "purpose": "Show push-to-talk readiness, provider adapters, and full-voice blockers.",
+        "viewId": "voice_readiness_panel",
+        "requiredSkillId": "inspect_voice_readiness",
+        "evidenceRequired": false,
+        "priority": 1
+      },
+      {
+        "id": "provider-adapters",
+        "title": "Provider Adapters",
+        "purpose": "Show text/SSE readiness, browser STT prototype state, Realtime candidate gates, TTS disabled state, and provider-bypass blockers.",
+        "viewId": "provider_adapter_panel",
+        "requiredSkillId": "inspect_voice_readiness",
+        "evidenceRequired": false,
+        "priority": 2
+      },
+      {
+        "id": "review-state",
+        "title": "Review State",
+        "purpose": "Keep local review and blocked capability gates visible beside voice readiness.",
+        "viewId": "review_workflow_panel",
+        "requiredSkillId": "review_session_state",
+        "evidenceRequired": false,
+        "priority": 3
+      },
+      {
+        "id": "gaps",
+        "title": "Voice Promotion Gaps",
+        "purpose": "Name missing evidence and governance before full voice activation.",
+        "viewId": "data_gap_panel",
+        "requiredSkillId": "inspect_voice_readiness",
+        "evidenceRequired": false,
+        "priority": 4
+      }
+    ],
+    "artifactTypes": ["evidence_packet"],
+    "guardrails": [
+      "This workspace inspects readiness only; it does not enable Realtime voice, continuous listening, wake-word capture, or TTS.",
+      "Voice provider adapters must preserve the governed runtime, approved views, evidence, memory, audit, and confirmation gates before activation.",
+      "Consent, privacy, interruption, TTS policy, and enterprise transcript storage blockers remain visible until approved."
+    ],
+    "humanApproval": "not_required",
+    "pilotPriority": "p1"
+  },
+  {
+    "id": "persistence-readiness-cockpit",
+    "name": "Persistence Readiness Cockpit",
+    "audience": "insights_lead",
+    "objective": "monitor",
+    "layout": "command_center",
+    "purpose": "Inspect whether the governed runtime is ready for durable memory and audit promotion by showing browser/local JSON state, reviewed-memory context, source-candidate posture, and blocked enterprise persistence requirements before any storage promotion.",
+    "triggerTerms": ["persistence readiness", "enterprise persistence", "durable memory", "durable audit", "local json", "database readiness", "retention privacy", "backup recovery", "canonical source promotion", "source promotion blockers"],
+    "requiredSkillIds": ["inspect_persistence_readiness", "review_session_state"],
+    "zones": [
+      {
+        "id": "persistence-readiness",
+        "title": "Persistence Readiness",
+        "purpose": "Show local persistence state, reviewed context, and enterprise promotion blockers.",
+        "viewId": "persistence_readiness_panel",
+        "requiredSkillId": "inspect_persistence_readiness",
+        "evidenceRequired": false,
+        "priority": 1
+      },
+      {
+        "id": "review-state",
+        "title": "Review State",
+        "purpose": "Keep local review gates visible beside memory and audit persistence readiness.",
+        "viewId": "review_workflow_panel",
+        "requiredSkillId": "review_session_state",
+        "evidenceRequired": false,
+        "priority": 2
+      },
+      {
+        "id": "memory-audit",
+        "title": "Memory Audit",
+        "purpose": "Show which memory became working context and which audit records prove review-gated continuity.",
+        "viewId": "memory_audit_panel",
+        "requiredSkillId": "inspect_persistence_readiness",
+        "evidenceRequired": false,
+        "priority": 3
+      },
+      {
+        "id": "review-identity",
+        "title": "Review Identity",
+        "purpose": "Show prototype review identity, blocked enterprise approval types, and identity/access blockers before persistence promotion.",
+        "viewId": "review_identity_panel",
+        "requiredSkillId": "inspect_persistence_readiness",
+        "evidenceRequired": false,
+        "priority": 4
+      },
+      {
+        "id": "gaps",
+        "title": "Persistence Promotion Gaps",
+        "purpose": "Name missing governance before durable enterprise memory, audit, and source-promotion storage.",
+        "viewId": "data_gap_panel",
+        "requiredSkillId": "inspect_persistence_readiness",
+        "evidenceRequired": false,
+        "priority": 5
+      }
+    ],
+    "artifactTypes": ["evidence_packet"],
+    "guardrails": [
+      "This workspace inspects readiness only; it does not create an enterprise database or official approval workflow.",
+      "Browser-local and local JSON records remain prototype continuity state, not enterprise source truth.",
+      "Canonical writes, source runtime auto-consumption, enterprise persistence, and source promotion remain disabled until governance approves them."
+    ],
+    "humanApproval": "not_required",
+    "pilotPriority": "p1"
+  },
+  {
+    "id": "treatment-outcome-readiness-cockpit",
+    "name": "Treatment Outcome Readiness Cockpit",
+    "audience": "insights_lead",
+    "objective": "monitor",
+    "layout": "command_center",
+    "purpose": "Inspect whether Brand Doctor is ready to capture treatment outcomes or learn from follow-up signals by showing outcome-record schema, signal-linkage, review identity, efficacy-rule, portfolio-store, and canonical-learning blockers before any outcome learning is enabled.",
+    "triggerTerms": ["treatment outcome readiness", "outcome learning", "efficacy readiness", "treatment efficacy", "follow-up signals", "outcome records", "portfolio learning", "canonical learning", "learning governance"],
+    "requiredSkillIds": ["inspect_treatment_outcome_readiness", "inspect_pilot_learning", "review_session_state"],
+    "zones": [
+      {
+        "id": "outcome-readiness",
+        "title": "Outcome Readiness",
+        "purpose": "Show treatment outcome learning gates, related treatments, follow-up signals, and disabled outcome-learning states.",
+        "viewId": "treatment_outcome_readiness_panel",
+        "requiredSkillId": "inspect_treatment_outcome_readiness",
+        "evidenceRequired": false,
+        "priority": 1
+      },
+      {
+        "id": "learning-context",
+        "title": "Learning Context",
+        "purpose": "Keep reviewed-only pilot learning signals visible without promoting them to outcome evidence.",
+        "viewId": "pilot_learning_panel",
+        "requiredSkillId": "inspect_pilot_learning",
+        "evidenceRequired": false,
+        "priority": 2
+      },
+      {
+        "id": "review-state",
+        "title": "Review State",
+        "purpose": "Keep local review gates visible beside outcome-readiness blockers.",
+        "viewId": "review_workflow_panel",
+        "requiredSkillId": "review_session_state",
+        "evidenceRequired": false,
+        "priority": 3
+      },
+      {
+        "id": "gaps",
+        "title": "Outcome Learning Gaps",
+        "purpose": "Name missing schema, methodology, source, and governance proof before outcome learning can be promoted.",
+        "viewId": "data_gap_panel",
+        "requiredSkillId": "inspect_treatment_outcome_readiness",
+        "evidenceRequired": false,
+        "priority": 4
+      }
+    ],
+    "artifactTypes": ["evidence_packet"],
+    "guardrails": [
+      "This workspace inspects readiness only; it does not capture treatment outcome records or claim treatment efficacy.",
+      "Pilot learning signals and follow-up signals remain review inputs, not accepted pattern memory, source truth, causal proof, or canonical learning.",
+      "Outcome learning, accepted outcome-record storage, treatment claims, and canonical learning writes remain disabled until source-owner, methodology, identity, and enterprise governance approve them."
+    ],
+    "humanApproval": "not_required",
+    "pilotPriority": "p1"
+  },
+  {
+    "id": "source-promotion-readiness-cockpit",
+    "name": "Source Promotion Readiness Cockpit",
+    "audience": "insights_lead",
+    "objective": "monitor",
+    "layout": "command_center",
+    "purpose": "Inspect reviewed-local source records and extracted source claims before any source candidate is promoted to canonical fact or runtime evidence.",
+    "triggerTerms": ["source promotion readiness", "source claim promotion", "canonical source promotion", "canonical facts", "source candidates", "source claims", "source promotion blockers", "runtime source consumption", "reviewed local source"],
+    "requiredSkillIds": ["inspect_source_promotion_readiness", "review_session_state", "inspect_persistence_readiness"],
+    "zones": [
+      {
+        "id": "source-promotion",
+        "title": "Source Promotion",
+        "purpose": "Show source candidates, source claims, review gates, canonical blockers, and runtime-consumption state.",
+        "viewId": "source_promotion_readiness_panel",
+        "requiredSkillId": "inspect_source_promotion_readiness",
+        "evidenceRequired": false,
+        "priority": 1
+      },
+      {
+        "id": "review-state",
+        "title": "Review State",
+        "purpose": "Keep local review workflow and blocked source-promotion gates visible.",
+        "viewId": "review_workflow_panel",
+        "requiredSkillId": "review_session_state",
+        "evidenceRequired": false,
+        "priority": 2
+      },
+      {
+        "id": "persistence",
+        "title": "Canonical Promotion Blockers",
+        "purpose": "Show enterprise persistence, identity, retention, and canonical-write blockers before source promotion.",
+        "viewId": "persistence_readiness_panel",
+        "requiredSkillId": "inspect_persistence_readiness",
+        "evidenceRequired": false,
+        "priority": 3
+      },
+      {
+        "id": "runtime-ingestion",
+        "title": "Runtime Ingestion Gate",
+        "purpose": "Show source-owner runtime file coverage before any source candidate becomes default runtime evidence.",
+        "viewId": "source_runtime_ingestion_panel",
+        "requiredSkillId": "inspect_source_promotion_readiness",
+        "evidenceRequired": false,
+        "priority": 4
+      },
+      {
+        "id": "gaps",
+        "title": "Source Promotion Gaps",
+        "purpose": "Name missing source-owner, governance, or evidence inputs before promotion.",
+        "viewId": "data_gap_panel",
+        "requiredSkillId": "inspect_source_promotion_readiness",
+        "evidenceRequired": false,
+        "priority": 5
+      }
+    ],
+    "artifactTypes": ["evidence_packet"],
+    "guardrails": [
+      "This workspace inspects source promotion readiness only; it does not promote source candidates or extracted claims to canonical facts.",
+      "Reviewed-local source promotion records and source claims remain non-evidence context until source-owner and enterprise governance approve canonical promotion.",
+      "Runtime auto-consumption, canonical writes, and official approvals remain disabled."
+    ],
+    "humanApproval": "not_required",
+    "pilotPriority": "p1"
+  },
+  {
+    "id": "artifact-readiness-cockpit",
+    "name": "Artifact Readiness Cockpit",
+    "audience": "insights_lead",
+    "objective": "monitor",
+    "layout": "command_center",
+    "purpose": "Inspect generated artifacts before any draft is shared, showing reviewer roles, required evidence, required source views, language approvals, circulation blockers, and disabled export gates.",
+    "triggerTerms": ["artifact readiness", "export readiness", "circulation readiness", "can we share this", "can we export", "artifact gates", "qbr draft readiness", "meeting artifact readiness", "agency brief readiness"],
+    "requiredSkillIds": ["inspect_artifact_readiness", "review_session_state", "explain_diagnosis_evidence"],
+    "zones": [
+      {
+        "id": "artifact-readiness",
+        "title": "Artifact Readiness",
+        "purpose": "Show generated artifact review, circulation, evidence, language, source-view, and export gates.",
+        "viewId": "artifact_readiness_panel",
+        "requiredSkillId": "inspect_artifact_readiness",
+        "evidenceRequired": false,
+        "priority": 1
+      },
+      {
+        "id": "review-state",
+        "title": "Review State",
+        "purpose": "Keep local review workflow and blocked capability gates visible beside artifact readiness.",
+        "viewId": "review_workflow_panel",
+        "requiredSkillId": "review_session_state",
+        "evidenceRequired": false,
+        "priority": 2
+      },
+      {
+        "id": "proof",
+        "title": "Evidence Context",
+        "purpose": "Keep source evidence visible while checking artifact readiness.",
+        "viewId": "evidence_ledger",
+        "requiredSkillId": "explain_diagnosis_evidence",
+        "evidenceRequired": true,
+        "priority": 3
+      },
+      {
+        "id": "gaps",
+        "title": "Readiness Gaps",
+        "purpose": "Name missing evidence, source, language, or governance inputs before circulation.",
+        "viewId": "data_gap_panel",
+        "requiredSkillId": "inspect_artifact_readiness",
+        "evidenceRequired": false,
+        "priority": 4
+      }
+    ],
+    "artifactTypes": ["qbr_story_draft", "talk_track", "agency_brief", "evidence_packet", "learning_practice", "decision_note"],
+    "guardrails": [
+      "This workspace inspects artifact readiness only; it does not enable export, copy, circulation, or official approval.",
+      "Generated artifacts remain draft support for human decision-making until required reviewers approve them.",
+      "Review can mark prototype readiness, but export stays disabled until stakeholder language, artifact shape, and capability gates are approved."
+    ],
+    "humanApproval": "required_before_circulation",
+    "pilotPriority": "p1"
+  },
+  {
+    "id": "runtime-governance-cockpit",
+    "name": "Runtime Governance Cockpit",
+    "audience": "insights_lead",
+    "objective": "monitor",
+    "layout": "command_center",
+    "purpose": "Inspect governed runtime surfaces, kill-switch posture, capability flags, provider adapter gates, and promotion blockers before any surface is made default or any risky capability is enabled.",
+    "triggerTerms": ["runtime governance", "runtime control", "kill switch", "capability flags", "runtime surfaces", "surface readiness", "surface map", "governed surfaces", "provider gates", "which surfaces are ready"],
+    "requiredSkillIds": ["inspect_runtime_governance", "review_session_state", "inspect_voice_readiness"],
+    "zones": [
+      {
+        "id": "runtime-governance",
+        "title": "Runtime Governance",
+        "purpose": "Show surface readiness, runtime policy, disabled capabilities, and promotion blockers.",
+        "viewId": "runtime_governance_panel",
+        "requiredSkillId": "inspect_runtime_governance",
+        "evidenceRequired": false,
+        "priority": 1
+      },
+      {
+        "id": "capability-readiness",
+        "title": "Capability Readiness",
+        "purpose": "Show disabled risky capability flags, blocked gates, admin override requirements, and hard-disabled promotion paths.",
+        "viewId": "capability_readiness_panel",
+        "requiredSkillId": "inspect_runtime_governance",
+        "evidenceRequired": false,
+        "priority": 2
+      },
+      {
+        "id": "provider-adapters",
+        "title": "Provider Adapters",
+        "purpose": "Show governed provider adapter readiness and blocked provider-bypass paths beside runtime surface readiness.",
+        "viewId": "provider_adapter_panel",
+        "requiredSkillId": "inspect_runtime_governance",
+        "evidenceRequired": false,
+        "priority": 3
+      },
+      {
+        "id": "voice-runtime",
+        "title": "Provider Gates",
+        "purpose": "Keep voice and provider adapter gates visible beside runtime surface readiness.",
+        "viewId": "voice_readiness_panel",
+        "requiredSkillId": "inspect_voice_readiness",
+        "evidenceRequired": false,
+        "priority": 4
+      },
+      {
+        "id": "runtime-quality",
+        "title": "Runtime Quality",
+        "purpose": "Show persisted runtime self-checks, consistency signals, and watch/blocked quality items before promotion.",
+        "viewId": "runtime_quality_panel",
+        "requiredSkillId": "inspect_runtime_governance",
+        "evidenceRequired": false,
+        "priority": 5
+      },
+      {
+        "id": "review-state",
+        "title": "Review State",
+        "purpose": "Keep blocked capability gates and local review state visible beside runtime governance.",
+        "viewId": "review_workflow_panel",
+        "requiredSkillId": "review_session_state",
+        "evidenceRequired": false,
+        "priority": 6
+      },
+      {
+        "id": "gaps",
+        "title": "Promotion Gaps",
+        "purpose": "Name missing policy, capability, provider, source, or review proof before promoting a surface.",
+        "viewId": "data_gap_panel",
+        "requiredSkillId": "inspect_runtime_governance",
+        "evidenceRequired": false,
+        "priority": 7
+      }
+    ],
+    "artifactTypes": ["evidence_packet"],
+    "guardrails": [
+      "This workspace inspects runtime governance only; it does not enable disabled capabilities, change kill-switch state, or promote gated surfaces.",
+      "Default scoped chat remains stable unless the user explicitly opts into the governed runtime.",
+      "Realtime voice, continuous listening, TTS, exports, source writes, canonical promotion, and enterprise persistence remain gated until policy and capability requirements are approved."
+    ],
+    "humanApproval": "not_required",
+    "pilotPriority": "p1"
+  },
+  {
+    "id": "experience-architecture-cockpit",
+    "name": "Experience Architecture Cockpit",
+    "audience": "insights_lead",
+    "objective": "monitor",
+    "layout": "command_center",
+    "purpose": "Inspect whether the agent can build the right role-specific workspace from the governed foundation by showing ExperiencePlan coverage, approved skills/views/templates, runtime surface posture, review gates, and unsupported UI blockers.",
+    "triggerTerms": ["experience architecture", "experience plan readiness", "dynamic ui foundation", "workspace builder", "build the right workspace", "role specific workspace", "role-specific workspace", "approved templates", "approved views", "compose ui", "new user workspace"],
+    "requiredSkillIds": ["inspect_experience_architecture", "inspect_runtime_governance", "review_session_state"],
+    "zones": [
+      {
+        "id": "architecture",
+        "title": "Experience Architecture",
+        "purpose": "Show audience/objective coverage, approved template/view/skill counts, and dynamic UI guardrails.",
+        "viewId": "experience_architecture_panel",
+        "requiredSkillId": "inspect_experience_architecture",
+        "evidenceRequired": false,
+        "priority": 1
+      },
+      {
+        "id": "canvas-continuity",
+        "title": "Canvas Continuity",
+        "purpose": "Prove approved rendered views, fallbacks, focused views, proof rails, presence signals, and interruption recovery persist without arbitrary UI generation.",
+        "viewId": "canvas_continuity_panel",
+        "requiredSkillId": "inspect_experience_architecture",
+        "evidenceRequired": false,
+        "priority": 2
+      },
+      {
+        "id": "runtime",
+        "title": "Runtime Surfaces",
+        "purpose": "Show which surfaces can render governed ExperiencePlans and which remain gated.",
+        "viewId": "runtime_governance_panel",
+        "requiredSkillId": "inspect_runtime_governance",
+        "evidenceRequired": false,
+        "priority": 3
+      },
+      {
+        "id": "runtime-quality",
+        "title": "Runtime Quality",
+        "purpose": "Show whether recent ExperiencePlan turns passed the approved-template, evidence, source, memory, voice, provider, and runtime-surface checks.",
+        "viewId": "runtime_quality_panel",
+        "requiredSkillId": "inspect_experience_architecture",
+        "evidenceRequired": false,
+        "priority": 4
+      },
+      {
+        "id": "review-state",
+        "title": "Review State",
+        "purpose": "Keep local review gates visible beside workspace-composition readiness.",
+        "viewId": "review_workflow_panel",
+        "requiredSkillId": "review_session_state",
+        "evidenceRequired": false,
+        "priority": 5
+      },
+      {
+        "id": "gaps",
+        "title": "Composition Gaps",
+        "purpose": "Name missing evidence, source, governance, or template coverage before a workspace can be trusted.",
+        "viewId": "data_gap_panel",
+        "requiredSkillId": "inspect_experience_architecture",
+        "evidenceRequired": false,
+        "priority": 6
+      }
+    ],
+    "artifactTypes": ["evidence_packet"],
+    "guardrails": [
+      "This workspace inspects the experience architecture only; it does not generate arbitrary UI, unregistered views, unsupported metrics, or new source claims.",
+      "The agent may assemble role-specific workspaces only through approved ExperiencePlan templates, skills, dynamic views, artifacts, evidence needs, and human-review gates.",
+      "Unsupported audiences, objectives, artifacts, or missing evidence must fail closed into a data-gap or review-required state."
+    ],
+    "humanApproval": "not_required",
+    "pilotPriority": "p1"
+  },
+  {
+    "id": "live-meeting-capture",
+    "name": "Live Meeting Capture",
+    "audience": "executive",
+    "objective": "package",
+    "layout": "command_center",
+    "purpose": "Capture a live brand-growth discussion into a review-required takeaway, keeping the provisional decision, evidence, gaps, and next proof signal visible.",
+    "triggerTerms": ["meeting takeaway", "capture decision", "capture decisions", "final takeaway", "meeting recap", "workshop recap", "takeaway", "recap"],
+    "requiredSkillIds": ["facilitate_live_meeting"],
+    "zones": [
+      {
+        "id": "takeaway",
+        "title": "Takeaway",
+        "purpose": "Capture the provisional decision and next proof signal for human review.",
+        "viewId": "meeting_takeaway_panel",
+        "requiredSkillId": "facilitate_live_meeting",
+        "evidenceRequired": true,
+        "priority": 1
+      },
+      {
+        "id": "proof",
+        "title": "Proof",
+        "purpose": "Keep evidence beside the captured takeaway.",
+        "viewId": "evidence_ledger",
+        "requiredSkillId": "facilitate_live_meeting",
+        "evidenceRequired": true,
+        "priority": 2
+      },
+      {
+        "id": "provocations",
+        "title": "Open Provocations",
+        "purpose": "Preserve options to test rather than final commands.",
+        "viewId": "growth_provocation_list",
+        "requiredSkillId": "facilitate_live_meeting",
+        "evidenceRequired": true,
+        "priority": 3
+      },
+      {
+        "id": "gaps",
+        "title": "Unresolved Gaps",
+        "purpose": "Name what must be resolved before final circulation.",
+        "viewId": "data_gap_panel",
+        "requiredSkillId": "facilitate_live_meeting",
+        "evidenceRequired": false,
+        "priority": 4
+      }
+    ],
+    "artifactTypes": ["decision_note"],
+    "guardrails": [
+      "Separate captured decisions from AI suggestions.",
+      "Treat the takeaway as a review-required draft, not final meeting minutes.",
+      "Do not circulate a final takeaway until evidence gaps and human review are resolved."
+    ],
+    "humanApproval": "required_for_final_takeaway",
+    "pilotPriority": "p1"
+  },
+  {
+    "id": "agency-brief-builder",
+    "name": "Agency Brief Builder",
+    "audience": "agency",
+    "objective": "package",
+    "layout": "brief_builder",
+    "purpose": "Draft an evidence-backed agency brief or talk track from accepted brand evidence, visible gaps, and human-review constraints.",
+    "triggerTerms": ["agency", "brief", "creative brief", "partner", "talk track", "memo"],
+    "requiredSkillIds": ["draft_meeting_story", "create_growth_provocations"],
+    "zones": [
+      {
+        "id": "brief",
+        "title": "Draft Brief",
+        "purpose": "Create a draft narrative for review before partner circulation.",
+        "viewId": "qbr_story_draft",
+        "requiredSkillId": "draft_meeting_story",
+        "evidenceRequired": true,
+        "priority": 1
+      },
+      {
+        "id": "provocations",
+        "title": "Provocations",
+        "purpose": "Show what the agency should pressure-test, not execute blindly.",
+        "viewId": "growth_provocation_list",
+        "requiredSkillId": "create_growth_provocations",
+        "evidenceRequired": true,
+        "priority": 2
+      },
+      {
+        "id": "guardrails",
+        "title": "Do Not Overclaim",
+        "purpose": "Keep missing brand strategy and source constraints visible.",
+        "viewId": "data_gap_panel",
+        "requiredSkillId": "draft_meeting_story",
+        "evidenceRequired": false,
+        "priority": 3
+      }
+    ],
+    "artifactTypes": ["agency_brief", "talk_track"],
+    "guardrails": [
+      "Do not infer approved brand positioning or creative platform when Brand Strategic Context is missing.",
+      "Drafts require human review before partner circulation.",
+      "Keep evidence links and data-gap notes attached."
+    ],
+    "humanApproval": "required_before_circulation",
+    "pilotPriority": "p1"
+  },
+  {
+    "id": "executive-pilot-runbook",
+    "name": "Executive Pilot Runbook",
+    "audience": "executive",
+    "objective": "package",
+    "layout": "command_center",
+    "purpose": "Assemble a CMO or platform-sponsor pilot sequence that proves the brand read, dynamic workspace foundation, review rails, runtime controls, and gating path from approved views only.",
+    "triggerTerms": ["executive pilot", "cmo pilot", "funding demo", "sponsor runbook", "demo runbook", "pilot runbook", "show the pilot path", "make the case to fund", "holy shit demo", "jaw drop demo"],
+    "requiredSkillIds": ["plan_executive_pilot", "bbe_momentum_intelligence_read", "inspect_foundation_readiness", "inspect_runtime_governance", "review_session_state"],
+    "zones": [
+      {
+        "id": "runbook",
+        "title": "Pilot Runbook",
+        "purpose": "Show the sponsor-ready sequence, proof moments, gates, and funding asks.",
+        "viewId": "executive_pilot_runbook_panel",
+        "requiredSkillId": "plan_executive_pilot",
+        "evidenceRequired": false,
+        "priority": 1
+      },
+      {
+        "id": "momentum",
+        "title": "Brand Read",
+        "purpose": "Start the pilot with the active brand's momentum signal and evidence posture.",
+        "viewId": "momentum_ladder",
+        "requiredSkillId": "bbe_momentum_intelligence_read",
+        "evidenceRequired": true,
+        "priority": 2
+      },
+      {
+        "id": "opportunity",
+        "title": "Opportunity Lens",
+        "purpose": "Show room-to-grow context when source inputs support it, otherwise fall closed to gaps.",
+        "viewId": "momentum_room_to_grow_grid",
+        "requiredSkillId": "bbe_momentum_intelligence_read",
+        "evidenceRequired": true,
+        "priority": 3
+      },
+      {
+        "id": "foundation",
+        "title": "Foundation Control Plane",
+        "purpose": "Prove the foundation readiness signal and gated promotion paths.",
+        "viewId": "foundation_readiness_panel",
+        "requiredSkillId": "inspect_foundation_readiness",
+        "evidenceRequired": false,
+        "priority": 4
+      },
+      {
+        "id": "promotion-gate",
+        "title": "Promotion Gate",
+        "purpose": "State the CMO-demo, pilot-review, and production-blocked verdict before any funding or rollout decision.",
+        "viewId": "promotion_gate_panel",
+        "requiredSkillId": "plan_executive_pilot",
+        "evidenceRequired": false,
+        "priority": 5
+      },
+      {
+        "id": "canvas-continuity",
+        "title": "Canvas Continuity",
+        "purpose": "Prove the pilot canvas is assembled from approved rendered views and preserves state across interruptions without arbitrary UI, private reasoning, or continuous voice.",
+        "viewId": "canvas_continuity_panel",
+        "requiredSkillId": "plan_executive_pilot",
+        "evidenceRequired": false,
+        "priority": 6
+      },
+      {
+        "id": "source-runtime-ingestion",
+        "title": "Source Ingestion Gate",
+        "purpose": "Show source-owner runtime file coverage and disabled canonical/runtime consumption before sponsor asks.",
+        "viewId": "source_runtime_ingestion_panel",
+        "requiredSkillId": "plan_executive_pilot",
+        "evidenceRequired": false,
+        "priority": 7
+      },
+      {
+        "id": "claim-proof",
+        "title": "Claim Proof",
+        "purpose": "Show supported, missing, guardrail, and reviewed-context claims before sponsor funding asks.",
+        "viewId": "evidence_spotlight_panel",
+        "requiredSkillId": "plan_executive_pilot",
+        "evidenceRequired": false,
+        "priority": 8
+      },
+      {
+        "id": "runtime",
+        "title": "Runtime Governance",
+        "purpose": "Show the shared governed runtime, surface readiness, and disabled risky capabilities.",
+        "viewId": "runtime_governance_panel",
+        "requiredSkillId": "inspect_runtime_governance",
+        "evidenceRequired": false,
+        "priority": 9
+      },
+      {
+        "id": "capability-readiness",
+        "title": "Capability Readiness",
+        "purpose": "Show disabled risky capability flags, blocked gates, admin override requirements, and hard-disabled promotion paths before sponsor asks.",
+        "viewId": "capability_readiness_panel",
+        "requiredSkillId": "plan_executive_pilot",
+        "evidenceRequired": false,
+        "priority": 10
+      },
+      {
+        "id": "provider-adapters",
+        "title": "Provider Adapters",
+        "purpose": "Show text/SSE readiness, browser STT prototype state, Realtime candidate gates, TTS disabled state, and provider-bypass blockers before sponsor asks.",
+        "viewId": "provider_adapter_panel",
+        "requiredSkillId": "plan_executive_pilot",
+        "evidenceRequired": false,
+        "priority": 11
+      },
+      {
+        "id": "runtime-quality",
+        "title": "Runtime Quality",
+        "purpose": "Show persisted quality checks proving the pilot turn stayed inside evidence, source, memory, voice, provider, and runtime guardrails.",
+        "viewId": "runtime_quality_panel",
+        "requiredSkillId": "plan_executive_pilot",
+        "evidenceRequired": false,
+        "priority": 12
+      },
+      {
+        "id": "review-state",
+        "title": "Review And Gaps",
+        "purpose": "Keep human review state and blocked promotion gates visible before any rollout decision.",
+        "viewId": "review_workflow_panel",
+        "requiredSkillId": "review_session_state",
+        "evidenceRequired": false,
+        "priority": 13
+      },
+      {
+        "id": "memory-audit",
+        "title": "Memory Audit",
+        "purpose": "Prove accepted working context and memory audit continuity remain visible before any sponsor asks.",
+        "viewId": "memory_audit_panel",
+        "requiredSkillId": "plan_executive_pilot",
+        "evidenceRequired": false,
+        "priority": 14
+      },
+      {
+        "id": "audit-trail",
+        "title": "Audit Trail",
+        "purpose": "Prove lifecycle, evidence, view, artifact, memory, source, and runtime-quality audit coverage before any sponsor asks.",
+        "viewId": "audit_trail_panel",
+        "requiredSkillId": "plan_executive_pilot",
+        "evidenceRequired": false,
+        "priority": 15
+      },
+      {
+        "id": "review-identity",
+        "title": "Review Identity",
+        "purpose": "Prove local review labels are not official enterprise approvals before any sponsor asks.",
+        "viewId": "review_identity_panel",
+        "requiredSkillId": "plan_executive_pilot",
+        "evidenceRequired": false,
+        "priority": 16
+      }
+    ],
+    "artifactTypes": ["evidence_packet"],
+    "guardrails": [
+      "This runbook is an approved workspace plan, not a generated deck, export, or official funding memo.",
+      "Use approved views only and fail closed to review or data-gap states when evidence is missing.",
+      "Do not enable official approvals, enterprise persistence, canonical writes, exports/copy/circulation, full voice, autonomous learning, or arbitrary UI generation."
+    ],
+    "humanApproval": "not_required",
+    "pilotPriority": "p1"
+  },
+  {
+    "id": "foundation-readiness-cockpit",
+    "name": "Foundation Readiness Cockpit",
+    "audience": "executive",
+    "objective": "monitor",
+    "layout": "command_center",
+    "purpose": "Give a CMO or platform sponsor one governed control-plane view of whether the Brand Growth Intelligence foundation is ready, prototype-ready, gated, or waiting across experience composition, evidence, memory/review, sources, runtime, voice, persistence, artifacts, and learning.",
+    "triggerTerms": ["foundation readiness", "platform readiness", "brand growth intelligence foundation", "cmo readiness", "fundable foundation", "control plane", "foundation control plane", "is the foundation ready", "what is ready", "what is gated"],
+    "requiredSkillIds": ["inspect_foundation_readiness", "inspect_experience_architecture", "inspect_runtime_governance", "review_session_state"],
+    "zones": [
+      {
+        "id": "foundation",
+        "title": "Foundation Readiness",
+        "purpose": "Show cross-rail readiness, demo signal, gated promotion paths, and next foundation steps.",
+        "viewId": "foundation_readiness_panel",
+        "requiredSkillId": "inspect_foundation_readiness",
+        "evidenceRequired": false,
+        "priority": 1
+      },
+      {
+        "id": "composition",
+        "title": "Experience Composition",
+        "purpose": "Show approved template, skill, view, audience, objective, and arbitrary-UI guardrails.",
+        "viewId": "experience_architecture_panel",
+        "requiredSkillId": "inspect_experience_architecture",
+        "evidenceRequired": false,
+        "priority": 2
+      },
+      {
+        "id": "canvas-continuity",
+        "title": "Canvas Continuity",
+        "purpose": "Show approved rendered views, fallbacks, focused views, proof rails, and continuity guardrails that make dynamic workspaces inspectable.",
+        "viewId": "canvas_continuity_panel",
+        "requiredSkillId": "inspect_foundation_readiness",
+        "evidenceRequired": false,
+        "priority": 3
+      },
+      {
+        "id": "promotion-gate",
+        "title": "Promotion Gate",
+        "purpose": "State the CMO-demo, pilot-review, and production-blocked verdict using persisted readiness summaries.",
+        "viewId": "promotion_gate_panel",
+        "requiredSkillId": "inspect_foundation_readiness",
+        "evidenceRequired": false,
+        "priority": 4
+      },
+      {
+        "id": "runtime",
+        "title": "Runtime Control",
+        "purpose": "Show runtime surfaces, kill-switch posture, provider gates, and disabled risky capabilities.",
+        "viewId": "runtime_governance_panel",
+        "requiredSkillId": "inspect_runtime_governance",
+        "evidenceRequired": false,
+        "priority": 5
+      },
+      {
+        "id": "capability-readiness",
+        "title": "Capability Readiness",
+        "purpose": "Show disabled risky capability flags, blocked gates, admin override requirements, and hard-disabled promotion paths.",
+        "viewId": "capability_readiness_panel",
+        "requiredSkillId": "inspect_foundation_readiness",
+        "evidenceRequired": false,
+        "priority": 6
+      },
+      {
+        "id": "provider-adapters",
+        "title": "Provider Adapters",
+        "purpose": "Show governed provider adapter readiness, Realtime/TTS blockers, and provider-bypass protection before promotion.",
+        "viewId": "provider_adapter_panel",
+        "requiredSkillId": "inspect_foundation_readiness",
+        "evidenceRequired": false,
+        "priority": 7
+      },
+      {
+        "id": "runtime-quality",
+        "title": "Runtime Quality",
+        "purpose": "Show persisted runtime quality checks, consistency signals, and quality blockers across governed turns.",
+        "viewId": "runtime_quality_panel",
+        "requiredSkillId": "inspect_foundation_readiness",
+        "evidenceRequired": false,
+        "priority": 8
+      },
+      {
+        "id": "claim-proof",
+        "title": "Claim Proof",
+        "purpose": "Show session claim-to-proof continuity, missing evidence, guardrails, and reviewed-context separation.",
+        "viewId": "evidence_spotlight_panel",
+        "requiredSkillId": "inspect_foundation_readiness",
+        "evidenceRequired": false,
+        "priority": 9
+      },
+      {
+        "id": "source-runtime-ingestion",
+        "title": "Source Ingestion Gate",
+        "purpose": "Show source-owner file coverage, missing runtime file kinds, and disabled source consumption before promotion.",
+        "viewId": "source_runtime_ingestion_panel",
+        "requiredSkillId": "inspect_foundation_readiness",
+        "evidenceRequired": false,
+        "priority": 10
+      },
+      {
+        "id": "review-state",
+        "title": "Review State",
+        "purpose": "Keep local review gates, blocked capability gates, and non-official approval state visible.",
+        "viewId": "review_workflow_panel",
+        "requiredSkillId": "review_session_state",
+        "evidenceRequired": false,
+        "priority": 11
+      },
+      {
+        "id": "memory-audit",
+        "title": "Memory Audit",
+        "purpose": "Prove accepted working context, memory review decisions, and audit coverage remain visible before promotion.",
+        "viewId": "memory_audit_panel",
+        "requiredSkillId": "inspect_foundation_readiness",
+        "evidenceRequired": false,
+        "priority": 12
+      },
+      {
+        "id": "audit-trail",
+        "title": "Audit Trail",
+        "purpose": "Show persisted lifecycle, evidence, view, artifact, memory, source-governance, and runtime-quality audit coverage before promotion.",
+        "viewId": "audit_trail_panel",
+        "requiredSkillId": "inspect_foundation_readiness",
+        "evidenceRequired": false,
+        "priority": 13
+      },
+      {
+        "id": "review-identity",
+        "title": "Review Identity",
+        "purpose": "Show prototype reviewer-label limits, blocked official approval, enterprise identity/access blockers, and required approval steps before promotion.",
+        "viewId": "review_identity_panel",
+        "requiredSkillId": "inspect_foundation_readiness",
+        "evidenceRequired": false,
+        "priority": 14
+      },
+      {
+        "id": "gaps",
+        "title": "Promotion Gaps",
+        "purpose": "Name missing governance, source, persistence, artifact, voice, or learning proof before promotion.",
+        "viewId": "data_gap_panel",
+        "requiredSkillId": "inspect_foundation_readiness",
+        "evidenceRequired": false,
+        "priority": 15
+      }
+    ],
+    "artifactTypes": ["evidence_packet"],
+    "guardrails": [
+      "This workspace inspects foundation readiness only; it does not enable enterprise persistence, official approvals, canonical writes, exports, full voice, autonomous learning, or arbitrary UI generation.",
+      "Ready and prototype states are evidence for prioritization, not production authorization.",
+      "Gated paths must remain visible until governance, source ownership, privacy, identity, artifact, and runtime requirements are approved."
+    ],
+    "humanApproval": "not_required",
+    "pilotPriority": "p1"
+  }
+]

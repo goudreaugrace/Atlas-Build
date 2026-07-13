@@ -1,0 +1,42 @@
+[
+  {
+    "scope": "brand_health_panel",
+    "question": "Explain this BBE Bloodwork read like I am a new brand manager."
+  },
+  {
+    "scope": "brand_health_panel",
+    "question": "What are the top three signals I should notice first?"
+  },
+  {
+    "scope": "diagnosis",
+    "question": "Why did the system diagnose this condition?"
+  },
+  {
+    "scope": "diagnosis",
+    "question": "What evidence would change the diagnosis?"
+  },
+  {
+    "scope": "diagnosis",
+    "question": "What should I not conclude from this data?"
+  },
+  {
+    "scope": "root_cause",
+    "question": "Which metric is the root cause and which is the symptom?"
+  },
+  {
+    "scope": "treatment",
+    "question": "Why is this treatment suggested for this ailment?"
+  },
+  {
+    "scope": "treatment",
+    "question": "What should we do first if budget is limited?"
+  },
+  {
+    "scope": "treatment",
+    "question": "What are the risks and dependencies?"
+  },
+  {
+    "scope": "insights",
+    "question": "Show me the rule that fired and the evidence links."
+  }
+]

@@ -1,0 +1,82 @@
+{
+  "id": "artifact-readiness-requirements-v1",
+  "lastReviewed": "2026-06-28",
+  "purpose": "Define the human-review, evidence, language, and export gates required before generated artifacts can be circulated.",
+  "requirements": [
+    {
+      "artifactType": "qbr_story_draft",
+      "reviewerRole": "Brand lead + Insights lead",
+      "requiredEvidence": ["diagnosis evidence labels", "data gaps", "source caveats", "treatment/provocation caveats"],
+      "requiredLanguageApprovals": ["executive narrative review", "Perceived Value wording", "no final treatment command language"],
+      "requiredSourceViews": ["qbr_story_draft", "evidence_ledger", "data_gap_panel"],
+      "promotionGate": "artifact_circulation_review",
+      "exportGate": "artifact_export_capability",
+      "guardrails": ["QBR story drafts require human review before circulation.", "Do not imply final management decisions or approved investment recommendations."],
+      "nextActionWhenBlocked": "Review the draft narrative, evidence labels, unresolved gaps, and caveats with the accountable brand/insights owners."
+    },
+    {
+      "artifactType": "talk_track",
+      "reviewerRole": "Brand lead + meeting owner",
+      "requiredEvidence": ["diagnosis evidence labels", "growth provocations", "data gaps"],
+      "requiredLanguageApprovals": ["spoken language review", "no causality overclaim", "no SKU-level pricing guidance"],
+      "requiredSourceViews": ["qbr_story_draft", "evidence_ledger", "growth_provocation_list", "data_gap_panel"],
+      "promotionGate": "artifact_circulation_review",
+      "exportGate": "artifact_export_capability",
+      "guardrails": ["Talk tracks must preserve evidence caveats when spoken.", "Do not convert options to consider into final instructions."],
+      "nextActionWhenBlocked": "Review the talk track for evidence, caveats, and overclaim language before using it in a meeting."
+    },
+    {
+      "artifactType": "agency_brief",
+      "reviewerRole": "Brand lead + agency briefing owner",
+      "requiredEvidence": ["approved Brand Strategic Context", "growth provocations", "source caveats", "claims not to make"],
+      "requiredLanguageApprovals": ["brand strategy review", "creative claim review", "agency circulation approval"],
+      "requiredSourceViews": ["qbr_story_draft", "growth_provocation_list", "data_gap_panel"],
+      "promotionGate": "artifact_circulation_review",
+      "exportGate": "artifact_export_capability",
+      "guardrails": ["Agency briefs must not infer positioning, creative platform, or approved claims without Brand Strategic Context.", "Draft briefs require human review before circulation."],
+      "nextActionWhenBlocked": "Load or review official Brand Strategic Context before circulating an agency-facing draft."
+    },
+    {
+      "artifactType": "evidence_packet",
+      "reviewerRole": "Insights lead",
+      "requiredEvidence": ["diagnosis trace", "source labels", "source periods", "missing evidence"],
+      "requiredLanguageApprovals": ["source caveat review", "measurement confidence review"],
+      "requiredSourceViews": ["source_readiness_panel", "diagnosis_trace_summary", "evidence_ledger", "data_gap_panel"],
+      "promotionGate": "artifact_circulation_review",
+      "exportGate": "artifact_export_capability",
+      "guardrails": ["Evidence packets must separate packet evidence, reviewed-local context, source claims, and missing evidence.", "Do not promote source candidates or claims into canonical facts."],
+      "nextActionWhenBlocked": "Review source labels, source periods, confidence, and missing evidence before sharing the packet."
+    },
+    {
+      "artifactType": "learning_practice",
+      "reviewerRole": "Learning owner",
+      "requiredEvidence": ["approved learning module", "brand example caveat", "answer rationale"],
+      "requiredLanguageApprovals": ["learning tone review", "guardrail explanation review"],
+      "requiredSourceViews": ["learning_explainer", "quiz_card", "kpi_strip"],
+      "promotionGate": "artifact_circulation_review",
+      "exportGate": "artifact_export_capability",
+      "guardrails": ["Learning practice must separate teaching examples from measured brand facts.", "Do not score ambiguous or unsupported facts."],
+      "nextActionWhenBlocked": "Review the teaching concept, answer rationale, and overclaim warning before distributing practice material."
+    },
+    {
+      "artifactType": "decision_note",
+      "reviewerRole": "Meeting owner + accountable decision maker",
+      "requiredEvidence": ["captured decision", "supporting evidence", "unresolved gaps", "next proof signal"],
+      "requiredLanguageApprovals": ["meeting owner review", "decision-owner confirmation", "not-final-minutes caveat"],
+      "requiredSourceViews": ["meeting_takeaway_panel", "evidence_ledger", "growth_provocation_list", "data_gap_panel"],
+      "promotionGate": "artifact_circulation_review",
+      "exportGate": "artifact_export_capability",
+      "guardrails": ["Meeting takeaways are draft notes until reviewed by the meeting owner.", "Separate captured decisions from AI suggestions."],
+      "nextActionWhenBlocked": "Confirm the takeaway with the meeting owner and decision maker before circulation."
+    }
+  ],
+  "guardrails": [
+    "Artifact approval may mark a draft reviewed for prototype use, but export remains disabled until the artifact export capability is approved.",
+    "Generated artifacts must preserve evidence labels, source caveats, human-review state, and export/circulation gates.",
+    "Artifacts are draft support for human decision-making, not final commands."
+  ],
+  "caveats": [
+    "This registry defines prototype artifact readiness, not enterprise publishing workflow.",
+    "External circulation still requires stakeholder-approved language and an enabled export/circulation capability."
+  ]
+}

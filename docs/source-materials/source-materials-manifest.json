@@ -1,0 +1,299 @@
+{
+  "lastUpdated": "2026-07-06",
+  "principle": "Preserve raw inputs separately from synthesized product docs so Brand Doctor can show where ideas, assumptions, and requirements came from.",
+  "materials": [
+    {
+      "id": "bbe-snacks-tracker-automated-report-2026-07-03",
+      "type": "source_report_bundle",
+      "path": "docs/source-materials/reference-materials/source-reports/bbe-snacks-tracker/2026-07-03/",
+      "source": "User-provided local PowerPoint deck",
+      "originalPath": "/Users/briongoudreau/Downloads/2026.q1.united_states.snacks_.pptx",
+      "status": "available_with_prototype_reviewed_extraction_ledger",
+      "files": [
+        {
+          "path": "docs/source-materials/reference-materials/source-reports/bbe-snacks-tracker/2026-07-03/2026.q1.united_states.snacks_.pptx",
+          "format": "pptx",
+          "approxSize": "21 MB",
+          "slideCount": 128,
+          "notes": "Raw 2026 Q1 United States Snacks BBE automated report deck. Keep unchanged.",
+          "sha256": "08a00a207799faca063d2a1c7aa519a2998b84919b1bf3a24769aedf2d65d9e4"
+        },
+        {
+          "path": "docs/source-materials/reference-materials/source-reports/bbe-snacks-tracker/2026-07-03/2026.q1.united_states.snacks_.extracted.txt",
+          "format": "txt",
+          "notes": "Searchable slide and notes extraction generated from the PPTX for review and knowledge-base use.",
+          "sha256": "388c47a560d8b0603a9b113bfca7f7e93c35f5826c04d6315d2ab62ccc5354a3"
+        },
+        {
+          "path": "docs/source-materials/reference-materials/source-reports/bbe-snacks-tracker/2026-07-03/slide-inventory.json",
+          "format": "json",
+          "notes": "Slide-level inventory with extracted title and text counts.",
+          "sha256": "c11197057ac6d658e816b35e7f608c9ffaed2c73565f976914761ac91feb8e68"
+        },
+        {
+          "path": "docs/source-materials/reference-materials/source-reports/bbe-snacks-tracker/2026-07-03/deck-chart-ledger.json",
+          "format": "json",
+          "notes": "Generated source-report ledger mapping 107 native chart XML parts, 107 linked embedded Excel workbooks, slide titles, chart cache previews, and processed metric row reconciliation. Regenerate with pnpm extract:source-ledger.",
+          "sha256": "313e1b3a14ffb3c95d202ceb5b37fd0c24d89097e9a4f1f458182655bee373b8"
+        },
+        {
+          "path": "docs/source-materials/reference-materials/source-reports/bbe-snacks-tracker/2026-07-03/SOURCE_SYNTHESIS.md",
+          "format": "md",
+          "notes": "Initial source synthesis for BBE benchmark lenses, automated-report interpretation, Pricing Power guardrails, driver roles, and reasoning-layer candidates."
+        },
+        {
+          "path": "src/data/processed/bbe_source_data_ledger.json",
+          "format": "json",
+          "notes": "Product source data ledger for governed prototype use, blocked official uses, caveats, and pilot promotion requirements for the Q1 2026 US Snacks automated report.",
+          "sha256": "20d0fa34e3a913e10f842972c897de9c860cb42bcac4044dbf15315b31ec0d60"
+        }
+      ],
+      "notes": [
+        "Use as source material for the Equity Reasoning Layer, especially the distinction between vs Category, Ahead/Behind, and Momentum.",
+        "Useful for BBE metric definitions, driver relationships, provocation questions, Pricing Power guardrails, Jobs To Be Done, and source-readiness requirements.",
+        "The generated chart ledger is reviewed for prototype validation and report-module design, not approved as canonical pilot data.",
+        "This material should not be treated as approved product copy or canonical source truth until reviewed by the business/source owners."
+      ]
+    },
+    {
+      "id": "bbe-v7-spec-review-notes-2026-07-01",
+      "type": "source_report_bundle",
+      "path": "docs/source-materials/reference-materials/source-reports/bbe-v7-spec-review/2026-07-01/",
+      "source": "User-provided local Word document from the business team",
+      "originalPath": "/Users/briongoudreau/Downloads/BBE_v7_Spec_Review_Notes.docx",
+      "status": "available_unreviewed_source_report",
+      "files": [
+        {
+          "path": "docs/source-materials/reference-materials/source-reports/bbe-v7-spec-review/2026-07-01/BBE_v7_Spec_Review_Notes.docx",
+          "format": "docx",
+          "approxSize": "27 KB",
+          "notes": "Raw BBE Momentum Intelligence v7 spec review notes. Keep unchanged.",
+          "sha256": "bd7279736f4799fcb8a507874da322cbd2cc4d65595ae8f0714e15a6d8666a9d"
+        },
+        {
+          "path": "docs/source-materials/reference-materials/source-reports/bbe-v7-spec-review/2026-07-01/BBE_v7_Spec_Review_Notes.extracted.md",
+          "format": "md",
+          "notes": "Searchable extraction generated from the DOCX for review and knowledge-base use.",
+          "sha256": "c11d40528624162db78e5ce5dff00a6bc4b4d8e0d60af15e5be8395c6c9cc02d"
+        }
+      ],
+      "notes": [
+        "Use as stakeholder/spec review input for BBE Momentum Intelligence, Jarvis governed outputs, output-quality checks, SMD ordering, room-to-grow, and publication workflow planning.",
+        "This material should not be treated as approved product copy or canonical source truth by itself.",
+        "Companion architecture evaluation is in docs/product/BBE_V7_SPEC_REVIEW_ARCHITECTURE_EVALUATION.md."
+      ]
+    },
+    {
+      "id": "day-3-workshop-transcript-available-export",
+      "type": "workshop_transcript",
+      "path": "docs/source-materials/workshops/day-3-workshop-transcript-available-export.md",
+      "source": "Codex pasted-text attachment",
+      "originalPath": "/Users/briongoudreau/.codex/attachments/7b9166ff-a603-49f9-90f1-9bba7be213f4/pasted-text.txt",
+      "status": "available_partial_or_unconfirmed_full",
+      "notes": [
+        "Appears to be the Day 3 transcript export shared in Codex.",
+        "Current file has 187 lines and visibly spans approximately 0:03 through 26:31 of `Conf - Purchase L1B3.06 (9)`.",
+        "Needs confirmation against the original three-day transcript set."
+      ]
+    },
+    {
+      "id": "brand-doctor-reset-patch-request",
+      "type": "codex_implementation_input",
+      "path": "docs/source-materials/codex-inputs/brand-doctor-reset-patch-request.md",
+      "source": "Codex pasted-text attachment",
+      "originalPath": "/Users/briongoudreau/.codex/attachments/8dc9fd87-6413-40d1-b934-8d2310d292ec/pasted-text.txt",
+      "status": "available",
+      "notes": [
+        "Preserves the pasted reset/merge request that established the single-brand Brand Doctor direction.",
+        "This is not a workshop transcript."
+      ]
+    },
+    {
+      "id": "ali-ebi-mms-bbe-momentum-reference-bundle",
+      "type": "reference_material_bundle",
+      "path": "docs/source-materials/reference-materials/ali-dumps/2026-06-16-ebi-mms-bbe-momentum/",
+      "source": "Codex pasted-text attachment and clipboard images shared by user",
+      "originalPath": "/Users/briongoudreau/.codex/attachments/75ac95a0-9f2e-4dd1-aaf7-3e633e4bccf2/pasted-text.txt plus five temporary clipboard PNGs",
+      "status": "available_unreviewed_reference",
+      "files": [
+        {
+          "path": "docs/source-materials/reference-materials/ali-dumps/2026-06-16-ebi-mms-bbe-momentum/ebi-mms-bbe-momentum-synthesis.txt",
+          "sha256": "660a5c9ae62602ed12e63b82444ebb7b9393b93f4100deada193d9cb638a5be6"
+        },
+        {
+          "path": "docs/source-materials/reference-materials/ali-dumps/2026-06-16-ebi-mms-bbe-momentum/images/abinbev-demand-power-vs-share-roe.png",
+          "sha256": "0126952f953f6df043793c288ad47d87e62201fc683e1c29cb0a5909519d7312"
+        },
+        {
+          "path": "docs/source-materials/reference-materials/ali-dumps/2026-06-16-ebi-mms-bbe-momentum/images/pepsi-cola-growth-algo-to-beat-the-odds.png",
+          "sha256": "4b1d7dd728c1bd55680e6a2ae370e245cfd973ac248a574ccc2edc3a577b80bc"
+        },
+        {
+          "path": "docs/source-materials/reference-materials/ali-dumps/2026-06-16-ebi-mms-bbe-momentum/images/pepsi-max-buyers-nonbuyers-mental-availability.png",
+          "sha256": "104d94ea60c8418bd914415061a6a8447945ec8c62c94fa7dbc28fc6763efa2e"
+        },
+        {
+          "path": "docs/source-materials/reference-materials/ali-dumps/2026-06-16-ebi-mms-bbe-momentum/images/bbe-category-usage-screener-question.png",
+          "sha256": "e138f44e317b836f8a66ce84ee6589acea18290080fdd6049b960e61a9dbb3f0"
+        },
+        {
+          "path": "docs/source-materials/reference-materials/ali-dumps/2026-06-16-ebi-mms-bbe-momentum/images/fmcg-familiarity-question-design.png",
+          "sha256": "3620052436e90347ffbce6651055555d7ed3f88f6b840a6bf4964c902bb0c15e"
+        }
+      ],
+      "notes": [
+        "Preserves an Ali-shared synthesis on using EBI / Ehrenberg-Bass Mental Availability and CEP material as a support layer around BBE.",
+        "Useful for learning content on Mental Market Share, Mental Penetration, Network Size, Share of Mind, CEP prioritization, buyer/non-buyer splits, and reach/branding/messaging action diagnosis.",
+        "This material should not be treated as approved product copy or as formal third-party endorsement."
+      ]
+    },
+    {
+      "id": "bbe-momentum-source-reports-2026-06-16",
+      "type": "source_report_bundle",
+      "path": "docs/source-materials/reference-materials/source-reports/bbe-momentum/2026-06-16/",
+      "source": "Files copied directly into docs/source-materials by user",
+      "originalPath": "docs/source-materials root before organization",
+      "status": "available_unreviewed_source_reports",
+      "files": [
+        {
+          "path": "docs/source-materials/reference-materials/source-reports/bbe-momentum/2026-06-16/BBE Momentum Matters FINAL  (1).docx",
+          "format": "docx",
+          "approxSize": "120 KB",
+          "notes": "Word document; likely useful for BBE Momentum language and education framing.",
+          "sha256": "25f5d11533c0a624689f6d8a30f746b24bd2cf8a33600ebae9e5f4ac6c5a49e1"
+        },
+        {
+          "path": "docs/source-materials/reference-materials/source-reports/bbe-momentum/2026-06-16/Brand Equity Momentum Matters 02.26 1 (1).pptx",
+          "format": "pptx",
+          "approxSize": "16 MB",
+          "slideCount": 11,
+          "notes": "Likely useful for BBE Momentum storytelling and visual explanation patterns.",
+          "sha256": "c1007792fd6a4bc068e009673e00fe420b39398eeadde090d9f9961926876902"
+        }
+      ],
+      "notes": [
+        "Preserves BBE Momentum and Brand Equity Momentum source files that were initially placed at docs/source-materials root.",
+        "Use for learning-content synthesis and BBE Momentum explanation planning only until source claims are reviewed."
+      ]
+    },
+    {
+      "id": "growth-navigator-source-reports-2026-06-16",
+      "type": "source_report_bundle",
+      "path": "docs/source-materials/reference-materials/source-reports/growth-navigator/2026-06-16/",
+      "source": "Files copied directly into docs/source-materials by user",
+      "originalPath": "docs/source-materials root before organization",
+      "status": "available_unreviewed_source_reports",
+      "files": [
+        {
+          "path": "docs/source-materials/reference-materials/source-reports/growth-navigator/2026-06-16/GN 101 S&T Session.pptx",
+          "format": "pptx",
+          "approxSize": "151 MB",
+          "slideCount": 98,
+          "notes": "Likely useful for Growth Navigator 101 education and BBE-to-GN connection material.",
+          "sha256": "3d7222f6bb6b1cc878adc912fe0ea0d973200af789ba20c93ea822a65ad43be1"
+        },
+        {
+          "path": "docs/source-materials/reference-materials/source-reports/growth-navigator/2026-06-16/GN Scorecard Summary Slides - Cheetos, Walkers, Pepsi, Sting (1).pptx",
+          "format": "pptx",
+          "approxSize": "8 MB",
+          "slideCount": 61,
+          "notes": "Likely useful for brand examples, GN scorecard interpretation, and case-based learning.",
+          "sha256": "ba24516c438a6446d01a1ffaaba44244c0ec9476809dc64963c0320ae0d037f9"
+        }
+      ],
+      "notes": [
+        "Preserves Growth Navigator source files that were initially placed at docs/source-materials root.",
+        "Use for GN education, BBE-to-GN bridge synthesis, and brand case learning only until source claims are reviewed."
+      ]
+    },
+    {
+      "id": "performance-pulse-source-report-2026-06-16",
+      "type": "source_report_bundle",
+      "path": "docs/source-materials/reference-materials/source-reports/performance-pulse/2026-06-16/",
+      "source": "Files copied directly into docs/source-materials by user",
+      "originalPath": "docs/source-materials root before organization",
+      "status": "available_unreviewed_source_reports",
+      "files": [
+        {
+          "path": "docs/source-materials/reference-materials/source-reports/performance-pulse/2026-06-16/IB Performance Pulse_P4 2026.pptx",
+          "format": "pptx",
+          "approxSize": "10 MB",
+          "slideCount": 110,
+          "notes": "Likely useful for performance pulse examples and executive-report patterns.",
+          "sha256": "2c0c3039372e675e5948a0e95e361ef0d771d8f05531d3bf5bab23ba4940fb8c"
+        }
+      ],
+      "notes": [
+        "Preserves the IB Performance Pulse source deck that was initially placed at docs/source-materials root.",
+        "Use for executive-report patterns and business-context synthesis only until source claims are reviewed."
+      ]
+    },
+    {
+      "id": "kantar-warc-brand-growth-question-framing-2026-07-06",
+      "type": "external_framework_reference",
+      "path": "docs/source-materials/reference-materials/external-frameworks/brand-growth/2026-07-06-kantar-warc-cmo-question-framing/",
+      "source": "Live public web references reviewed by Codex on 2026-07-06",
+      "status": "available_external_framework_reference",
+      "files": [
+        {
+          "path": "docs/source-materials/reference-materials/external-frameworks/brand-growth/2026-07-06-kantar-warc-cmo-question-framing/README.md",
+          "format": "md",
+          "notes": "Documents Kantar MDS, Kantar Blueprint for Brand Growth, Kantar BrandZ 2026, and WARC Multiplier Effect references used for governed CMO question framing."
+        }
+      ],
+      "sourceUrls": [
+        "https://www.kantar.com/inspiration/brands/what-is-the-meaningful-different-salient-framework",
+        "https://www.kantar.com/campaigns/blueprint-for-brand-growth",
+        "https://www.kantar.com/campaigns/brandz/global",
+        "https://page.warc.com/the-multiplier-effect-report"
+      ],
+      "notes": [
+        "Use these references for executive question framing, learning content, and reusable-shell design.",
+        "Do not use these references as source facts for PepsiCo brand diagnoses or as third-party endorsement of Brand Doctor.",
+        "The `provocation_questions` module may cite these as research basis, but brand-specific claims still require BBE/GN/source-owner reviewed evidence."
+      ]
+    },
+    {
+      "id": "kantar-brandz-2026-external-framework-reference",
+      "type": "external_framework_reference",
+      "path": "docs/source-materials/reference-materials/external-frameworks/brandz/2026-06-16-kantar-brandz-2026/",
+      "source": "File copied directly into docs/source-materials by user",
+      "originalPath": "docs/source-materials root before organization",
+      "status": "available_unreviewed_external_reference",
+      "files": [
+        {
+          "path": "docs/source-materials/reference-materials/external-frameworks/brandz/2026-06-16-kantar-brandz-2026/Kantar_BrandZ_2026_Most_Valuable_Global_Brands.pdf",
+          "format": "pdf",
+          "approxSize": "57 MB",
+          "notes": "Likely useful for BrandZ context and external brand-equity language.",
+          "sha256": "b04776afb44d07cd7e75c8be853039832db3b242a5219d740786a20ee4a709ce"
+        }
+      ],
+      "notes": [
+        "Preserves the Kantar BrandZ 2026 PDF that was initially placed at docs/source-materials root.",
+        "Use as external BrandZ context only until source claims are reviewed.",
+        "Do not imply Kantar or BrandZ endorsement of Brand Doctor."
+      ]
+    }
+  ],
+  "missingMaterials": [
+    {
+      "id": "day-1-workshop-transcript",
+      "type": "workshop_transcript",
+      "status": "missing_from_repo_and_current_codex_attachment_inventory",
+      "desiredPath": "docs/source-materials/workshops/day-1-workshop-transcript.md"
+    },
+    {
+      "id": "day-2-workshop-transcript",
+      "type": "workshop_transcript",
+      "status": "missing_from_repo_and_current_codex_attachment_inventory",
+      "desiredPath": "docs/source-materials/workshops/day-2-workshop-transcript.md"
+    },
+    {
+      "id": "day-3-remaining-segments",
+      "type": "workshop_transcript",
+      "status": "unconfirmed_or_missing",
+      "desiredPath": "docs/source-materials/workshops/day-3-workshop-transcript-full.md"
+    }
+  ]
+}

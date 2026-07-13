@@ -1,0 +1,36 @@
+{
+  "id": "agent-runtime-policy-v1",
+  "runtimeEnabled": true,
+  "killSwitchActive": false,
+  "mode": "normal",
+  "adminOverrideRequiredFor": [
+    "artifact_export",
+    "artifact_circulation",
+    "reviewed_memory_write",
+    "source_claim_promotion",
+    "source_data_write",
+    "external_research_ingest",
+    "voice_continuous_mode"
+  ],
+  "emergencyStopScope": [
+    "agent_turns",
+    "streaming",
+    "voice_capture",
+    "artifact_generation",
+    "memory_review",
+    "source_review"
+  ],
+  "degradedModeFallback": "read_only_packet_inspection",
+  "owner": "BBE Brand Doctor prototype governance",
+  "lastReviewed": "2026-06-28",
+  "caveats": [
+    "The runtime kill switch is a prototype governance rail, not an enterprise operations console.",
+    "When active, future implementations should fail closed to read-only packet inspection and preserve audit visibility.",
+    "Risky write, export, source-promotion, and continuous-voice actions remain independently disabled by capability flags."
+  ],
+  "guardrails": [
+    "Runtime policy must be loaded server-side and surfaced in every governed agent turn.",
+    "Admin override cannot bypass evidence, source, memory, or artifact review requirements.",
+    "Kill-switch activation should stop new autonomous or streaming work before any external action is attempted."
+  ]
+}

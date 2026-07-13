@@ -1,0 +1,176 @@
+{
+  "id": "voice-skill-view-contract-v1",
+  "lastReviewed": "2026-06-28",
+  "mode": "skill_view_contract_map",
+  "purpose": "Map future voice orchestration modes to approved agent skills, voice-canvas views, visible states, and readiness gates without enabling continuous listening, Realtime voice, or text-to-speech.",
+  "voiceModes": [
+    {
+      "id": "push_to_talk",
+      "label": "Push-to-talk governed turn",
+      "status": "ready",
+      "allowedSkillIds": [
+        "answer_brand_question",
+        "bbe_momentum_intelligence_read",
+        "explain_diagnosis_evidence",
+        "create_growth_provocations",
+        "recommend_dynamic_view",
+        "teach_brand_growth_concept",
+        "test_understanding",
+        "compare_brands_or_competitors",
+        "draft_meeting_story",
+        "facilitate_live_meeting",
+        "review_session_state",
+        "inspect_experience_architecture",
+        "inspect_pilot_learning",
+        "inspect_quiet_proactivity",
+        "inspect_voice_readiness",
+        "inspect_persistence_readiness",
+        "inspect_treatment_outcome_readiness",
+        "inspect_source_promotion_readiness",
+        "inspect_artifact_readiness",
+        "inspect_runtime_governance",
+        "inspect_foundation_readiness",
+        "plan_executive_pilot"
+      ],
+      "requiredViewIds": ["kpi_strip", "evidence_ledger", "data_gap_panel"],
+      "optionalViewIds": [
+        "momentum_ladder",
+        "momentum_room_to_grow_grid",
+        "smd_driver_map",
+        "diagnosis_trace_summary",
+        "growth_provocation_list",
+        "treatment_path_card",
+        "peer_comparison",
+        "pattern_radar_brief",
+        "source_readiness_panel",
+        "source_runtime_ingestion_panel",
+        "data_basis_inspector",
+        "meeting_takeaway_panel",
+        "qbr_story_draft",
+        "learning_explainer",
+        "quiz_card",
+        "review_workflow_panel",
+        "memory_audit_panel",
+        "audit_trail_panel",
+        "review_identity_panel",
+        "evidence_spotlight_panel",
+        "pilot_learning_panel",
+        "proactivity_panel",
+        "voice_readiness_panel",
+        "provider_adapter_panel",
+        "capability_readiness_panel",
+        "persistence_readiness_panel",
+        "treatment_outcome_readiness_panel",
+        "source_promotion_readiness_panel",
+        "artifact_readiness_panel",
+        "runtime_governance_panel",
+        "runtime_quality_panel",
+        "experience_architecture_panel",
+        "canvas_continuity_panel",
+        "foundation_readiness_panel",
+        "executive_pilot_runbook_panel",
+        "promotion_gate_panel"
+      ],
+      "requiredReadinessIds": ["same-runtime-evidence-gates", "streaming-status-and-canvas-parity", "push-to-talk-consent-boundary"],
+      "blockedUntil": [],
+      "guardrails": ["A visible click remains the consent boundary.", "Voice turns must use the same ExperiencePlan, evidence, memory, audit, and gates as typed turns."]
+    },
+    {
+      "id": "wake_listen",
+      "label": "Visible wake/listen handoff",
+      "status": "gated",
+      "allowedSkillIds": ["answer_brand_question", "recommend_dynamic_view", "facilitate_live_meeting", "inspect_voice_readiness"],
+      "requiredViewIds": ["voice_readiness_panel", "evidence_ledger", "data_gap_panel"],
+      "optionalViewIds": ["kpi_strip", "meeting_takeaway_panel", "review_workflow_panel"],
+      "requiredReadinessIds": ["continuous-consent-privacy-review", "streaming-status-and-canvas-parity"],
+      "blockedUntil": ["continuous-consent-privacy-review"],
+      "guardrails": ["Wake/listen must show visible listening state.", "No background wake-word capture is allowed until privacy and consent review approve it."]
+    },
+    {
+      "id": "continuous_voice",
+      "label": "Continuous voice session",
+      "status": "blocked",
+      "allowedSkillIds": ["facilitate_live_meeting", "recommend_dynamic_view", "review_session_state", "inspect_voice_readiness"],
+      "requiredViewIds": ["voice_readiness_panel", "review_workflow_panel", "data_gap_panel"],
+      "optionalViewIds": ["meeting_takeaway_panel", "evidence_ledger", "proactivity_panel"],
+      "requiredReadinessIds": ["realtime-runtime-unification", "interruption-and-server-cancel", "continuous-consent-privacy-review", "enterprise-voice-memory-storage"],
+      "blockedUntil": ["realtime-runtime-unification", "interruption-and-server-cancel", "continuous-consent-privacy-review", "enterprise-voice-memory-storage"],
+      "guardrails": ["Continuous mode cannot create overlapping runs.", "Continuous mode cannot write memory, source facts, artifacts, or meeting takeaways without review."]
+    },
+    {
+      "id": "realtime_voice",
+      "label": "Realtime voice provider adapter",
+      "status": "blocked",
+      "allowedSkillIds": ["answer_brand_question", "facilitate_live_meeting", "recommend_dynamic_view", "inspect_voice_readiness", "inspect_runtime_governance"],
+      "requiredViewIds": ["voice_readiness_panel", "runtime_governance_panel", "evidence_ledger", "data_gap_panel"],
+      "optionalViewIds": ["meeting_takeaway_panel", "review_workflow_panel", "qbr_story_draft"],
+      "requiredReadinessIds": ["realtime-runtime-unification", "interruption-and-server-cancel", "tts-provider-and-speaking-policy", "enterprise-voice-memory-storage"],
+      "blockedUntil": ["realtime-runtime-unification", "interruption-and-server-cancel", "tts-provider-and-speaking-policy", "enterprise-voice-memory-storage"],
+      "guardrails": ["Realtime provider events must call the governed runtime.", "Provider adapters cannot bypass source, evidence, memory, audit, or review gates."]
+    },
+    {
+      "id": "text_to_speech",
+      "label": "Assistant spoken response",
+      "status": "blocked",
+      "allowedSkillIds": ["answer_brand_question", "teach_brand_growth_concept", "facilitate_live_meeting", "inspect_voice_readiness"],
+      "requiredViewIds": ["voice_readiness_panel", "evidence_ledger", "data_gap_panel"],
+      "optionalViewIds": ["kpi_strip", "learning_explainer", "meeting_takeaway_panel"],
+      "requiredReadinessIds": ["same-runtime-evidence-gates", "tts-provider-and-speaking-policy"],
+      "blockedUntil": ["tts-provider-and-speaking-policy"],
+      "guardrails": ["Spoken output must preserve caveats and human-review language.", "The assistant cannot speak autonomously or convert treatment options into commands."]
+    }
+  ],
+  "statePhases": [
+    {
+      "id": "idle",
+      "label": "Idle",
+      "visibleToUser": true,
+      "allowedModes": ["push_to_talk", "wake_listen", "continuous_voice", "realtime_voice", "text_to_speech"],
+      "guardrail": "Idle state must make capture status unambiguous."
+    },
+    {
+      "id": "listening",
+      "label": "Listening",
+      "visibleToUser": true,
+      "allowedModes": ["push_to_talk"],
+      "guardrail": "Prototype listening starts only from a user click."
+    },
+    {
+      "id": "routing",
+      "label": "Routing to skill",
+      "visibleToUser": true,
+      "allowedModes": ["push_to_talk", "wake_listen", "continuous_voice", "realtime_voice"],
+      "guardrail": "Routing must select a registered skill ID."
+    },
+    {
+      "id": "evidence_binding",
+      "label": "Binding evidence",
+      "visibleToUser": true,
+      "allowedModes": ["push_to_talk", "wake_listen", "continuous_voice", "realtime_voice", "text_to_speech"],
+      "guardrail": "Evidence gaps and caveats must remain visible."
+    },
+    {
+      "id": "canvas_rendering",
+      "label": "Rendering approved views",
+      "visibleToUser": true,
+      "allowedModes": ["push_to_talk", "wake_listen", "continuous_voice", "realtime_voice"],
+      "guardrail": "Only registered voice-canvas view IDs can render."
+    },
+    {
+      "id": "review_gate_check",
+      "label": "Checking review gates",
+      "visibleToUser": true,
+      "allowedModes": ["push_to_talk", "wake_listen", "continuous_voice", "realtime_voice", "text_to_speech"],
+      "guardrail": "Artifacts, memory, source promotion, exports, and meeting takeaways remain review-gated."
+    }
+  ],
+  "guardrails": [
+    "Voice orchestration can request only registered skills and voice-canvas views.",
+    "Continuous voice, Realtime voice, wake-word capture, TTS, autonomous speaking, export, and source writes remain disabled until readiness gates and capability flags clear.",
+    "The voice contract is an inspectable foundation for future dynamic UI composition, not permission to generate arbitrary interfaces."
+  ],
+  "caveats": [
+    "This contract maps the governed prototype vocabulary; it is not a production voice policy.",
+    "A mode can be present in the contract while still blocked by voice readiness, capability flags, provider adapters, privacy review, or enterprise storage requirements."
+  ]
+}

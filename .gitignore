@@ -1,0 +1,50 @@
+# dependencies
+node_modules/
+
+# Next.js build output
+.next/
+out/
+
+# local env and secrets
+.env
+.env.local
+.env.*.local
+.env.local.save
+.codex/
+.wrangler/
+.vinext/
+dist/
+
+# TypeScript / tooling caches
+*.tsbuildinfo
+.turbo/
+.eslintcache
+.runtime/
+
+# OS and editor noise
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# generated artifacts
+output/
+outputs/
+tmp/
+Patches/
+
+# bulky source-material binaries; keep local unless explicitly needed
+docs/source-materials/reference-materials/**/*.pdf
+docs/source-materials/reference-materials/**/*.pptx
+docs/source-materials/reference-materials/**/*.docx
+docs/source-materials/reference-materials/**/*.xlsx
+
+# GitHub blocks normal Git blobs over 100 MB; keep this local unless Git LFS is enabled.
+docs/source-materials/reference-materials/source-reports/growth-navigator/2026-06-16/GN 101 S&T Session.pptx

@@ -1,0 +1,93 @@
+{
+  "principle": "Mental Availability is the brand's probability of being thought of in useful buying situations. It should be read through category entry points, not generic awareness.",
+  "evidenceModes": [
+    {
+      "id": "measured",
+      "label": "Measured",
+      "description": "Observed source data loaded into the packet."
+    },
+    {
+      "id": "simulated_prototype",
+      "label": "Simulated prototype",
+      "description": "Prototype-only evidence used to demonstrate the future experience."
+    },
+    {
+      "id": "inferred_from_current_packet",
+      "label": "Inferred",
+      "description": "Directional read derived from current Brand Health Record metrics and occasions."
+    },
+    {
+      "id": "missing",
+      "label": "Missing",
+      "description": "Evidence is not loaded and should not be treated as a measured fact."
+    }
+  ],
+  "coreMeasures": [
+    {
+      "id": "mental_penetration",
+      "label": "Mental Penetration",
+      "definition": "Share of category buyers who link the brand to at least one relevant category entry point.",
+      "guardrail": "Do not treat broad awareness as Mental Penetration unless the CEP link is measured."
+    },
+    {
+      "id": "mental_market_share",
+      "label": "Mental Market Share",
+      "definition": "The brand's share of all measured CEP associations within the competitive mental set.",
+      "guardrail": "This is a mental-competition read, not sales share."
+    },
+    {
+      "id": "network_size",
+      "label": "Network Size",
+      "definition": "The number and breadth of category entry points where the brand has usable memory links.",
+      "guardrail": "Bigger is not always better if links are weak, irrelevant, or undifferentiated."
+    },
+    {
+      "id": "share_of_mind",
+      "label": "Share of Mind",
+      "definition": "The brand's relative accessibility in the buyer's memory across measured CEPs.",
+      "guardrail": "Use as directional mental salience unless the source design explicitly measures it."
+    }
+  ],
+  "cepRoles": [
+    {
+      "id": "build",
+      "label": "Build",
+      "definition": "A relevant buying situation where the brand has room to create or strengthen memory links.",
+      "tone": "good"
+    },
+    {
+      "id": "defend",
+      "label": "Defend",
+      "definition": "A relevant buying situation where the brand has usable strength that should not be allowed to erode.",
+      "tone": "good"
+    },
+    {
+      "id": "watch",
+      "label": "Watch",
+      "definition": "A situation with useful relevance but mixed or incomplete evidence.",
+      "tone": "watch"
+    },
+    {
+      "id": "avoid",
+      "label": "Avoid for now",
+      "definition": "A situation where current evidence does not support investment priority.",
+      "tone": "bad"
+    }
+  ],
+  "defaultMissingInputs": [
+    "Mental Penetration",
+    "Mental Market Share",
+    "Network Size",
+    "Share of Mind",
+    "CEP association strength",
+    "Competitive mental set",
+    "Buyer/non-buyer split",
+    "Wave-over-wave CEP movement"
+  ],
+  "interpretationGuardrails": [
+    "Do not claim ownership of a category entry point without measured association and competitive context.",
+    "Do not infer buyer migration, cannibalization, or occasion substitution from CEP coverage alone.",
+    "Do not use one-period evidence as proof of durable momentum.",
+    "Simulated prototype packets must be labeled in UI, AI context, and validation."
+  ]
+}

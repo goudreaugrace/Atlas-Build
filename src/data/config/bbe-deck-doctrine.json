@@ -1,0 +1,126 @@
+{
+  "id": "bbe-deck-doctrine-v1",
+  "version": "0.1.0",
+  "sourceReportId": "bbe-snacks-tracker-2026-q1-us-snacks",
+  "sourceSlides": {
+    "benchmarkLenses": [10, 12, 20, 22, 33, 44, 71, 91, 121],
+    "chartRead": [17, 19, 20, 22, 33, 44, 121],
+    "typology": [8, 9, 16],
+    "driverRelationships": [19],
+    "pricingPowerGuardrail": [25, 26, 27],
+    "provocations": [13, 14, 24, 31, 42]
+  },
+  "metricSystem": {
+    "outcomeMetrics": ["Demand Power", "Pricing Power"],
+    "outcomeDisplayLabels": {
+      "Demand Power": "Demand Power",
+      "Pricing Power": "Perceived Value"
+    },
+    "inputMetrics": ["Salient", "Meaningful", "Different"],
+    "coreMetrics": ["Demand Power", "Pricing Power", "Meaningful", "Different", "Salient"],
+    "userFacingInputOrder": ["Salient", "Meaningful", "Different"],
+    "sourceMetricNameForValue": "Pricing Power",
+    "userFacingValueLabel": "Perceived Value"
+  },
+  "benchmarkLensHierarchy": [
+    {
+      "id": "momentum",
+      "label": "Momentum",
+      "role": "headline_verdict",
+      "precedence": 1,
+      "definition": "Whether the brand improved significantly versus the prior period, tested at 95% confidence where source data is available.",
+      "productRule": "Momentum is the trajectory verdict and must not be hidden behind category index or brand scale.",
+      "sourceContext": "Deck lens: MOMENTUM vs. prior period."
+    },
+    {
+      "id": "aheadBehind",
+      "label": "Ahead/Behind",
+      "role": "size_adjusted_strength_check",
+      "precedence": 2,
+      "definition": "Whether the brand is in the top third versus same size/life-stage peers.",
+      "productRule": "Ahead/Behind is a size-adjusted strength check, not opportunity sizing and not the final verdict by itself.",
+      "sourceContext": "Deck lens: AHEAD vs. peers."
+    },
+    {
+      "id": "vsCategory",
+      "label": "vs. Category",
+      "role": "category_context",
+      "precedence": 3,
+      "definition": "How the brand indexes versus the whole category.",
+      "productRule": "Category index is descriptive context and cannot prove brand health by itself.",
+      "sourceContext": "Deck lens: vs. CATEGORY."
+    }
+  ],
+  "ambitionRead": {
+    "principle": "The deck frames ambition around brands being Ahead and in Momentum in anchor markets.",
+    "productTranslation": "A high category index is not the ambition by itself; the system should ask whether the brand is both size-adjusted Ahead and building Momentum."
+  },
+  "strengthLanguagePolicy": {
+    "blockedTerms": ["strong", "healthy", "winning", "star as verdict"],
+    "blockWhen": [
+      "Category index is the only positive proof.",
+      "Any core outcome KPI is declining.",
+      "Multiple core metrics are Not Ahead.",
+      "Pricing Power / Perceived Value or Different is Not Ahead for a large/category-leading brand."
+    ],
+    "requiredQualifierWhenBlocked": "Use qualified language such as large/category-leading but vulnerable, not simply strong.",
+    "allowedOnlyWhen": [
+      "Momentum is not declining across core outcome KPIs.",
+      "Ahead/Behind does not materially undermine the profile.",
+      "Driver profile supports the outcome read.",
+      "Source posture and caveats are visible."
+    ]
+  },
+  "typologyPolicy": {
+    "allowedTerms": ["Mainstream", "Star", "Iconic"],
+    "allowedUse": "source_context_only",
+    "productRule": "Source typology may be shown only as source context / source-methodology context, and only when the user explicitly asks about source typology. It must not become the product diagnosis, default readout language, or headline verdict.",
+    "blockedUse": "Do not use source typology labels as the final product verdict."
+  },
+  "driverRelationships": {
+    "Demand Power": {
+      "primaryDrivers": ["Meaningful", "Salient"],
+      "secondaryDrivers": ["Different"],
+      "sourceWeights": {
+        "Meaningful": 0.48,
+        "Salient": 0.3,
+        "Different": 0.22
+      },
+      "read": "Demand Power pressure should be diagnosed through Meaningful and Salient first, then Different."
+    },
+    "Pricing Power": {
+      "primaryDrivers": ["Meaningful", "Different"],
+      "secondaryDrivers": ["Salient"],
+      "sourceWeights": {
+        "Meaningful": 0.55,
+        "Different": 0.39,
+        "Salient": 0.06
+      },
+      "read": "Pricing Power / Perceived Value pressure should be diagnosed through Meaningful and Different first."
+    }
+  },
+  "pricingPowerPolicy": {
+    "sourceMetricName": "Pricing Power",
+    "userFacingLabel": "Perceived Value",
+    "validFor": "Broad brand-equity price justification.",
+    "notValidFor": [
+      "SKU-level price decisions",
+      "Pack-price architecture",
+      "Store-level pricing",
+      "Promotion optimization",
+      "Causal proof of willingness to pay"
+    ],
+    "productRule": "Use Perceived Value in product-facing language while preserving Pricing Power as source lineage."
+  },
+  "demographicPolicy": {
+    "deckSampleContext": ["age 13-70", "gender", "past 4-week category users", "readable base sizes"],
+    "productRule": "Deck sample context does not equal demographic performance evidence. Segment-specific brand diagnosis requires official BBE demographic cuts with base sizes and movement/significance metadata.",
+    "simulatedAllowedUse": "workflow_demonstration_only"
+  },
+  "sourceUsePolicy": {
+    "reviewStatus": "reviewed_for_prototype",
+    "allowedUses": ["prototype_demo", "diagnostic_reasoning_calibration", "report_module_design"],
+    "blockedUses": ["official_business_readout", "pilot_canonical_data_store", "unreviewed_external_distribution"],
+    "promotionRequirement": "Source owner must approve the underlying BBE export/workbook and metric mapping before canonical pilot use."
+  }
+}

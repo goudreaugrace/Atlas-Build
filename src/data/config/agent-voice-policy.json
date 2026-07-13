@@ -1,0 +1,19 @@
+{
+  "id": "agent-voice-policy-v1",
+  "defaultMode": "push_to_talk",
+  "enabledModes": ["push_to_talk", "wake_listen"],
+  "disabledModes": ["continuous"],
+  "consentRequired": true,
+  "interruptHandling": "basic",
+  "runtimeEventSource": "/api/agent/stream",
+  "caveats": [
+    "Agent Lab may use browser speech recognition when available, but typed input remains the reliable fallback.",
+    "Continuous voice remains disabled until explicit consent, interruption behavior, privacy posture, and runtime alignment are reviewed.",
+    "Voice turns must use the same governed runtime, evidence, dynamic views, memory, audit, and capability gates as typed turns."
+  ],
+  "guardrails": [
+    "Do not enable always-listening behavior without user consent.",
+    "Do not bypass evidence, guardrails, or human-review gates for spoken requests.",
+    "Voice should stream the same runtime events used by Agent Lab."
+  ]
+}

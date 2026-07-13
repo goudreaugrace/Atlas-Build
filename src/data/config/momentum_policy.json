@@ -1,0 +1,73 @@
+{
+  "principle": "Current strength tells us how healthy the brand is today. Momentum tells us whether the brand is getting healthier.",
+  "primaryOutcomeMetrics": ["Demand Power", "Pricing Power"],
+  "primaryOutcomeDisplayLabels": {
+    "Demand Power": "Demand Power",
+    "Pricing Power": "Perceived Value"
+  },
+  "inputMetrics": ["Salient", "Meaningful", "Different"],
+  "inputMetricOrderPrinciple": "Use SMD as the user-facing order: Salient first for mental availability, then Meaningful for relevance, then Different for distinctiveness. Preserve source metric names where needed for lineage.",
+  "benchmarkLensPolicy": {
+    "momentum": "Headline verdict",
+    "aheadBehind": "Size-check/context lens only; never opportunity sizing or final diagnosis verdict",
+    "vsCategory": "Context lens; must name benchmark basis before color or comparison language"
+  },
+  "states": [
+    {
+      "id": "strong_and_building",
+      "label": "Strong and Building",
+      "strength": "strong",
+      "momentum": "Gaining",
+      "tone": "good",
+      "read": "The brand is healthy today and gaining equity momentum."
+    },
+    {
+      "id": "strong_but_holding",
+      "label": "Strong but Holding",
+      "strength": "strong",
+      "momentum": "Holding",
+      "tone": "watch",
+      "read": "The brand has a strong base, but the next job is to create measurable momentum."
+    },
+    {
+      "id": "strong_but_slipping",
+      "label": "Strong but Slipping",
+      "strength": "strong",
+      "momentum": "Declining",
+      "tone": "bad",
+      "read": "The brand is strong today, but equity health is moving the wrong way."
+    },
+    {
+      "id": "weak_but_gaining",
+      "label": "Weak but Gaining",
+      "strength": "weak",
+      "momentum": "Gaining",
+      "tone": "watch",
+      "read": "The brand is not yet strong enough, but the trajectory is encouraging."
+    },
+    {
+      "id": "weak_and_stuck",
+      "label": "Weak and Stuck",
+      "strength": "weak",
+      "momentum": "Holding",
+      "tone": "bad",
+      "read": "The brand is underbuilt and not gaining enough momentum yet."
+    },
+    {
+      "id": "weak_and_declining",
+      "label": "Weak and Declining",
+      "strength": "weak",
+      "momentum": "Declining",
+      "tone": "bad",
+      "read": "The brand is underbuilt and losing equity momentum."
+    },
+    {
+      "id": "momentum_unknown",
+      "label": "Momentum Unknown",
+      "strength": "unknown",
+      "momentum": "Unknown",
+      "tone": "watch",
+      "read": "The current packet does not contain enough momentum evidence to classify trajectory."
+    }
+  ]
+}

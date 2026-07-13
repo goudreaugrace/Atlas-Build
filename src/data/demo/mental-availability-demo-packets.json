@@ -1,0 +1,432 @@
+[
+  {
+    "brandId": "siete",
+    "period": "Prototype 2026",
+    "evidenceMode": "simulated_prototype",
+    "sourceLabel": "Simulated prototype Mental Availability / CEP packet; not a measured PepsiCo source.",
+    "topline": {
+      "label": "Build memory before scaling reach",
+      "read": "Siete's opportunity is not simply to become more famous; it is to become easier to retrieve in a few high-value snack buying situations where the brand's meaning can travel beyond niche awareness.",
+      "strategicQuestion": "Which CEPs can make Siete feel like an easy everyday snack choice without losing its distinctive role?"
+    },
+    "measures": {
+      "mental_penetration": {
+        "value": null,
+        "displayValue": "Not loaded",
+        "read": "The packet does not yet measure how many category buyers link Siete to at least one CEP.",
+        "evidenceMode": "missing"
+      },
+      "mental_market_share": {
+        "value": null,
+        "displayValue": "Not loaded",
+        "read": "Competitive mental share is missing, so the system should not claim Siete owns a snack occasion.",
+        "evidenceMode": "missing"
+      },
+      "network_size": {
+        "value": 2,
+        "displayValue": "2 prototype CEPs",
+        "read": "Prototype story suggests a narrow but usable memory network to build from.",
+        "evidenceMode": "simulated_prototype"
+      },
+      "share_of_mind": {
+        "value": null,
+        "displayValue": "Not loaded",
+        "read": "Share of Mind requires measured competitive association data.",
+        "evidenceMode": "missing"
+      }
+    },
+    "ceps": [
+      {
+        "id": "better_snack_for_family",
+        "name": "Better snack for my family",
+        "consumerQuestion": "What can I feel good about putting out for my family?",
+        "role": "build",
+        "priority": 1,
+        "relevance": 82,
+        "brandAssociation": 44,
+        "competitorPressure": 58,
+        "interpretation": "Strong strategic fit, but the brand needs more repeated memory cues before this becomes a broad retrieval path.",
+        "action": "Build this CEP with simple family-snacking memory cues and proof points that are easy to repeat in retail and media.",
+        "evidence": [
+          "Siete has underbuilt BBE equity in the active packet.",
+          "The current Growth Availability read flags Mental Availability as directional weakness.",
+          "Prototype relevance is high but association is not yet scaled."
+        ],
+        "missingInputs": [
+          "Measured CEP association",
+          "Buyer/non-buyer split",
+          "Competitive mental set",
+          "Retail availability by family-snacking context"
+        ],
+        "caveat": "This is a simulated prototype CEP and should be tested before being treated as a measured growth lane."
+      },
+      {
+        "id": "better_for_you_party",
+        "name": "Better-for-you party snack",
+        "consumerQuestion": "What can I bring that feels fun but a little better?",
+        "role": "watch",
+        "priority": 2,
+        "relevance": 74,
+        "brandAssociation": 39,
+        "competitorPressure": 72,
+        "interpretation": "The occasion is attractive, but competitive pressure is high and Siete should not over-focus here before proving distinct memory cues.",
+        "action": "Use as a test-and-learn CEP, not the sole scale bet.",
+        "evidence": [
+          "Occasion fit is plausible for the brand's category lens.",
+          "Competitive pressure is simulated as high.",
+          "No measured party/snacking CEP ownership data is loaded."
+        ],
+        "missingInputs": [
+          "Measured occasion association",
+          "Competitive brand ranking",
+          "Distinctive asset recognition in party context"
+        ],
+        "caveat": "Do not infer occasion substitution or cannibalization from this CEP read."
+      },
+      {
+        "id": "everyday_crunch",
+        "name": "Everyday crunch",
+        "consumerQuestion": "What is an easy crunchy snack I can keep around?",
+        "role": "avoid",
+        "priority": 3,
+        "relevance": 68,
+        "brandAssociation": 24,
+        "competitorPressure": 86,
+        "interpretation": "This is a broad, crowded memory lane where Siete may need stronger foundations before fighting scaled incumbents.",
+        "action": "Avoid making this the first priority until narrower memory structures are stronger.",
+        "evidence": [
+          "Prototype association is low versus relevance.",
+          "Competitor pressure is simulated as very high.",
+          "Current BBE Salient signal is not enough to support broad everyday retrieval."
+        ],
+        "missingInputs": [
+          "Mental Market Share",
+          "Competitive CEP rank",
+          "Physical availability in everyday pantry channels"
+        ],
+        "caveat": "Avoid for now means lower priority, not that the brand can never play there."
+      }
+    ]
+  },
+  {
+    "brandId": "lay-s",
+    "period": "Prototype 2026",
+    "evidenceMode": "simulated_prototype",
+    "sourceLabel": "Simulated prototype Mental Availability / CEP packet; not a measured PepsiCo source.",
+    "topline": {
+      "label": "Defend breadth while refreshing memory",
+      "read": "Lay's likely has broad retrieval, but the strategic question is where memory structures need refresh so scale does not mask slippage.",
+      "strategicQuestion": "Which CEPs should Lay's defend, and where should the brand modernize cues without narrowing reach?"
+    },
+    "measures": {
+      "mental_penetration": {
+        "value": 78,
+        "displayValue": "78 prototype index",
+        "read": "Prototype signal treats Lay's as broadly mentally available.",
+        "evidenceMode": "simulated_prototype"
+      },
+      "mental_market_share": {
+        "value": 31,
+        "displayValue": "31 prototype share",
+        "read": "Prototype competitive mental share is strong but not universal across moments.",
+        "evidenceMode": "simulated_prototype"
+      },
+      "network_size": {
+        "value": 5,
+        "displayValue": "5 prototype CEPs",
+        "read": "Broad memory network with some refresh pressure.",
+        "evidenceMode": "simulated_prototype"
+      },
+      "share_of_mind": {
+        "value": 34,
+        "displayValue": "34 prototype share",
+        "read": "Strong relative accessibility in the simulated packet.",
+        "evidenceMode": "simulated_prototype"
+      }
+    },
+    "ceps": [
+      {
+        "id": "classic_chip_default",
+        "name": "Classic chip default",
+        "consumerQuestion": "What chips should I grab without thinking too hard?",
+        "role": "defend",
+        "priority": 1,
+        "relevance": 94,
+        "brandAssociation": 86,
+        "competitorPressure": 61,
+        "interpretation": "This is likely a core memory structure to defend because it protects broad buyer retrieval.",
+        "action": "Keep distinctive and availability cues fresh while avoiding narrow targeting that weakens broad reach.",
+        "evidence": [
+          "Measured Demand Power is category-leading in the active packet.",
+          "Prototype CEP association is high.",
+          "Growth Availability flags broad but refreshable mental availability."
+        ],
+        "missingInputs": [
+          "Measured CEP association",
+          "Wave-over-wave movement",
+          "Buyer/non-buyer split"
+        ],
+        "caveat": "Large-brand default status should be monitored for erosion, not assumed permanent."
+      },
+      {
+        "id": "party_bowl",
+        "name": "Party bowl",
+        "consumerQuestion": "What can I put out that everyone recognizes?",
+        "role": "defend",
+        "priority": 2,
+        "relevance": 88,
+        "brandAssociation": 79,
+        "competitorPressure": 67,
+        "interpretation": "A broad social CEP that reinforces scale and familiarity.",
+        "action": "Defend with broad-reach creative and retail visibility around social sharing moments.",
+        "evidence": [
+          "Prototype association is strong.",
+          "The CEP aligns with high-reach buying situations.",
+          "No measured current CEP trend is loaded."
+        ],
+        "missingInputs": [
+          "Current measured social occasion rank",
+          "Retail display evidence",
+          "Distinctive asset linkage in party context"
+        ],
+        "caveat": "Do not treat party strength as proof of all social occasions."
+      },
+      {
+        "id": "quick_lunch_side",
+        "name": "Quick lunch side",
+        "consumerQuestion": "What snack goes easily with lunch?",
+        "role": "watch",
+        "priority": 3,
+        "relevance": 76,
+        "brandAssociation": 58,
+        "competitorPressure": 74,
+        "interpretation": "A useful but more contested retrieval path that may need clearer value and convenience cues.",
+        "action": "Watch for leakage to convenience-led competitors before prioritizing a major push.",
+        "evidence": [
+          "Prototype pressure is elevated.",
+          "Current packet does not include retail or lunch occasion proof."
+        ],
+        "missingInputs": [
+          "Lunch occasion association",
+          "Retail pack availability",
+          "Competitive convenience read"
+        ],
+        "caveat": "This is a hypothesis for investigation, not a measured loss."
+      }
+    ]
+  },
+  {
+    "brandId": "cheetos",
+    "period": "Prototype 2026",
+    "evidenceMode": "simulated_prototype",
+    "sourceLabel": "Simulated prototype Mental Availability / CEP packet; not a measured PepsiCo source.",
+    "topline": {
+      "label": "Turn distinctive fame into CEP discipline",
+      "read": "Cheetos has strong distinctive intuition, but the next layer should separate fame from the specific buying situations the brand should build or defend.",
+      "strategicQuestion": "Where should Cheetos use distinctive assets to strengthen buyer retrieval rather than just entertain?"
+    },
+    "measures": {
+      "mental_penetration": {
+        "value": 69,
+        "displayValue": "69 prototype index",
+        "read": "Prototype read suggests broad but not universal CEP linkage.",
+        "evidenceMode": "simulated_prototype"
+      },
+      "mental_market_share": {
+        "value": 24,
+        "displayValue": "24 prototype share",
+        "read": "Cheetos has meaningful simulated mental share in expressive snack moments.",
+        "evidenceMode": "simulated_prototype"
+      },
+      "network_size": {
+        "value": 4,
+        "displayValue": "4 prototype CEPs",
+        "read": "Moderately broad network with distinctive-asset leverage.",
+        "evidenceMode": "simulated_prototype"
+      },
+      "share_of_mind": {
+        "value": 28,
+        "displayValue": "28 prototype share",
+        "read": "Simulated accessibility is strong in playful/expressive moments.",
+        "evidenceMode": "simulated_prototype"
+      }
+    },
+    "ceps": [
+      {
+        "id": "fun_flavor_hit",
+        "name": "Fun flavor hit",
+        "consumerQuestion": "What snack feels bold and fun right now?",
+        "role": "defend",
+        "priority": 1,
+        "relevance": 86,
+        "brandAssociation": 78,
+        "competitorPressure": 59,
+        "interpretation": "A distinctive CEP where the brand's codes can reinforce retrieval.",
+        "action": "Defend with consistent distinctive assets and high-reach memory refresh.",
+        "evidence": [
+          "Growth Navigator bridge exists for Cheetos.",
+          "Prototype association is strong.",
+          "BBE Salient and Demand Power are available in the active packet."
+        ],
+        "missingInputs": [
+          "Measured CEP association",
+          "Distinctive asset fame",
+          "Wave-over-wave CEP movement"
+        ],
+        "caveat": "Distinctive fame still needs measured asset linkage before it becomes proof."
+      },
+      {
+        "id": "teen_social_snack",
+        "name": "Teen social snack",
+        "consumerQuestion": "What snack makes hanging out more fun?",
+        "role": "build",
+        "priority": 2,
+        "relevance": 79,
+        "brandAssociation": 61,
+        "competitorPressure": 70,
+        "interpretation": "Relevant and plausible, but needs proof that it builds broad mental availability rather than narrow fandom.",
+        "action": "Build cautiously with broad-reach cues and monitor whether the association travels beyond heavy fans.",
+        "evidence": [
+          "Prototype relevance is high.",
+          "Competitive pressure is meaningful.",
+          "Buyer/non-buyer split is not loaded."
+        ],
+        "missingInputs": [
+          "Buyer/non-buyer split",
+          "Measured audience CEP",
+          "Competitive mental set"
+        ],
+        "caveat": "Avoid treating a youth audience cue as a full growth strategy."
+      },
+      {
+        "id": "lunchbox_treat",
+        "name": "Lunchbox treat",
+        "consumerQuestion": "What treat snack can go with lunch?",
+        "role": "watch",
+        "priority": 3,
+        "relevance": 66,
+        "brandAssociation": 47,
+        "competitorPressure": 73,
+        "interpretation": "Useful but potentially less distinctive than the brand's strongest expressive moments.",
+        "action": "Watch rather than lead until lunch-context evidence is loaded.",
+        "evidence": [
+          "Prototype relevance is moderate.",
+          "No lunch-specific measured evidence is loaded."
+        ],
+        "missingInputs": [
+          "Lunch context association",
+          "Pack availability",
+          "Parent/buyer split"
+        ],
+        "caveat": "This is not evidence of lunchbox underperformance."
+      }
+    ]
+  },
+  {
+    "brandId": "tostitos",
+    "period": "Prototype 2026",
+    "evidenceMode": "simulated_prototype",
+    "sourceLabel": "Simulated prototype Mental Availability / CEP packet; not a measured PepsiCo source.",
+    "topline": {
+      "label": "Connect price-value risk to social memory",
+      "read": "Tostitos should connect its price-value diagnosis to the social and sharing CEPs where the brand earns permission to justify the role it plays.",
+      "strategicQuestion": "Which social CEPs make Tostitos worth choosing, and where is the brand vulnerable to value-led alternatives?"
+    },
+    "measures": {
+      "mental_penetration": {
+        "value": 63,
+        "displayValue": "63 prototype index",
+        "read": "Prototype read suggests useful but not dominant mental penetration.",
+        "evidenceMode": "simulated_prototype"
+      },
+      "mental_market_share": {
+        "value": 21,
+        "displayValue": "21 prototype share",
+        "read": "Simulated mental share is meaningful in social snack contexts.",
+        "evidenceMode": "simulated_prototype"
+      },
+      "network_size": {
+        "value": 3,
+        "displayValue": "3 prototype CEPs",
+        "read": "Focused network anchored in social and sharing moments.",
+        "evidenceMode": "simulated_prototype"
+      },
+      "share_of_mind": {
+        "value": 23,
+        "displayValue": "23 prototype share",
+        "read": "Moderate accessibility with price-value proof needs.",
+        "evidenceMode": "simulated_prototype"
+      }
+    },
+    "ceps": [
+      {
+        "id": "chips_and_dip_gathering",
+        "name": "Chips and dip gathering",
+        "consumerQuestion": "What do I need for chips and dip when people come over?",
+        "role": "defend",
+        "priority": 1,
+        "relevance": 91,
+        "brandAssociation": 73,
+        "competitorPressure": 66,
+        "interpretation": "A high-relevance CEP where Tostitos can defend its role if value and availability cues are clear.",
+        "action": "Defend with proof of social fit, visibility, and value justification.",
+        "evidence": [
+          "Growth Navigator bridge is loaded for Tostitos.",
+          "Current diagnosis flags price-value vulnerability.",
+          "Prototype CEP relevance is high."
+        ],
+        "missingInputs": [
+          "Measured chips-and-dip CEP rank",
+          "Retail display evidence",
+          "Value perception by buyer group"
+        ],
+        "caveat": "Social fit does not prove SKU-level price elasticity."
+      },
+      {
+        "id": "game_day_table",
+        "name": "Game day table",
+        "consumerQuestion": "What should be on the table for watching the game?",
+        "role": "build",
+        "priority": 2,
+        "relevance": 84,
+        "brandAssociation": 57,
+        "competitorPressure": 76,
+        "interpretation": "Attractive but contested, so memory building should be paired with physical availability proof.",
+        "action": "Build only where retail, display, and value signals can support the memory claim.",
+        "evidence": [
+          "Prototype relevance is high.",
+          "Competitive pressure is elevated.",
+          "GN bridge can provide some availability context."
+        ],
+        "missingInputs": [
+          "Game day CEP association",
+          "Retail/display availability",
+          "Competitive mental share"
+        ],
+        "caveat": "This is a testable growth lane, not measured game-day ownership."
+      },
+      {
+        "id": "quick_family_snack",
+        "name": "Quick family snack",
+        "consumerQuestion": "What can I put out quickly for the family?",
+        "role": "watch",
+        "priority": 3,
+        "relevance": 72,
+        "brandAssociation": 45,
+        "competitorPressure": 82,
+        "interpretation": "Useful but vulnerable to cheaper or more convenient alternatives.",
+        "action": "Watch for value leakage and avoid over-investing before proof improves.",
+        "evidence": [
+          "Price-value diagnosis suggests caution.",
+          "Prototype pressure is high."
+        ],
+        "missingInputs": [
+          "Family snack association",
+          "Price-value segmentation",
+          "Availability by household mission"
+        ],
+        "caveat": "Do not infer household migration from this signal."
+      }
+    ]
+  }
+]

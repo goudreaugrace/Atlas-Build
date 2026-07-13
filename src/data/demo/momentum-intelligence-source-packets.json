@@ -1,0 +1,190 @@
+[
+  {
+    "brandId": "lay-s",
+    "sourceLabel": "Prototype-reviewed Momentum Intelligence source - Lay's",
+    "sourceOwner": "BBE Brand Doctor prototype team + Codex assumption synthesis",
+    "sourceDate": "2026-07-02",
+    "evidenceMode": "prototype_reviewed_partial",
+    "marketContext": {
+      "market": "US savory snacks",
+      "category": "Mainstream salty snacks",
+      "geography": "United States",
+      "period": "Q1 2026",
+      "categoryGrowth": 2.1,
+      "categoryGrowthUnit": "percent",
+      "maturity": "mature"
+    },
+    "peerSet": {
+      "peerSetId": "us-savory-mainstream-scale",
+      "label": "US savory mainstream scale peer set",
+      "brandIds": ["cheetos", "doritos", "fritos", "ruffles", "tostitos"],
+      "peerCount": 5,
+      "selectionBasis": "Prototype set selected for broad-reach salty snack comparison and executive QBR pressure-testing.",
+      "caveats": [
+        "Peer set is prototype-reviewed and must be replaced with an approved comparison set before external circulation.",
+        "Do not infer cannibalization, portfolio migration, or occasion substitution from this peer set."
+      ]
+    },
+    "roomToGrowInputs": {
+      "penetrationHeadroom": 18,
+      "demandPowerShareVsMarketShareGap": 4.2,
+      "categoryGrowth": 2.1
+    },
+    "smdContributionWeights": {
+      "salient": 0.34,
+      "meaningful": 0.42,
+      "different": 0.24,
+      "sourceLabel": "Prototype SMD contribution model - US savory mainstream Q1 2026",
+      "caveats": [
+        "Weights are prototype-reviewed directional inputs, not an official BBE contribution model.",
+        "Use weights to prioritize questions, not to claim causal contribution."
+      ]
+    },
+    "caveats": [
+      "This packet is prototype-reviewed and directional; replace with a measured source extract before final investment sizing.",
+      "Room-to-grow reads should be used as QBR provocation context, not a forecast.",
+      "Peer set and SMD weights are Codex-assisted prototype assumptions cataloged in docs/data/PROTOTYPE_ASSUMPTION_CATALOG.md."
+    ]
+  },
+  {
+    "brandId": "cheetos",
+    "sourceLabel": "Codex-created prototype Momentum Intelligence assumption source - Cheetos",
+    "sourceOwner": "Codex prototype assumption synthesis for BBE Brand Doctor POC",
+    "sourceDate": "2026-07-02",
+    "evidenceMode": "directional_stakeholder_input",
+    "marketContext": {
+      "market": "US savory snacks",
+      "category": "Mainstream salty snacks",
+      "geography": "United States",
+      "period": "Q1 2026",
+      "categoryGrowth": 1.2,
+      "categoryGrowthUnit": "percent",
+      "maturity": "mature"
+    },
+    "peerSet": {
+      "peerSetId": "us-savory-flavor-icons",
+      "label": "US savory flavor-icon peer set",
+      "brandIds": ["doritos", "lay-s", "fritos", "ruffles", "tostitos", "sunchips"],
+      "peerCount": 6,
+      "selectionBasis": "Codex-created POC peer set using public Frito-Lay portfolio context and Cheetos' role as a distinctive cheesy/flavor snack icon; intended for QBR pressure-testing only.",
+      "caveats": [
+        "Peer set is a prototype assumption and must be replaced with an approved competitive set before executive circulation.",
+        "Peer context supports comparison discipline only; it is not evidence of substitution, migration, or cannibalization."
+      ]
+    },
+    "roomToGrowInputs": {
+      "penetrationHeadroom": 24,
+      "demandPowerShareVsMarketShareGap": 2.6,
+      "categoryGrowth": 1.2
+    },
+    "smdContributionWeights": {
+      "salient": 0.29,
+      "meaningful": 0.38,
+      "different": 0.33,
+      "sourceLabel": "Codex-created prototype SMD contribution assumption - US savory flavor icons Q1 2026",
+      "caveats": [
+        "Weights are synthetic POC assumptions, not an official BBE contribution model.",
+        "Use weights to prioritize executive questions around relevance, distinctive mischief assets, and salience; do not claim causal contribution."
+      ]
+    },
+    "caveats": [
+      "This packet is Codex-created for prototype storytelling and must be replaced or approved by a source owner before executive use.",
+      "Room-to-grow values are directional assumptions designed to show how explicit opportunity inputs behave in the system.",
+      "Do not infer media, investment, SKU, pricing, cannibalization, or portfolio migration decisions from this packet."
+    ]
+  },
+  {
+    "brandId": "siete",
+    "sourceLabel": "Prototype-reviewed Momentum Intelligence source - Siete",
+    "sourceOwner": "BBE Brand Doctor prototype team + Codex assumption synthesis",
+    "sourceDate": "2026-07-02",
+    "evidenceMode": "prototype_reviewed_partial",
+    "marketContext": {
+      "market": "US better-for-you Mexican-inspired snacks",
+      "category": "Premium snack growth segment",
+      "geography": "United States",
+      "period": "Q1 2026",
+      "categoryGrowth": 5.8,
+      "categoryGrowthUnit": "percent",
+      "maturity": "growing"
+    },
+    "peerSet": {
+      "peerSetId": "us-premium-growth-snacks",
+      "label": "US premium growth snack peer set",
+      "brandIds": ["late-july", "stacy-s", "sunchips", "popcorners"],
+      "peerCount": 4,
+      "selectionBasis": "Prototype set selected to pressure-test growth-brand evidence, distribution headroom, and distinctive meaning.",
+      "caveats": [
+        "Peer set is prototype-reviewed and must be validated by the brand or insights team.",
+        "Peer context is associative only; do not present it as proof of substitution or migration."
+      ]
+    },
+    "roomToGrowInputs": {
+      "penetrationHeadroom": 42,
+      "demandPowerShareVsMarketShareGap": 6.5,
+      "categoryGrowth": 5.8
+    },
+    "smdContributionWeights": {
+      "salient": 0.2,
+      "meaningful": 0.45,
+      "different": 0.35,
+      "sourceLabel": "Prototype SMD contribution model - US premium growth snacks Q1 2026",
+      "caveats": [
+        "Weights are prototype-reviewed directional inputs, not an official BBE contribution model.",
+        "Use weights to guide evidence questions before creating agency or investment recommendations."
+      ]
+    },
+    "caveats": [
+      "This packet is prototype-reviewed and directional; it should not be treated as official PepsiCo strategy.",
+      "Growth context supports opportunity framing, not final scale or media investment sizing.",
+      "Peer set and SMD weights are Codex-assisted prototype assumptions cataloged in docs/data/PROTOTYPE_ASSUMPTION_CATALOG.md."
+    ]
+  },
+  {
+    "brandId": "tostitos",
+    "sourceLabel": "Codex-created prototype Momentum Intelligence assumption source - Tostitos",
+    "sourceOwner": "Codex prototype assumption synthesis for BBE Brand Doctor POC",
+    "sourceDate": "2026-07-02",
+    "evidenceMode": "directional_stakeholder_input",
+    "marketContext": {
+      "market": "US savory snacks",
+      "category": "Mainstream tortilla chips and dips occasions",
+      "geography": "United States",
+      "period": "Q1 2026",
+      "categoryGrowth": -2.4,
+      "categoryGrowthUnit": "percent",
+      "maturity": "mature"
+    },
+    "peerSet": {
+      "peerSetId": "us-tortilla-social-snacking",
+      "label": "US tortilla and social-snacking peer set",
+      "brandIds": ["doritos", "fritos", "lay-s", "ruffles", "sunchips", "stacy-s"],
+      "peerCount": 6,
+      "selectionBasis": "Codex-created POC peer set using public Frito-Lay portfolio context and Tostitos' role in tortilla, dip, hosting, and shared snacking occasions; intended for QBR pressure-testing only.",
+      "caveats": [
+        "Peer set is a prototype assumption and must be replaced with an approved competitive set before executive circulation.",
+        "Peer context is not measured occasion-substitution, meal-replacement, portfolio migration, or cannibalization evidence."
+      ]
+    },
+    "roomToGrowInputs": {
+      "penetrationHeadroom": 31,
+      "demandPowerShareVsMarketShareGap": 1.7,
+      "categoryGrowth": -2.4
+    },
+    "smdContributionWeights": {
+      "salient": 0.36,
+      "meaningful": 0.34,
+      "different": 0.3,
+      "sourceLabel": "Codex-created prototype SMD contribution assumption - US tortilla and social snacking Q1 2026",
+      "caveats": [
+        "Weights are synthetic POC assumptions, not an official BBE contribution model.",
+        "Use weights to prioritize executive questions around salience, hosting relevance, and distinctiveness; do not claim causal contribution."
+      ]
+    },
+    "caveats": [
+      "This packet is Codex-created for prototype storytelling and must be replaced or approved by a source owner before executive use.",
+      "Room-to-grow values are directional assumptions designed to show how explicit opportunity inputs behave in the system.",
+      "Do not infer occasion expansion, retail activation, SKU, pricing, cannibalization, or portfolio migration decisions from this packet."
+    ]
+  }
+]

@@ -1,0 +1,102 @@
+{
+  "id": "assistant-reality-boundaries-v1",
+  "purpose": "Core product-truth language for the BBE Brand Assistant so answers stay ambitious, real, and grounded.",
+  "mustUseWhenQuestionMentions": {
+    "currentOrLatest": ["current", "latest", "recent", "today", "now", "up to date", "newest"],
+    "shareOrExport": ["share", "send", "export", "circulate", "download", "publish"],
+    "executiveReady": ["cmo-ready", "board-ready", "leadership-ready", "final report", "finished deck", "approved report"],
+    "capabilityOrIdentity": ["what can you do", "capabilities", "what is your job", "who are you", "what are you", "what data do you have", "what do you know"],
+    "outsideEvidence": ["ai search", "gpt", "brand.com", "website", "creative effectiveness", "media", "social", "sales", "share", "penetration", "cep", "category entry point", "pack recognition", "asset linkage", "source authority"]
+  },
+  "sourcePeriodRule": {
+    "label": "Loaded source period",
+    "instruction": "When a user asks for current/latest/recent/today, state that the answer is based on the latest loaded packet, not live market data.",
+    "wording": "Based on the loaded {period} packet for {brandName}, not live market data."
+  },
+  "capabilityBuckets": [
+    {
+      "id": "available_today",
+      "label": "Available today",
+      "definition": "Direct active-brand answers, proof/gap explanation, source-period disclosure, treatment paths to test, and user-initiated text/voice interaction grounded in the loaded packet."
+    },
+    {
+      "id": "prototype_workspaces",
+      "label": "Prototype governed workspaces",
+      "definition": "Approval-gated meeting prep reads, proof packs, treatment paths, learning paths, and readiness workspaces built from approved skills, templates, and views. QBR remains a supported meeting objective."
+    },
+    {
+      "id": "gated_or_future",
+      "label": "Gated or future",
+      "definition": "Official approval, export/circulation, canonical source writes, production certification, autonomous work, enterprise persistence, and continuous/background voice."
+    }
+  ],
+  "workOrderLanguage": {
+    "reviewDraftLabel": "review draft workspace",
+    "approvedArtifactForbidden": ["CMO-ready", "board-ready", "final", "approved", "shareable", "export-ready"],
+    "approvedArtifactReplacement": {
+      "CMO-ready": "CMO-review",
+      "board-ready": "leadership-review",
+      "final": "draft",
+      "approved": "review-required",
+      "shareable": "URL-addressable prototype",
+      "export-ready": "export-gated"
+    },
+    "defaultApprovalAsk": "Want me to build the review draft workspace?"
+  },
+  "shareExportRule": {
+    "instruction": "If the user asks to share/export/circulate/send, say the assistant can prepare a review draft or URL-addressable prototype workspace, but official circulation/export remains gated.",
+    "wording": "I can prepare a review draft workspace here, but official export, circulation, or approval is still gated."
+  },
+  "missingEvidenceTaxonomy": [
+    {
+      "id": "ai_search_visibility",
+      "label": "AI/search visibility",
+      "triggerTerms": ["ai search", "gpt", "chatgpt", "llm", "answer engine", "machine availability", "ai visibility", "source authority"]
+    },
+    {
+      "id": "owned_site_analytics",
+      "label": "Owned-site / brand.com analytics",
+      "triggerTerms": ["brand.com", "website", "owned site", "site content", "structured data"]
+    },
+    {
+      "id": "media_creative_effectiveness",
+      "label": "Media / creative effectiveness",
+      "triggerTerms": ["media", "ads", "advertising", "creative effectiveness", "campaign", "reach", "frequency"]
+    },
+    {
+      "id": "sales_share_penetration",
+      "label": "Sales, share, and penetration",
+      "triggerTerms": ["sales", "share", "penetration", "volume", "value growth"]
+    },
+    {
+      "id": "cep_movement",
+      "label": "Category Entry Point movement",
+      "triggerTerms": ["cep", "category entry point", "occasion", "need state"]
+    },
+    {
+      "id": "distinctive_asset_linkage",
+      "label": "Distinctive asset linkage",
+      "triggerTerms": ["pack recognition", "asset linkage", "distinctive asset", "brand assets"]
+    },
+    {
+      "id": "official_brand_strategy",
+      "label": "Official Brand Strategic Context",
+      "triggerTerms": ["brand strategy", "brand book", "positioning", "brand dna", "creative platform", "approved claims"]
+    }
+  ],
+  "demoMustHaves": [
+    "Truth boundary core: loaded data, source period, measured/prototype status, available-now capabilities, and gated capabilities.",
+    "Excellent Lay's conversation: momentum, CMO read, next actions, proof, and gaps.",
+    "One polished CMO-review output generated from conversation and opened as a durable workspace.",
+    "Jarvis flow: direct answer, approval-gated deeper work, Recent Work shelf, focused output page.",
+    "Evidence and gaps confidence: what we know, what we do not know, and what funding/connectivity closes next."
+  ],
+  "deferForFundingDemo": [
+    "Complex audience-specific language rules.",
+    "Full artifact lifecycle and export workflow.",
+    "Enterprise persistence and identity/access.",
+    "Advanced memory governance.",
+    "Large skills library expansion.",
+    "Arbitrary UI generation."
+  ]
+}

@@ -1,0 +1,101 @@
+[
+  {
+    "brandId": "doritos",
+    "extractKind": "market_share_penetration",
+    "sourceLabel": "Prototype Momentum source-extract adapter fixture - Doritos market/share/penetration",
+    "sourceOwner": "BBE Brand Doctor prototype team",
+    "sourceDate": "2026-06-28",
+    "reviewStatus": "reviewed_for_prototype",
+    "marketContext": {
+      "market": "US savory snacks",
+      "category": "Mainstream salty snacks",
+      "geography": "United States",
+      "period": "MAT Q126",
+      "categoryGrowth": 1.8,
+      "categoryGrowthUnit": "percent",
+      "maturity": "mature"
+    },
+    "peerSet": {
+      "peerSetId": "us-savory-mainstream-extract-fixture",
+      "label": "US savory mainstream extract fixture peer set",
+      "brandIds": ["cheetos", "fritos", "ruffles", "tostitos"],
+      "peerCount": 4,
+      "selectionBasis": "Prototype fixture for exercising the governed source-extract adapter; replace with an approved source-owner peer set before use in decision artifacts.",
+      "caveats": [
+        "Peer set is an adapter fixture and must not be used as official comparison evidence.",
+        "Do not infer cannibalization, portfolio migration, or occasion substitution from this peer set."
+      ]
+    },
+    "roomToGrowInputs": {
+      "penetrationHeadroom": 22,
+      "demandPowerShareVsMarketShareGap": 1.7,
+      "categoryGrowth": 1.8
+    },
+    "caveats": [
+      "This market/share/penetration extract block is reviewed for prototype adapter verification only.",
+      "Replace with approved source-owner market/share/penetration files before using Doritos Momentum Intelligence in management recommendations."
+    ]
+  },
+  {
+    "brandId": "doritos",
+    "extractKind": "bbe_contribution_weight",
+    "sourceLabel": "Prototype BBE contribution extract fixture - Doritos",
+    "sourceOwner": "BBE Brand Doctor prototype team",
+    "sourceDate": "2026-06-28",
+    "reviewStatus": "reviewed_for_prototype",
+    "smdContributionWeights": {
+      "salient": 0.31,
+      "meaningful": 0.46,
+      "different": 0.23,
+      "sourceLabel": "Prototype BBE contribution extract fixture - Doritos",
+      "caveats": [
+        "Contribution weights are a prototype adapter fixture, not an approved BBE contribution model.",
+        "Use weights to verify source mapping and prioritization behavior, not to claim causal contribution."
+      ]
+    },
+    "caveats": [
+      "This BBE contribution-weight extract block is reviewed for prototype adapter verification only.",
+      "Replace with an approved contribution-weight model extract before using Doritos SMD weights in management recommendations."
+    ]
+  },
+  {
+    "brandId": "doritos",
+    "extractKind": "bbe_movement_significance",
+    "sourceLabel": "Prototype BBE movement extract fixture - Doritos",
+    "sourceOwner": "BBE Brand Doctor prototype team",
+    "sourceDate": "2026-06-28",
+    "reviewStatus": "reviewed_for_prototype",
+    "trendEvidence": {
+      "sourceLabel": "Prototype BBE movement extract fixture - Doritos",
+      "sourcePeriodCompatibility": "aligned",
+      "metricReads": [
+        {
+          "metric": "Meaningful",
+          "sourceTrendKey": "Meaningful",
+          "periodCount": 5,
+          "firstPeriod": "Q1 2025",
+          "lastPeriod": "Q1 2026",
+          "firstValue": 132,
+          "lastValue": 127,
+          "delta": -5,
+          "direction": "down",
+          "significance": "significant_decrease",
+          "sourceLabel": "Prototype BBE movement extract fixture - Doritos",
+          "caveats": [
+            "Significance status is included only to exercise the adapter path; replace with an approved source-owner extract before decision use.",
+            "Movement evidence does not prove causality."
+          ],
+          "read": "Meaningful declined significantly in the prototype source-extract fixture."
+        }
+      ],
+      "caveats": [
+        "Trend evidence is a prototype fixture for adapter verification, not an official BBE movement extract.",
+        "Use source-period compatibility before connecting BBE movement to commercial context."
+      ]
+    },
+    "caveats": [
+      "This movement/significance extract block is reviewed for prototype adapter verification only.",
+      "Replace with an approved BBE tracker movement extract before calling Doritos movement executive-ready."
+    ]
+  }
+]

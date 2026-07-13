@@ -1,0 +1,421 @@
+[
+  {
+    "id": "answer_brand_question",
+    "name": "Answer Brand Question",
+    "family": "core_reasoning",
+    "purpose": "Answer a user question about the active brand using the Brand Intelligence Packet, evidence ledger, diagnosis rules, treatment library, and guardrails.",
+    "primaryUserIntent": ["ask why", "explain metric", "summarize brand", "challenge diagnosis"],
+    "requiredInputs": ["activeBrandId", "userQuestion"],
+    "optionalInputs": ["audienceMode", "activeViewId", "personaId"],
+    "allowedServices": ["buildBrandIntelligencePacket", "getDiagnosisEvidence", "getEvidenceConfidence", "getTreatmentPlanOptions"],
+    "outputSchema": "GroundedAgentAnswer",
+    "allowedViewIds": ["data_basis_inspector", "evidence_ledger", "evidence_spotlight_panel", "kpi_strip", "diagnosis_trace_summary"],
+    "guardrails": [
+      "Use only active brand evidence unless the user asks for comparison.",
+      "Say what is missing when the packet cannot answer.",
+      "Separate fact, interpretation, and caveat."
+    ],
+    "humanApproval": "not_required",
+    "pilotPriority": "p0"
+  },
+  {
+    "id": "bbe_momentum_intelligence_read",
+    "name": "BBE Momentum Intelligence Read",
+    "family": "core_reasoning",
+    "purpose": "Produce the BGS/QBR-oriented read from category context through equity momentum, diagnosis, room to grow, and growth provocations.",
+    "primaryUserIntent": ["prepare QBR", "prepare BGS", "read momentum", "find growth provocations"],
+    "requiredInputs": ["activeBrandId", "period"],
+    "optionalInputs": ["categoryGroup", "market", "audienceMode"],
+    "allowedServices": ["buildBrandIntelligencePacket", "readMomentum", "readRoomToGrow", "createGrowthProvocations", "runOutputQualitySelfCheck"],
+    "outputSchema": "BbeMomentumIntelligenceRead",
+    "allowedViewIds": ["momentum_ladder", "momentum_room_to_grow_grid", "smd_driver_map", "data_basis_inspector", "source_readiness_panel", "source_runtime_ingestion_panel", "growth_provocation_list", "evidence_spotlight_panel", "data_gap_panel"],
+    "guardrails": [
+      "Momentum is the headline verdict.",
+      "Red momentum must remain visible.",
+      "Do not use Ahead/Behind as a substitute for room to grow.",
+      "Use Perceived Value as the user-facing label for the Pricing Power source metric."
+    ],
+    "humanApproval": "review_before_publish",
+    "pilotPriority": "p0"
+  },
+  {
+    "id": "explain_diagnosis_evidence",
+    "name": "Explain Diagnosis Evidence",
+    "family": "core_reasoning",
+    "purpose": "Explain why the deterministic diagnosis fired, what complicates it, and what not to conclude.",
+    "primaryUserIntent": ["why diagnosis", "show proof", "what complicates this", "what not to conclude"],
+    "requiredInputs": ["activeBrandId", "diagnosisId"],
+    "optionalInputs": ["audienceMode"],
+    "allowedServices": ["getDiagnosisResult", "getDiagnosisEvidence", "getDiagnosisRuleTrace"],
+    "outputSchema": "DiagnosisEvidenceExplanation",
+    "allowedViewIds": ["data_basis_inspector", "diagnosis_trace_summary", "evidence_ledger", "evidence_spotlight_panel", "data_gap_panel"],
+    "guardrails": [
+      "The LLM does not choose the diagnosis.",
+      "Always include supporting and complicating evidence when available.",
+      "Do not turn diagnosis into treatment before the provocation or treatment step."
+    ],
+    "humanApproval": "not_required",
+    "pilotPriority": "p0"
+  },
+  {
+    "id": "create_growth_provocations",
+    "name": "Create Growth Provocations",
+    "family": "planning",
+    "purpose": "Convert evidence into sharp what / so what / now what provocations for BGS, AOP, or QBR discussion.",
+    "primaryUserIntent": ["what should we do", "what questions should we bring", "make this actionable", "create provocations"],
+    "requiredInputs": ["activeBrandId", "diagnosisId"],
+    "optionalInputs": ["meetingType", "audienceMode", "horizon"],
+    "allowedServices": ["buildBrandIntelligencePacket", "getTreatmentPlanOptions", "getFollowUpSignals"],
+    "outputSchema": "GrowthProvocationSet",
+    "allowedViewIds": ["growth_provocation_list", "treatment_path_card", "data_basis_inspector", "evidence_ledger", "evidence_spotlight_panel"],
+    "guardrails": [
+      "Provocations are options to consider or questions to test, not final commands.",
+      "Every provocation needs evidence or a data-gap note.",
+      "Tag urgency as act_now, watch, or longer_term_theme."
+    ],
+    "humanApproval": "review_before_publish",
+    "pilotPriority": "p0"
+  },
+  {
+    "id": "recommend_dynamic_view",
+    "name": "Recommend Dynamic View",
+    "family": "visualization",
+    "purpose": "Select the most useful approved view for the user's current question, evidence state, and decision context.",
+    "primaryUserIntent": ["show me", "visualize", "compare", "open the evidence", "build a view"],
+    "requiredInputs": ["activeBrandId", "userQuestion"],
+    "optionalInputs": ["availableViewIds", "audienceMode", "canvasState"],
+    "allowedServices": ["buildBrandIntelligencePacket", "getPatternRadarRecord", "getGrowthNavigatorVitals"],
+    "outputSchema": "DynamicViewRequest",
+    "allowedViewIds": ["kpi_strip", "momentum_ladder", "momentum_room_to_grow_grid", "source_readiness_panel", "source_runtime_ingestion_panel", "source_promotion_readiness_panel", "review_workflow_panel", "memory_audit_panel", "audit_trail_panel", "review_identity_panel", "artifact_readiness_panel", "pilot_learning_panel", "proactivity_panel", "voice_readiness_panel", "provider_adapter_panel", "capability_readiness_panel", "persistence_readiness_panel", "treatment_outcome_readiness_panel", "runtime_governance_panel", "runtime_quality_panel", "experience_architecture_panel", "canvas_continuity_panel", "foundation_readiness_panel", "executive_pilot_runbook_panel", "promotion_gate_panel", "evidence_ledger", "evidence_spotlight_panel", "peer_comparison", "pattern_radar_brief", "learning_explainer", "quiz_card"],
+    "guardrails": [
+      "Choose from the approved view registry.",
+      "Fail closed when no approved view fits.",
+      "Never invent chart metrics."
+    ],
+    "humanApproval": "not_required",
+    "pilotPriority": "p1"
+  },
+  {
+    "id": "teach_brand_growth_concept",
+    "name": "Teach Brand Growth Concept",
+    "family": "learning",
+    "purpose": "Teach a BBE, Growth Navigator, Momentum, Perceived Value, CEP, treatment, or guardrail concept using approved learning and wiki content.",
+    "primaryUserIntent": ["teach me", "explain concept", "help me understand", "what does this mean", "build a learning path", "create a training plan", "open education pages"],
+    "requiredInputs": ["conceptId"],
+    "optionalInputs": ["activeBrandId", "learnerLevel", "preferredFormat"],
+    "allowedServices": ["retrieveLearningModule", "buildBrandIntelligencePacket"],
+    "outputSchema": "LearningExplanation",
+    "allowedViewIds": ["learning_explainer", "kpi_strip", "quiz_card"],
+    "guardrails": [
+      "Teach from approved modules and wiki content.",
+      "Use brand context as an example only when evidence exists.",
+      "Correct common misreads directly and constructively."
+    ],
+    "humanApproval": "not_required",
+    "pilotPriority": "p1"
+  },
+  {
+    "id": "test_understanding",
+    "name": "Test Understanding",
+    "family": "learning",
+    "purpose": "Create a short scenario, quiz, or signal-read exercise to test user understanding of a concept.",
+    "primaryUserIntent": ["test me", "quiz me", "practice this", "check my understanding", "build a test diagnostic", "run a learning diagnostic"],
+    "requiredInputs": ["conceptId"],
+    "optionalInputs": ["activeBrandId", "difficulty", "scenarioType"],
+    "allowedServices": ["retrievePracticeScenarios", "buildBrandIntelligencePacket"],
+    "outputSchema": "LearningAssessment",
+    "allowedViewIds": ["quiz_card", "learning_explainer", "smd_driver_map"],
+    "guardrails": [
+      "Do not score users on unsupported or ambiguous facts.",
+      "Explain why the best answer is best.",
+      "Show the guardrail when a tempting answer overclaims."
+    ],
+    "humanApproval": "not_required",
+    "pilotPriority": "p1"
+  },
+  {
+    "id": "compare_brands_or_competitors",
+    "name": "Compare Brands Or Competitors",
+    "family": "research",
+    "purpose": "Compare the active brand with approved peer brands, competitive sets, or researched competitors while preserving source caveats.",
+    "primaryUserIntent": ["compare brands", "research competitors", "how does this compare", "show peers"],
+    "requiredInputs": ["activeBrandId"],
+    "optionalInputs": ["comparisonBrandIds", "competitiveSetId", "externalResearchScope"],
+    "allowedServices": ["buildBrandIntelligencePacket", "getPatternRadarRecord", "retrieveReviewedSourceClaims"],
+    "outputSchema": "BrandComparisonRead",
+    "allowedViewIds": ["peer_comparison", "pattern_radar_brief", "evidence_ledger", "evidence_spotlight_panel", "data_gap_panel"],
+    "guardrails": [
+      "Separate internal canonical facts from reviewed source claims and unreviewed research.",
+      "Do not infer portfolio migration or cannibalization without measured evidence.",
+      "Show peer-set size and category lens caveats."
+    ],
+    "humanApproval": "review_before_publish",
+    "pilotPriority": "p2"
+  },
+  {
+    "id": "draft_meeting_story",
+    "name": "Draft Meeting Story",
+    "family": "storytelling",
+    "purpose": "Turn the active evidence and decisions into an executive memo, QBR narrative, agency brief, talk track, or slide outline.",
+    "primaryUserIntent": ["draft QBR", "make a memo", "create talk track", "write agency brief", "make slides"],
+    "requiredInputs": ["activeBrandId", "outputFormat"],
+    "optionalInputs": ["meetingType", "audience", "acceptedProvocationIds"],
+    "allowedServices": ["buildBrandIntelligencePacket", "createGrowthProvocations", "getTreatmentPlanDraft", "runOutputQualitySelfCheck"],
+    "outputSchema": "DecisionPackageDraft",
+    "allowedViewIds": ["qbr_story_draft", "growth_provocation_list", "evidence_ledger", "evidence_spotlight_panel"],
+    "guardrails": [
+      "Preserve evidence links and data-gap notes.",
+      "Write as draft support for human review.",
+      "Do not present treatment options as final management commands."
+    ],
+    "humanApproval": "required_before_circulation",
+    "pilotPriority": "p1"
+  },
+  {
+    "id": "facilitate_live_meeting",
+    "name": "Facilitate Live Meeting",
+    "family": "meeting",
+    "purpose": "Support a live workshop or leadership discussion by answering questions, opening evidence, capturing decisions, and generating takeaways.",
+    "primaryUserIntent": ["join meeting", "facilitate", "capture decisions", "answer live"],
+    "requiredInputs": ["activeBrandId", "meetingType"],
+    "optionalInputs": ["attendeeRoles", "agenda", "voiceEnabled"],
+    "allowedServices": ["buildBrandIntelligencePacket", "recommendDynamicView", "createMeetingTakeaway"],
+    "outputSchema": "MeetingSupportResult",
+    "allowedViewIds": ["meeting_takeaway_panel", "evidence_ledger", "evidence_spotlight_panel", "momentum_room_to_grow_grid", "growth_provocation_list", "qbr_story_draft", "data_gap_panel"],
+    "guardrails": [
+      "Keep answers scoped to the active brand and meeting context.",
+      "Flag unsupported claims in real time.",
+      "Separate captured decisions from AI suggestions."
+    ],
+    "humanApproval": "required_for_final_takeaway",
+    "pilotPriority": "p2"
+  },
+  {
+    "id": "review_session_state",
+    "name": "Review Session State",
+    "family": "system_building",
+    "purpose": "Inspect the governed session review workflow, including pending memory, artifacts, confirmation gates, audit state, and blocked capability gates without enabling official approvals or canonical writes.",
+    "primaryUserIntent": ["review queue", "review workflow", "audit session", "pending approvals", "what needs review"],
+    "requiredInputs": ["activeBrandId", "sessionId"],
+    "optionalInputs": ["audienceMode", "activeViewId"],
+    "allowedServices": ["buildBrandIntelligencePacket", "buildSessionReviewWorkflowSummary", "getSessionLedger"],
+    "outputSchema": "SessionReviewWorkflowRead",
+    "allowedViewIds": ["review_workflow_panel", "memory_audit_panel", "audit_trail_panel", "review_identity_panel", "capability_readiness_panel", "evidence_ledger", "evidence_spotlight_panel", "data_gap_panel"],
+    "guardrails": [
+      "Local review workflow is prototype state, not official enterprise approval.",
+      "Do not auto-accept memory, source candidates, or source claims.",
+      "Do not enable export, circulation, canonical writes, or runtime source consumption from this skill."
+    ],
+    "humanApproval": "not_required",
+    "pilotPriority": "p1"
+  },
+  {
+    "id": "inspect_experience_architecture",
+    "name": "Inspect Experience Architecture",
+    "family": "system_building",
+    "purpose": "Inspect the governed ExperiencePlan foundation, audience/objective coverage, approved skills/views/templates, dynamic UI blockers, and workspace composition readiness without enabling arbitrary UI generation.",
+    "primaryUserIntent": ["experience architecture", "experience plan readiness", "dynamic ui foundation", "workspace builder", "build the right workspace", "role specific workspace", "approved templates", "approved views", "compose ui", "new user workspace"],
+    "requiredInputs": ["activeBrandId", "sessionId"],
+    "optionalInputs": ["audienceMode", "activeViewId", "requestedAudience", "requestedObjective"],
+    "allowedServices": ["buildBrandIntelligencePacket", "planExperience", "loadExperienceTemplateRegistry", "loadDynamicViewRegistry", "loadAgentSkillRegistry", "buildCanvasStateManifest"],
+    "outputSchema": "ExperienceArchitectureRead",
+    "allowedViewIds": ["experience_architecture_panel", "canvas_continuity_panel", "runtime_governance_panel", "runtime_quality_panel", "review_workflow_panel", "data_gap_panel"],
+    "guardrails": [
+      "Experience architecture inspection must not generate arbitrary UI, unregistered views, unsupported metrics, or new source claims.",
+      "The agent may compose only approved ExperiencePlan templates, skills, views, artifacts, evidence needs, and human-review gates.",
+      "Unsupported audiences, objectives, or missing evidence must fail closed into a data-gap or review-required state."
+    ],
+    "humanApproval": "not_required",
+    "pilotPriority": "p1"
+  },
+  {
+    "id": "inspect_pilot_learning",
+    "name": "Inspect Pilot Learning",
+    "family": "system_building",
+    "purpose": "Inspect reviewed-only pilot learning signals, blocked learning paths, next proof needs, and session learning state without enabling autonomous learning, outcome claims, or canonical writes.",
+    "primaryUserIntent": ["what are we learning", "pilot learning", "learning summary", "session learning", "learning signals"],
+    "requiredInputs": ["activeBrandId", "sessionId"],
+    "optionalInputs": ["audienceMode", "activeViewId"],
+    "allowedServices": ["buildBrandIntelligencePacket", "buildSessionPilotLearningSummary", "getSessionLedger"],
+    "outputSchema": "SessionPilotLearningRead",
+    "allowedViewIds": ["pilot_learning_panel", "review_workflow_panel", "data_gap_panel"],
+    "guardrails": [
+      "Pilot learning signals are review inputs, not autonomous memory or source truth.",
+      "Do not claim treatment outcomes, efficacy, causality, or accepted pattern memory from learning signals.",
+      "Do not enable canonical memory writes, canonical source writes, or enterprise learning storage from this skill."
+    ],
+    "humanApproval": "not_required",
+    "pilotPriority": "p1"
+  },
+  {
+    "id": "inspect_quiet_proactivity",
+    "name": "Inspect Quiet Proactivity",
+    "family": "system_building",
+    "purpose": "Inspect review-required follow-up suggestions, held notices, related gates, and disabled automation rails without scheduling reminders, sending notifications, or taking autonomous action.",
+    "primaryUserIntent": ["follow up", "next reminders", "held notices", "quiet proactivity", "what should we revisit", "what should happen next"],
+    "requiredInputs": ["activeBrandId", "sessionId"],
+    "optionalInputs": ["audienceMode", "activeViewId"],
+    "allowedServices": ["buildBrandIntelligencePacket", "buildProactivityManifest", "getSessionLedger"],
+    "outputSchema": "QuietProactivityRead",
+    "allowedViewIds": ["proactivity_panel", "review_workflow_panel", "evidence_ledger", "data_gap_panel"],
+    "guardrails": [
+      "Quiet proactivity is suggestions-only until scheduling, privacy, no-overlap, and notification governance are approved.",
+      "Do not create reminders, send messages, start background checks, or promote source data from this skill.",
+      "Every follow-up suggestion remains human-review-required working context."
+    ],
+    "humanApproval": "not_required",
+    "pilotPriority": "p1"
+  },
+  {
+    "id": "inspect_voice_readiness",
+    "name": "Inspect Voice Readiness",
+    "family": "system_building",
+    "purpose": "Inspect governed push-to-talk readiness, provider adapters, voice orchestration promotion gates, interruption limits, and disabled full-voice rails without enabling Realtime voice, continuous listening, or TTS.",
+    "primaryUserIntent": ["voice readiness", "voice gates", "jarvis readiness", "realtime voice", "continuous voice", "tts readiness", "provider adapters"],
+    "requiredInputs": ["activeBrandId", "sessionId"],
+    "optionalInputs": ["audienceMode", "activeViewId"],
+    "allowedServices": ["buildBrandIntelligencePacket", "buildVoiceRuntimeManifest", "buildProviderAdapterManifest", "buildVoiceOrchestrationReadinessManifest"],
+    "outputSchema": "VoiceReadinessRead",
+    "allowedViewIds": ["voice_readiness_panel", "provider_adapter_panel", "review_workflow_panel", "data_gap_panel"],
+    "guardrails": [
+      "Voice readiness inspection must not enable Realtime voice, continuous listening, wake-word capture, or text-to-speech.",
+      "Voice providers must share the governed runtime, approved views, evidence spotlight, memory, audit, and confirmation gates before activation.",
+      "Consent, privacy, interruption, TTS policy, and enterprise transcript storage blockers must stay visible."
+    ],
+    "humanApproval": "not_required",
+    "pilotPriority": "p1"
+  },
+  {
+    "id": "inspect_persistence_readiness",
+    "name": "Inspect Persistence Readiness",
+    "family": "system_building",
+    "purpose": "Inspect local/browser persistence, reviewed memory, audit storage, source candidates, and blocked enterprise promotion requirements without enabling enterprise persistence, canonical writes, or source auto-consumption.",
+    "primaryUserIntent": ["persistence readiness", "enterprise persistence", "durable memory", "durable audit", "local json", "database readiness", "retention privacy", "backup recovery", "canonical source promotion"],
+    "requiredInputs": ["activeBrandId", "sessionId"],
+    "optionalInputs": ["audienceMode", "activeViewId"],
+    "allowedServices": ["buildBrandIntelligencePacket", "buildPersistenceReadinessManifest", "buildSessionReviewWorkflowSummary", "getSessionLedger"],
+    "outputSchema": "PersistenceReadinessRead",
+    "allowedViewIds": ["persistence_readiness_panel", "memory_audit_panel", "review_identity_panel", "review_workflow_panel", "data_gap_panel"],
+    "guardrails": [
+      "Persistence readiness inspection must not enable enterprise storage, official approvals, source runtime auto-consumption, or canonical writes.",
+      "Browser-local and local JSON records are prototype continuity state, not enterprise truth.",
+      "Enterprise database, identity/access, retention/privacy, backup/recovery, and canonical source promotion blockers must stay visible."
+    ],
+    "humanApproval": "not_required",
+    "pilotPriority": "p1"
+  },
+  {
+    "id": "inspect_treatment_outcome_readiness",
+    "name": "Inspect Treatment Outcome Readiness",
+    "family": "system_building",
+    "purpose": "Inspect treatment outcome learning promotion gates, follow-up signal linkage, efficacy summary blockers, portfolio learning storage, and canonical learning governance without enabling outcome records, treatment claims, or canonical learning writes.",
+    "primaryUserIntent": ["treatment outcome readiness", "outcome learning", "efficacy readiness", "treatment efficacy", "follow-up signals", "outcome records", "portfolio learning", "canonical learning", "learning governance"],
+    "requiredInputs": ["activeBrandId", "sessionId"],
+    "optionalInputs": ["audienceMode", "activeViewId"],
+    "allowedServices": ["buildBrandIntelligencePacket", "buildTreatmentOutcomeReadinessManifest", "buildSessionPilotLearningSummary", "getSessionLedger"],
+    "outputSchema": "TreatmentOutcomeReadinessRead",
+    "allowedViewIds": ["treatment_outcome_readiness_panel", "pilot_learning_panel", "review_workflow_panel", "data_gap_panel"],
+    "guardrails": [
+      "Treatment outcome readiness inspection must not create outcome records, treatment efficacy claims, accepted pattern memory, or canonical learning writes.",
+      "Follow-up signals remain proof needs and cannot be treated as causal treatment evidence without approved methodology.",
+      "Outcome-record schema, review identity, efficacy rules, portfolio learning storage, and canonical learning governance blockers must stay visible."
+    ],
+    "humanApproval": "not_required",
+    "pilotPriority": "p1"
+  },
+  {
+    "id": "inspect_source_promotion_readiness",
+    "name": "Inspect Source Promotion Readiness",
+    "family": "system_building",
+    "purpose": "Inspect reviewed-local source promotion records, extracted source claims, source-review gates, canonical fact blockers, and runtime source-consumption blockers without promoting any source candidate to canonical evidence.",
+    "primaryUserIntent": ["source promotion readiness", "source claim promotion", "canonical source promotion", "canonical facts", "source candidates", "source claims", "source promotion blockers", "runtime source consumption", "reviewed local source"],
+    "requiredInputs": ["activeBrandId", "sessionId"],
+    "optionalInputs": ["audienceMode", "activeViewId"],
+    "allowedServices": ["buildBrandIntelligencePacket", "getSessionLedger", "loadSourcePromotionContext", "loadSourceClaimContext", "buildWorkingContextManifest", "buildPersistenceReadinessManifest"],
+    "outputSchema": "SourcePromotionReadinessRead",
+    "allowedViewIds": ["source_promotion_readiness_panel", "source_runtime_ingestion_panel", "review_workflow_panel", "persistence_readiness_panel", "data_gap_panel"],
+    "guardrails": [
+      "Source promotion readiness inspection must not promote source candidates, extracted claims, or reviewed-local packets into canonical facts.",
+      "Reviewed-local source records and source claims remain non-evidence context until source-owner governance, enterprise identity, retention, and canonical-write policy are approved.",
+      "Runtime auto-consumption of source candidates must remain disabled."
+    ],
+    "humanApproval": "not_required",
+    "pilotPriority": "p1"
+  },
+  {
+    "id": "inspect_artifact_readiness",
+    "name": "Inspect Artifact Readiness",
+    "family": "system_building",
+    "purpose": "Inspect generated artifact readiness, human-review requirements, evidence/source-view coverage, language approvals, circulation blockers, and export gates without enabling export or circulation.",
+    "primaryUserIntent": ["artifact readiness", "export readiness", "circulation readiness", "can we share this", "can we export", "artifact gates", "qbr draft readiness", "meeting artifact readiness", "agency brief readiness"],
+    "requiredInputs": ["activeBrandId", "sessionId"],
+    "optionalInputs": ["audienceMode", "activeViewId"],
+    "allowedServices": ["buildBrandIntelligencePacket", "planExperience", "loadArtifactReadinessRequirements", "buildSessionReviewWorkflowSummary"],
+    "outputSchema": "ArtifactReadinessRead",
+    "allowedViewIds": ["artifact_readiness_panel", "review_workflow_panel", "evidence_ledger", "data_gap_panel"],
+    "guardrails": [
+      "Artifact readiness inspection must not enable export, copy, circulation, or official approval.",
+      "Generated artifacts remain draft support for human decision-making until required reviewers approve them.",
+      "Review may mark prototype readiness, but export stays blocked until the artifact export capability is explicitly enabled."
+    ],
+    "humanApproval": "not_required",
+    "pilotPriority": "p1"
+  },
+  {
+    "id": "inspect_runtime_governance",
+    "name": "Inspect Runtime Governance",
+    "family": "system_building",
+    "purpose": "Inspect governed runtime surfaces, runtime control policy, kill-switch posture, capability flags, provider adapter gates, and default/opt-in/gated surface states without enabling disabled capabilities or promoting a gated surface.",
+    "primaryUserIntent": ["runtime governance", "runtime control", "kill switch", "capability flags", "runtime surfaces", "surface readiness", "surface map", "governed surfaces", "provider gates", "which surfaces are ready"],
+    "requiredInputs": ["activeBrandId", "sessionId"],
+    "optionalInputs": ["audienceMode", "activeViewId"],
+    "allowedServices": ["buildBrandIntelligencePacket", "buildRuntimeControlManifest", "loadCapabilityFlags", "loadRuntimeSurfaceRegistry", "buildProviderAdapterManifest"],
+    "outputSchema": "RuntimeGovernanceRead",
+    "allowedViewIds": ["runtime_governance_panel", "capability_readiness_panel", "runtime_quality_panel", "provider_adapter_panel", "canvas_continuity_panel", "review_workflow_panel", "voice_readiness_panel", "data_gap_panel"],
+    "guardrails": [
+      "Runtime governance inspection must not enable disabled capabilities, alter kill-switch state, or promote gated runtime surfaces.",
+      "Default scoped chat remains stable unless a user explicitly opts into the governed runtime.",
+      "Realtime voice, continuous listening, TTS, exports, source writes, and canonical promotion remain gated by policy and capability flags."
+    ],
+    "humanApproval": "not_required",
+    "pilotPriority": "p1"
+  },
+  {
+    "id": "plan_executive_pilot",
+    "name": "Plan Executive Pilot",
+    "family": "system_building",
+    "purpose": "Assemble a sponsor-ready, read-only pilot runbook from the active brand read, approved ExperiencePlan foundation, foundation readiness, runtime governance, review workflow, and evidence gaps without enabling exports, official approvals, canonical writes, full voice, autonomous learning, or arbitrary UI generation.",
+    "primaryUserIntent": ["executive pilot", "cmo pilot", "funding demo", "sponsor runbook", "demo runbook", "pilot runbook", "show the pilot path", "make the case to fund", "holy shit demo", "jaw drop demo"],
+    "requiredInputs": ["activeBrandId", "sessionId"],
+    "optionalInputs": ["audienceMode", "activeViewId", "meetingType"],
+    "allowedServices": ["buildBrandIntelligencePacket", "planExperience", "buildSessionFoundationReadinessSummary", "buildRuntimeControlManifest", "buildSessionReviewWorkflowSummary"],
+    "outputSchema": "ExecutivePilotRunbookRead",
+    "allowedViewIds": ["executive_pilot_runbook_panel", "promotion_gate_panel", "foundation_readiness_panel", "momentum_ladder", "momentum_room_to_grow_grid", "canvas_continuity_panel", "evidence_spotlight_panel", "source_runtime_ingestion_panel", "runtime_governance_panel", "capability_readiness_panel", "runtime_quality_panel", "provider_adapter_panel", "review_workflow_panel", "memory_audit_panel", "audit_trail_panel", "review_identity_panel", "data_gap_panel"],
+    "guardrails": [
+      "The executive pilot runbook is a read-only demonstration sequence, not a circulated artifact or official funding document.",
+      "Keep foundation gates visible and do not enable export, copy, official approvals, canonical writes, full voice, autonomous learning, or arbitrary UI generation.",
+      "Every pilot moment must use approved skills, approved views, packet evidence, reviewed working context, or visible gap state."
+    ],
+    "humanApproval": "not_required",
+    "pilotPriority": "p1"
+  },
+  {
+    "id": "inspect_foundation_readiness",
+    "name": "Inspect Foundation Readiness",
+    "family": "system_building",
+    "purpose": "Inspect the cross-rail Brand Growth Intelligence foundation across approved experience architecture, evidence, memory/review, source governance, audit/quality, runtime control, surfaces, providers, voice, persistence, artifacts, and outcome-readiness without enabling gated capabilities.",
+    "primaryUserIntent": ["foundation readiness", "platform readiness", "brand growth intelligence foundation", "cmo readiness", "fundable foundation", "control plane", "foundation control plane", "is the foundation ready", "what is ready", "what is gated"],
+    "requiredInputs": ["activeBrandId", "sessionId"],
+    "optionalInputs": ["audienceMode", "activeViewId"],
+    "allowedServices": ["buildBrandIntelligencePacket", "buildSessionFoundationReadinessSummary", "buildSessionRuntimeControlSummary", "buildSessionExperienceArchitectureSummary", "buildSessionSourceGovernanceSummary"],
+    "outputSchema": "FoundationReadinessRead",
+    "allowedViewIds": ["foundation_readiness_panel", "promotion_gate_panel", "experience_architecture_panel", "canvas_continuity_panel", "evidence_spotlight_panel", "source_runtime_ingestion_panel", "runtime_governance_panel", "capability_readiness_panel", "runtime_quality_panel", "provider_adapter_panel", "review_workflow_panel", "memory_audit_panel", "audit_trail_panel", "review_identity_panel", "data_gap_panel"],
+    "guardrails": [
+      "Foundation readiness inspection must not enable enterprise persistence, official approvals, canonical writes, exports, full voice, autonomous learning, or arbitrary UI generation.",
+      "Ready/prototype/gated statuses are evidence for prioritization, not permission to promote a capability.",
+      "The foundation control plane must preserve approved ExperiencePlan composition, evidence grounding, memory/review, source, artifact, runtime, voice, and audit rails."
+    ],
+    "humanApproval": "not_required",
+    "pilotPriority": "p1"
+  }
+]
