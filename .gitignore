@@ -16,6 +16,7 @@ out/
 dist/
 Atlas/
 Atlas-intelligence-/
+Atlas Build/
 
 # TypeScript / tooling caches
 *.tsbuildinfo
