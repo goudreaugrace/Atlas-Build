@@ -2650,29 +2650,56 @@ function PepsiCoImpactWorkspace() {
   const tradeSpendExposure = packet.buyingGroups.reduce((total, group) => total + group.financialExposure.tradeSpendExposure, 0);
   const belowTargetGroups = packet.buyingGroups.filter((group) => group.financialExposure.expectedPriceRealization < group.financialExposure.targetPriceRealization);
   const topGap = topGroup.financialExposure.targetPriceRealization - topGroup.financialExposure.expectedPriceRealization;
+  const revenueWeights = packet.buyingGroups.reduce((total, group) => total + group.financialExposure.revenueUnderNegotiation, 0);
+  const weightedExpectedRealization = packet.buyingGroups.reduce((total, group) => (
+    total + group.financialExposure.expectedPriceRealization * group.financialExposure.revenueUnderNegotiation
+  ), 0) / Math.max(1, revenueWeights);
+  const weightedTargetRealization = packet.buyingGroups.reduce((total, group) => (
+    total + group.financialExposure.targetPriceRealization * group.financialExposure.revenueUnderNegotiation
+  ), 0) / Math.max(1, revenueWeights);
+  const netRevenueOutlook = packet.summary.revenueUnderNegotiation - packet.summary.gapToPlan;
+  const marginRiskCeiling = 24000000;
+  const tradeSpendCap = 18000000;
+  const marginOverGoal = Math.max(0, packet.summary.marginAtRisk - marginRiskCeiling);
+  const tradeOverGoal = Math.max(0, tradeSpendExposure - tradeSpendCap);
+  const priceGap = Math.max(0, weightedTargetRealization - weightedExpectedRealization);
 
-  const kpis = [
+  const goalCards = [
     {
-      label: 'Revenue in play',
-      value: euros(packet.summary.revenueUnderNegotiation),
-      movement: '+EUR 12M vs prior'
-    },
-    {
-      label: 'Margin risk',
-      value: euros(packet.summary.marginAtRisk),
-      movement: '+9% refresh',
+      action: `Close ${euros(packet.summary.gapToPlan)} plan gap`,
+      current: euros(netRevenueOutlook),
+      gap: `${euros(packet.summary.gapToPlan)} short`,
+      goal: euros(packet.summary.revenueUnderNegotiation),
+      label: 'Net revenue goal',
+      status: 'Off track',
       tone: 'risk'
     },
     {
-      label: 'Plan gap',
-      value: euros(packet.summary.gapToPlan),
-      movement: `${belowTargetGroups.length} groups below target`,
+      action: `Reduce exposure by ${euros(marginOverGoal)}`,
+      current: euros(packet.summary.marginAtRisk),
+      gap: `${euros(marginOverGoal)} over ceiling`,
+      goal: `Under ${euros(marginRiskCeiling)}`,
+      label: 'Margin risk ceiling',
+      status: 'Off track',
+      tone: 'risk'
+    },
+    {
+      action: `Recover ${pct(priceGap)} realization`,
+      current: pct(weightedExpectedRealization),
+      gap: `${pct(priceGap)} gap`,
+      goal: pct(weightedTargetRealization),
+      label: 'Price realization goal',
+      status: 'Watch',
       tone: 'warning'
     },
     {
-      label: 'Trade spend at risk',
-      value: euros(tradeSpendExposure),
-      movement: `${packet.summary.highRiskBuyingGroups} high-risk groups`
+      action: `Rebalance ${euros(tradeOverGoal)}`,
+      current: euros(tradeSpendExposure),
+      gap: `${euros(tradeOverGoal)} over cap`,
+      goal: `Under ${euros(tradeSpendCap)}`,
+      label: 'Trade spend cap',
+      status: tradeOverGoal > 0 ? 'Watch' : 'On track',
+      tone: tradeOverGoal > 0 ? 'warning' : 'good'
     }
   ];
 
@@ -2702,28 +2729,39 @@ function PepsiCoImpactWorkspace() {
       <section className="atlas-impact-hero-v2">
         <div>
           <span className="atlas-market-readiness-pill readiness-escalation_needed">Recommended focus</span>
-          <h1>{euros(packet.summary.marginAtRisk)} margin at risk. {topGroup.name} + {topMarket.name} drive the read.</h1>
-          <p>Model {topGroup.name} before the next checkpoint.</p>
+          <h1>{euros(packet.summary.gapToPlan)} short of plan; {euros(packet.summary.marginAtRisk)} margin at risk.</h1>
+          <p>{topMarket.name} and {topGroup.name} are the fastest path back to the PepsiCo financial goals.</p>
         </div>
         <a href={`/scenario-models?market=${topMarket.id}&buyingGroup=${topGroup.id}`}>
           Model top exposure <ArrowRight size={14} />
         </a>
       </section>
 
-      <section className="atlas-impact-kpi-strip" aria-label="Impact metrics">
-        {kpis.map((kpi) => (
-          <article className={kpi.tone ?? ''} key={kpi.label}>
-            <span>{kpi.label}</span>
-            <strong>{kpi.value}</strong>
-            <em>{kpi.movement}</em>
-          </article>
-        ))}
+      <section className="atlas-impact-goal-board" aria-label="PepsiCo financial goals">
+        <header>
+          <h2>PepsiCo financial goals</h2>
+        </header>
+        <div>
+          {goalCards.map((goal) => (
+            <article className={goal.tone} key={goal.label}>
+              <div>
+                <span>{goal.label}</span>
+                <b>{goal.status}</b>
+              </div>
+              <strong>{goal.current}</strong>
+              <dl>
+                <div><dt>Goal</dt><dd>{goal.goal}</dd></div>
+                <div><dt>Gap</dt><dd>{goal.gap}</dd></div>
+              </dl>
+            </article>
+          ))}
+        </div>
       </section>
 
       <section className="atlas-impact-main-grid">
         <article className="atlas-impact-rank-panel">
           <header>
-            <h2>Markets</h2>
+            <h2>Gap by market</h2>
             <a href="/markets">Compare markets</a>
           </header>
           <div className="atlas-impact-rank-list">
@@ -2746,7 +2784,10 @@ function PepsiCoImpactWorkspace() {
 
         <article className="atlas-impact-rank-panel">
           <header>
-            <h2>Buying groups</h2>
+            <div>
+              <h2>Buying groups pulling goals off track</h2>
+              <span className="atlas-impact-header-stat">{belowTargetGroups.length} below target · {packet.summary.highRiskBuyingGroups} high risk</span>
+            </div>
             <a href="/buying-groups">All groups</a>
           </header>
           <div className="atlas-impact-rank-list">
