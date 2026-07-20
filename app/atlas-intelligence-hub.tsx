@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import {
   AlertTriangle,
   ArrowRight,
@@ -1701,6 +1701,45 @@ function scenarioHrefWithId(href: string, scenarioId: string) {
   return `${href}${href.includes('?') ? '&' : '?'}scenario=${scenarioId}`;
 }
 
+function triageBuyingGroupIdForAlert(alert: AtlasActiveAlert) {
+  return paramFromScenarioHref(alert.modelHref, 'buyingGroup')
+    ?? paramFromScenarioHref(alert.href, 'buyingGroup');
+}
+
+function triageMarketIdForAlert(alert: AtlasActiveAlert) {
+  return paramFromScenarioHref(alert.modelHref, 'market')
+    ?? paramFromScenarioHref(alert.href, 'market');
+}
+
+function triageAtlasActionForAlert(alert: AtlasActiveAlert, scenarioSnapshot?: TriageScenarioSnapshot | null) {
+  const buyingGroupId = triageBuyingGroupIdForAlert(alert);
+  const marketId = triageMarketIdForAlert(alert);
+
+  if (scenarioSnapshot && buyingGroupId) {
+    const compareParams = new URLSearchParams();
+    compareParams.append('scenario', 'recommended');
+    compareParams.append('scenario', 'buyer-counter');
+    compareParams.set('buyingGroup', buyingGroupId);
+    if (marketId) compareParams.set('market', marketId);
+    return {
+      href: `/scenario-lab/compare?${compareParams.toString()}`,
+      label: alert.alertTypeLabel === 'Scenario modeled' ? 'Compare scenarios' : 'See ATLAS scenarios'
+    };
+  }
+
+  if (scenarioSnapshot) {
+    return {
+      href: scenarioSnapshot.href,
+      label: 'Open ATLAS run'
+    };
+  }
+
+  return {
+    href: alert.modelHref ?? alert.href,
+    label: alert.alertTypeLabel === 'Memory update' ? 'Open memory' : 'Open ATLAS work'
+  };
+}
+
 function scenarioSnapshotForAlert(alert: AtlasActiveAlert): TriageScenarioSnapshot | null {
   if (!alert.modelHref?.startsWith('/scenario-lab') || alert.alertTypeLabel === 'Memory update') return null;
 
@@ -2302,6 +2341,9 @@ function TriageCommandCenter({
           {visibleAlerts.length ? visibleAlerts.map((alert, index) => {
             const isExpanded = expandedAlertId === alert.id;
             const scenarioSnapshot = scenarioSnapshotForAlert(alert);
+            const atlasAction = triageAtlasActionForAlert(alert, scenarioSnapshot);
+            const buyingGroupId = triageBuyingGroupIdForAlert(alert);
+            const buyingGroup = buyingGroupId ? getBuyingGroup(buyingGroupId) : undefined;
           return (
               <article className={`atlas-triage-alert-row atlas-triage-alert-row-v2 tone-${alert.tone}`} key={alert.id}>
                 <div className="atlas-triage-alert-main">
@@ -2322,6 +2364,14 @@ function TriageCommandCenter({
                     <div className="atlas-triage-alert-reaction">
                       <span>How ATLAS reacted</span>
                       <strong>{alert.action}</strong>
+                    </div>
+                    <div className="atlas-triage-alert-cta-row" aria-label={`${alert.title} actions`}>
+                      <a className="atlas-triage-alert-primary-cta" href={atlasAction.href}>
+                        {atlasAction.label} <ArrowRight size={13} />
+                      </a>
+                      <a className="atlas-triage-alert-secondary-cta" href={buyingGroupId ? `/buying-groups/${buyingGroupId}?view=current` : '/buying-groups'}>
+                        {buyingGroup ? `Open ${buyingGroup.name}` : 'Open buying groups'} <ArrowRight size={13} />
+                      </a>
                     </div>
                   </div>
                   <div className="atlas-triage-alert-actions">
@@ -10238,6 +10288,7 @@ function ScenarioModelsView({
   const [scenarioLabMode, setScenarioLabMode] = useState<ScenarioLabMode>(initialScenarioLabMode === 'create' ? 'create' : 'review');
   const [scenarioTypeFilter, setScenarioTypeFilter] = useState('all');
   const [expandedScenarioPriorityGroups, setExpandedScenarioPriorityGroups] = useState({ planning: false, traceability: false });
+  const [expandedScenarioRowIds, setExpandedScenarioRowIds] = useState<string[]>([]);
   const [compareScenarioIds, setCompareScenarioIds] = useState<string[]>([]);
   const [savedManualScenarios, setSavedManualScenarios] = useState<ScenarioLabOption[]>([]);
   const [skuRows, setSkuRows] = useState<ScenarioSkuRow[]>([
@@ -10855,7 +10906,6 @@ function ScenarioModelsView({
 	  ];
 	  const topRecommendedScenario = [...scenarioOptions].sort((a, b) => b.atlasScore - a.atlasScore)[0];
 	  const selectedPredictiveScenario = scenarioOptions.find((scenario) => scenario.id === selectedScenarioId) ?? scenarioOptions[0];
-	  const selectedScenarioForPanel = selectedScenarioId ? scenarioOptions.find((scenario) => scenario.id === selectedScenarioId) : undefined;
 	  useEffect(() => {
 	    if (initialScenarioLabMode !== 'create' || !initialScenarioId) return;
 	    const scenario = scenarioOptions.find((item) => item.id === initialScenarioId);
@@ -11017,6 +11067,24 @@ function ScenarioModelsView({
     scenarioReportParams.set('debriefMemory', `${latestScenarioDebrief.predictionImpact} Counter ${latestScenarioDebrief.buyerCounter || 'not entered'}, landed ${latestScenarioDebrief.finalLanded || 'not entered'}.`);
   }
   const scenarioReportHref = `/generated-views?${scenarioReportParams.toString()}`;
+
+  function scenarioReportHrefFor(scenario: ScenarioLabOption) {
+    const params = new URLSearchParams(scenarioReportParams.toString());
+    params.set('scenarioName', scenario.name);
+    params.set('atlasScore', String(scenario.atlasScore));
+    params.set('likelihood', String(scenario.likelihood));
+    params.set('buyerResponse', scenario.buyerResponse);
+    params.set('recommendedEdit', scenario.recommendedEdit);
+    params.set('evidenceStrength', String(scenario.evidenceStrength));
+    params.set('guardrailRisk', scenario.guardrailRisk);
+    params.set('relationshipRisk', scenario.relationshipRisk);
+    params.set('nrImpact', String(scenario.outputs.revenueImpact));
+    params.set('gmImpact', String(scenario.outputs.marginImpact));
+    params.set('volumeImpact', String(scenario.outputs.volumeImpact));
+    params.set('tradeImpact', String(scenario.outputs.tradeSpendImpact));
+    params.set('riskAdjustedValue', String(scenario.valueProtected));
+    return `/generated-views?${params.toString()}`;
+  }
 
   function applyPredictiveScenario(scenarioId: string) {
     const scenario = scenarioOptions.find((item) => item.id === scenarioId);
@@ -11181,6 +11249,14 @@ function ScenarioModelsView({
 	    });
 	  }
 
+  function toggleScenarioRowExpansion(scenarioId: string) {
+    setExpandedScenarioRowIds((current) => (
+      current.includes(scenarioId)
+        ? current.filter((id) => id !== scenarioId)
+        : [...current, scenarioId]
+    ));
+  }
+
 	  if (fullViewScenario) {
 	    const scenario = fullViewScenario;
 	    const scenarioContext = scenarioBuyingGroupContext(scenario);
@@ -11199,8 +11275,7 @@ function ScenarioModelsView({
 	      { label: 'NR impact', value: scenarioDeltaLabel(scenario.outputs.revenueImpact) },
 	      { label: 'GM impact', value: scenarioDeltaLabel(scenario.outputs.marginImpact) },
 	      { label: 'Trade impact', value: scenarioDeltaLabel(scenario.outputs.tradeSpendImpact) },
-	      { label: 'Risk-adjusted value', value: euros(scenario.valueProtected) },
-	      { label: 'Guardrail', value: scenario.guardrailRisk }
+	      { label: 'Risk-adjusted value', value: euros(scenario.valueProtected) }
 	    ];
 	    const scenarioCompareParams = new URLSearchParams();
 	    scenarioCompareParams.append('scenario', scenario.id);
@@ -11348,179 +11423,180 @@ function ScenarioModelsView({
 		          <a aria-disabled={compareScenarioIds.length < 2} href={compareHref}>Compare selected</a>
 		          <button disabled={compareScenarioIds.length === 0} onClick={() => setCompareScenarioIds([])} type="button">Clear selections</button>
 		        </div>
-		        <div className={`atlas-scenario-review-shell ${selectedScenarioForPanel ? 'has-selection' : ''}`}>
-		          <div className="atlas-scenario-review-list">
-		            <div className="atlas-scenario-priority-stack">
-		              {scenarioPriorityGroups.filter((group) => group.scenarios.length > 0).map((group) => (
-		                <section className={`atlas-scenario-priority-section priority-${group.id}`} key={group.id}>
-		                  <header>
-		                    <div>
-		                      <span>{group.label}</span>
-		                      <p>{group.note}</p>
-		                    </div>
-		                    <strong>{group.isExpanded ? 'Showing all' : group.collapsedLabel} · {group.scenarios.length} scenarios</strong>
-		                  </header>
-		                  {group.id === 'traceability' && !group.isExpanded ? (
-		                    <button
-		                      className="atlas-scenario-hidden-run-toggle"
-		                      onClick={() => setExpandedScenarioPriorityGroups((current) => ({
-		                        ...current,
-		                        traceability: true
-		                      }))}
-		                      type="button"
-		                    >
-		                      Show {group.scenarios.length} scenarios ATLAS ran but deprioritized
-		                    </button>
-		                  ) : null}
-		                  <div className="atlas-scenario-card-list">
-		                    {group.visibleScenarios.map((scenario, scenarioIndex) => {
-		                      const isSelected = selectedScenarioId === scenario.id;
-		                      const isCompareSelected = compareScenarioIds.includes(scenario.id);
-		                      const attentionReason = scenarioAttentionReason(scenario);
-		                      const scenarioContext = scenarioBuyingGroupContext(scenario);
-		                      const modeledMove = `${pct(scenario.inputs.priceIncreasePercent)} ask / ${pct(scenario.inputs.expectedRealizationPercent)} realization`;
-		                      const collapsedScenarioBasis = scenario.origin === 'manual'
-		                        ? 'Your adjusted assumptions'
-		                        : scenario.scenarioStyle === 'Reference'
-		                          ? 'Watchout context'
-		                          : `${scenario.scenarioStyle} logic`;
-			                      const scenarioSummarySentence = `Based on ${collapsedScenarioBasis.toLowerCase()}, ATLAS modeled ${modeledMove} with ${scenarioDeltaLabel(scenario.outputs.revenueImpact)} NR impact and ${scenario.likelihood}% likelihood to land.`;
-			                      return (
-		                        <article className={`atlas-scenario-list-card ${isSelected ? 'selected' : ''}`} key={scenario.id}>
-		                          <label className="atlas-scenario-compare-checkbox" aria-label={`Select ${scenario.name} for comparison`}>
-		                            <input
-		                              checked={isCompareSelected}
-		                              onChange={() => toggleCompareScenario(scenario.id)}
-		                              type="checkbox"
-		                            />
-		                          </label>
-		                          <div
-		                            aria-pressed={isSelected}
-		                            className="atlas-scenario-list-trigger"
-		                            onClick={() => applyPredictiveScenario(scenario.id)}
-		                            onKeyDown={(event) => {
-		                              if (event.key === 'Enter' || event.key === ' ') {
-		                                event.preventDefault();
-		                                applyPredictiveScenario(scenario.id);
-		                              }
-		                            }}
-		                            role="button"
-		                            tabIndex={0}
-		                          >
-		                            <div className="atlas-scenario-accordion-copy">
-		                              <div className="atlas-scenario-card-eyebrow">
-		                                <span>{String(scenarioIndex + 1).padStart(2, '0')}</span>
-		                                <strong>{attentionReason}</strong>
-		                                <em>{scenarioContext.buyingGroup} · {scenarioContext.market}</em>
-		                              </div>
-		                              <div className="atlas-scenario-card-heading">
-		                                <h3>{scenario.name.replace(/^[A-C]\.\s*/, '')}</h3>
-		                                <span>{scenario.origin === 'manual' ? 'Manual' : 'ATLAS generated'}</span>
-		                                <span>{scenario.scenarioStyle}</span>
-		                              </div>
-		                              <p className="atlas-scenario-summary-line">{scenarioSummarySentence}</p>
-		                            </div>
-			                            <dl className="atlas-scenario-row-metrics" aria-label={`${scenario.name} impact`}>
-			                              <div><dt>Land</dt><dd>{scenario.likelihood}%</dd></div>
-			                              <div><dt>NR</dt><dd>{scenarioDeltaLabel(scenario.outputs.revenueImpact)}</dd></div>
-			                            </dl>
-			                          </div>
-		                        </article>
-		                      );
-		                    })}
-		                  </div>
-		                  {group.isExpandable && (group.id !== 'traceability' || group.isExpanded) && (group.scenarios.length > 5 || group.id === 'traceability') ? (
-		                    <button
-		                      className="atlas-scenario-show-more"
-		                      onClick={() => setExpandedScenarioPriorityGroups((current) => ({
-		                        ...current,
-		                        [group.id as 'planning' | 'traceability']: !group.isExpanded
-		                      }))}
-		                      type="button"
-		                    >
-		                      {group.isExpanded
-		                        ? `Hide ${group.label.toLowerCase()}`
-		                        : group.id === 'traceability'
-		                          ? `Show ${group.scenarios.length} deprioritized scenarios`
-		                          : `Show ${group.scenarios.length - 5} more ${group.label.toLowerCase()}`}
-		                    </button>
-		                  ) : null}
-		                </section>
-		              ))}
-		            </div>
-		          </div>
-		          {selectedScenarioForPanel ? (() => {
-		            const scenario = selectedScenarioForPanel;
-		            const attentionReason = scenarioAttentionReason(scenario);
-		            const scenarioContext = scenarioBuyingGroupContext(scenario);
-		            const scenarioBasis = scenario.origin === 'manual'
-		              ? 'Your adjusted scenario inputs, current buyer context, and saved local assumptions.'
-		              : `${scenario.why}${scenarioTrigger ? ` Trigger: ${scenarioTrigger.title}.` : ''}`;
-		            const modeledNumbers = [
-		              { label: 'Price ask', value: pct(scenario.inputs.priceIncreasePercent) },
-		              { label: 'Realization', value: pct(scenario.inputs.expectedRealizationPercent) },
-		              { label: 'Trade spend', value: euros(scenario.inputs.tradeSpendChange) },
-		              { label: 'Volume risk', value: pct(scenario.inputs.volumeChangePercent) }
-		            ];
-		            const expectedImpact = [
-		              { label: 'NR', value: scenarioDeltaLabel(scenario.outputs.revenueImpact) },
-		              { label: 'GM', value: scenarioDeltaLabel(scenario.outputs.marginImpact) },
-		              { label: 'Value', value: euros(scenario.valueProtected) },
-		              { label: 'Guardrail', value: scenario.guardrailRisk }
-		            ];
-		            const guardrailTone = scenario.guardrailRisk.toLowerCase().replace(/\s+/g, '-');
-		            return (
-		              <aside className="atlas-scenario-inspector" aria-label={`${scenario.name} details`}>
-		                <header>
-		                  <span>{attentionReason}</span>
-		                  <button aria-label="Close scenario detail" onClick={() => setSelectedScenarioId('')} type="button"><X size={16} /></button>
-		                </header>
-		                <div className="atlas-scenario-inspector-title">
-		                  <h2>{scenario.name.replace(/^[A-C]\.\s*/, '')}</h2>
-		                  <p>{scenarioContext.buyingGroup} · {scenarioContext.market}</p>
+		        <div className="atlas-scenario-table-stack">
+		          {scenarioPriorityGroups.filter((group) => group.scenarios.length > 0).map((group) => (
+		            <section className={`atlas-scenario-table-section priority-${group.id}`} key={group.id}>
+		              <header className="atlas-scenario-table-section-head">
+		                <div>
+		                  <span>{group.label}</span>
+		                  <p>{group.note}</p>
 		                </div>
-		                <section>
-		                  <h3>Why this matters</h3>
-		                  <p>{scenarioBasis}</p>
-		                </section>
-		                <section>
-		                  <h3>Modeled numbers</h3>
-		                  <dl className="atlas-scenario-inspector-grid">
-		                    {modeledNumbers.map((item) => (
-		                      <div key={item.label}><dt>{item.label}</dt><dd>{item.value}</dd></div>
-		                    ))}
-		                  </dl>
-		                </section>
-		                <section>
-		                  <h3>Expected impact</h3>
-		                  <dl className="atlas-scenario-inspector-grid">
-		                    {expectedImpact.map((item) => (
-		                      <div key={item.label}><dt>{item.label}</dt><dd className={item.label === 'Guardrail' ? `guardrail-${guardrailTone}` : ''}>{item.value}</dd></div>
-		                    ))}
-		                  </dl>
-		                </section>
-		                <section className="atlas-scenario-inspector-callout">
-		                  <h3>Buyer response</h3>
-		                  <p>{scenario.buyerResponse}</p>
-		                  <div className="atlas-scenario-progress"><i style={{ width: `${scenario.likelihood}%` }} /></div>
-		                  <small>{scenario.likelihood}% likelihood to land · {scenario.evidenceStrength}% evidence strength</small>
-		                </section>
-		                <section>
-		                  <h3>Recommended action</h3>
-		                  <p>{scenario.recommendedEdit}</p>
-		                  <small>{scenario.relationshipRisk} relationship risk</small>
-		                </section>
-			                <div className="atlas-scenario-selected-actions">
-			                  <a href={scenarioDetailHref(scenario.id)}>Open full view</a>
-			                  <a href={scenarioReportHref} rel="noreferrer" target="_blank">Download report</a>
-			                  <button type="button" onClick={() => editScenarioFromCard(scenario.id)}>Edit scenario</button>
-			                  <button type="button" onClick={saveScenarioToBuyingGroup}>Save to buyer profile</button>
+		                <strong>{group.isExpanded ? 'Showing all' : group.collapsedLabel} · {group.scenarios.length} scenarios</strong>
+		              </header>
+		              {group.id === 'traceability' && !group.isExpanded ? (
+		                <button
+		                  className="atlas-scenario-hidden-run-toggle"
+		                  onClick={() => setExpandedScenarioPriorityGroups((current) => ({
+		                    ...current,
+		                    traceability: true
+		                  }))}
+		                  type="button"
+		                >
+		                  Show {group.scenarios.length} scenarios ATLAS ran but deprioritized
+		                </button>
+		              ) : null}
+		              {group.visibleScenarios.length > 0 ? (
+		                <div className="atlas-scenario-table-wrap">
+		                  <table className="atlas-scenario-review-table">
+		                    <colgroup>
+		                      <col className="compare-col" />
+		                      <col className="scenario-col" />
+		                      <col className="buyer-col" />
+		                      <col className="basis-col" />
+		                      <col className="metric-col" />
+		                      <col className="metric-col" />
+		                      <col className="metric-col" />
+		                      <col className="relationship-col" />
+		                      <col className="updated-col" />
+		                      <col className="details-col" />
+		                    </colgroup>
+		                    <thead>
+		                      <tr>
+		                        <th aria-label="Select scenarios to compare">Compare</th>
+		                        <th>Scenario</th>
+		                        <th>Buying group</th>
+		                        <th>Based on</th>
+		                        <th>Likelihood</th>
+		                        <th>NR</th>
+		                        <th>GM</th>
+		                        <th>Relationship</th>
+		                        <th>Updated</th>
+		                        <th aria-label="Expand scenario details">Details</th>
+		                      </tr>
+		                    </thead>
+		                    <tbody>
+		                      {group.visibleScenarios.map((scenario, scenarioIndex) => {
+		                        const isCompareSelected = compareScenarioIds.includes(scenario.id);
+		                        const isExpanded = expandedScenarioRowIds.includes(scenario.id);
+		                        const attentionReason = scenarioAttentionReason(scenario);
+		                        const scenarioContext = scenarioBuyingGroupContext(scenario);
+		                        const modeledMove = `${pct(scenario.inputs.priceIncreasePercent)} ask / ${pct(scenario.inputs.expectedRealizationPercent)} realization`;
+		                        const collapsedScenarioBasis = scenario.origin === 'manual'
+		                          ? 'CNO adjusted'
+		                          : scenario.scenarioStyle === 'Reference'
+		                            ? 'Reference run'
+		                            : `${scenario.scenarioStyle} logic`;
+		                        const scenarioBasis = scenario.origin === 'manual'
+		                          ? 'This scenario uses CNO-adjusted assumptions plus current buyer context and saved local inputs.'
+		                          : `${scenario.why}${scenarioTrigger ? ` Trigger: ${scenarioTrigger.title}.` : ''}`;
+		                        const scenarioUpdatedDate = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(new Date(scenario.createdAt));
+		                        const rowNumber = String(scenarioIndex + 1).padStart(2, '0');
+		                        return (
+		                          <Fragment key={scenario.id}>
+		                            <tr className={isExpanded ? 'expanded' : ''} key={`${scenario.id}-row`}>
+		                              <td>
+		                                <label className="atlas-scenario-table-checkbox" aria-label={`Select ${scenario.name} for comparison`}>
+		                                  <input
+		                                    checked={isCompareSelected}
+		                                    onChange={() => toggleCompareScenario(scenario.id)}
+		                                    type="checkbox"
+		                                  />
+		                                </label>
+		                              </td>
+		                              <td className="atlas-scenario-table-name">
+		                                <a href={scenarioDetailHref(scenario.id)}>
+		                                  <span>{rowNumber} · {attentionReason}</span>
+		                                  <strong>{scenario.name.replace(/^[A-C]\.\s*/, '')}</strong>
+		                                  <small>{scenario.origin === 'manual' ? 'Manual' : 'ATLAS generated'} · {scenario.scenarioStyle}</small>
+		                                </a>
+		                              </td>
+		                              <td>
+		                                <strong>{scenarioContext.buyingGroup}</strong>
+		                                <small>{scenarioContext.market}</small>
+		                              </td>
+		                              <td>{collapsedScenarioBasis}</td>
+		                              <td><strong>{scenario.likelihood}%</strong></td>
+		                              <td><strong>{scenarioDeltaLabel(scenario.outputs.revenueImpact)}</strong></td>
+		                              <td>{scenarioDeltaLabel(scenario.outputs.marginImpact)}</td>
+		                              <td>{scenario.relationshipRisk}</td>
+		                              <td>{scenarioUpdatedDate}</td>
+		                              <td>
+		                                <button
+		                                  aria-expanded={isExpanded}
+		                                  aria-label={`${isExpanded ? 'Collapse' : 'Expand'} ${scenario.name}`}
+		                                  className="atlas-scenario-table-expand"
+		                                  onClick={() => toggleScenarioRowExpansion(scenario.id)}
+		                                  type="button"
+		                                >
+		                                  {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+		                                </button>
+		                              </td>
+		                            </tr>
+		                            {isExpanded ? (
+		                              <tr className="atlas-scenario-expanded-row" key={`${scenario.id}-detail`}>
+		                                <td colSpan={10}>
+		                                  <div className="atlas-scenario-expanded-story">
+		                                    <section>
+		                                      <h4>Based on</h4>
+		                                      <p>{scenarioBasis}</p>
+		                                    </section>
+		                                    <section>
+		                                      <h4>Modeled numbers</h4>
+		                                      <dl>
+		                                        <div><dt>Price ask</dt><dd>{pct(scenario.inputs.priceIncreasePercent)}</dd></div>
+		                                        <div><dt>Realization</dt><dd>{pct(scenario.inputs.expectedRealizationPercent)}</dd></div>
+		                                        <div><dt>Trade spend</dt><dd>{euros(scenario.inputs.tradeSpendChange)}</dd></div>
+		                                        <div><dt>Volume risk</dt><dd>{pct(scenario.inputs.volumeChangePercent)}</dd></div>
+		                                      </dl>
+		                                    </section>
+		                                    <section>
+		                                      <h4>Expected buyer response</h4>
+		                                      <p>{scenario.buyerResponse}</p>
+		                                      <div className="atlas-scenario-progress"><i style={{ width: `${scenario.likelihood}%` }} /></div>
+		                                      <small>{scenario.likelihood}% likelihood to land · {scenario.evidenceStrength}% evidence strength</small>
+		                                    </section>
+		                                    <section className="atlas-scenario-expanded-action">
+		                                      <h4>Recommended action</h4>
+		                                      <p>{scenario.recommendedEdit}</p>
+		                                    </section>
+		                                  </div>
+		                                  <div className="atlas-scenario-expanded-footer">
+		                                    <SourceTrustMini source={scenarioSource} />
+		                                    <div className="atlas-scenario-expanded-actions">
+		                                      <a href={scenarioDetailHref(scenario.id)}>Open full view</a>
+		                                      <button type="button" onClick={() => editScenarioFromCard(scenario.id)}>Edit scenario</button>
+		                                      <a href={scenarioReportHrefFor(scenario)} rel="noreferrer" target="_blank">Download report</a>
+		                                    </div>
+		                                  </div>
+		                                </td>
+		                              </tr>
+		                            ) : null}
+		                          </Fragment>
+		                        );
+		                      })}
+		                    </tbody>
+		                  </table>
 		                </div>
-		                <SourceTrustMini source={scenarioSource} />
-		                {scenarioSaveStatus ? <span className="atlas-scenario-save-status">{scenarioSaveStatus}</span> : null}
-		              </aside>
-		            );
-		          })() : null}
+		              ) : null}
+		              {group.isExpandable && (group.id !== 'traceability' || group.isExpanded) && (group.scenarios.length > 5 || group.id === 'traceability') ? (
+		                <button
+		                  className="atlas-scenario-show-more"
+		                  onClick={() => setExpandedScenarioPriorityGroups((current) => ({
+		                    ...current,
+		                    [group.id as 'planning' | 'traceability']: !group.isExpanded
+		                  }))}
+		                  type="button"
+		                >
+		                  {group.isExpanded
+		                    ? `Hide ${group.label.toLowerCase()}`
+		                    : group.id === 'traceability'
+		                      ? `Show ${group.scenarios.length} deprioritized scenarios`
+		                      : `Show ${group.scenarios.length - 5} more ${group.label.toLowerCase()}`}
+		                </button>
+		              ) : null}
+		            </section>
+		          ))}
+		          {scenarioSaveStatus ? <span className="atlas-scenario-save-status">{scenarioSaveStatus}</span> : null}
 		        </div>
 		      </section> : null}
 
