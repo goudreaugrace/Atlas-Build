@@ -318,7 +318,7 @@ export function createStrategyPathModules(numbers = initialEditableAssumptions):
       id: 'buyer_reaction',
       title: 'Predicted Carrefour reaction',
       generatedAt: 'Updated from current assumptions',
-      recommendation: counter <= redLine ? 'Expect affordability pressure, but current counter remains defensible.' : 'Higher counter improves acceptance but increases approval dependency.',
+      recommendation: counter <= redLine ? 'Expect affordability pressure, but current counter remains defensible.' : 'Higher counter improves acceptance but increases finance-review dependency.',
       narrative: demoBuyerReactionPredictions[0].likelyObjection,
       keyMetrics: [
         metric('Expected severity', counter <= redLine ? 'High' : 'Medium', 'modeled_estimate', 'medium'),
@@ -343,7 +343,7 @@ export function createStrategyPathModules(numbers = initialEditableAssumptions):
       title: 'Scenario pressure from editable numbers',
       generatedAt: 'Live model from manual edits',
       recommendation: `${counter.toFixed(1)}% counter produces ${calculateStrategyReadout(numbers).strategyResult}.`,
-      narrative: `Trade spend at ${trade.toFixed(1)}%, volume support at ${volume.toFixed(1)}%, and ${margin.toFixed(0)} bps margin impact keep the strategy in a working state, but approval depends on validation.`,
+      narrative: `Trade spend at ${trade.toFixed(1)}%, volume support at ${volume.toFixed(1)}%, and ${margin.toFixed(0)} bps margin impact keep the strategy in a working state, but final use depends on validation.`,
       keyMetrics: [
         metric('Target gap', `${(target - counter).toFixed(1)} pts`, 'modeled_estimate', 'medium'),
         metric('Red-line gap', `${(redLine - counter).toFixed(1)} pts`, 'modeled_estimate', 'medium'),
@@ -368,7 +368,7 @@ export function createStrategyPathModules(numbers = initialEditableAssumptions):
       title: 'Strategy readiness and output safety',
       generatedAt: 'Updated from validation state',
       recommendation: calculateStrategyReadout(numbers).readiness,
-      narrative: 'CNO can keep working from this strategy, but KAM-safe or customer-safe outputs should hide red lines, margin controls, and confidence gaps until validation is complete.',
+      narrative: 'CNO can keep working from this strategy, but field-ready or buyer-facing outputs should hide red lines, margin controls, and confidence gaps until validation is complete.',
       keyMetrics: [
         metric('Readiness', calculateStrategyReadout(numbers).readinessLabel, 'modeled_estimate', calculateStrategyReadout(numbers).confidence),
         metric('Open gaps', `${calculateStrategyReadout(numbers).gapCount}`, 'unknown_gap', 'medium'),

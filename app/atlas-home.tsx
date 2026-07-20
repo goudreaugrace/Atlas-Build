@@ -71,8 +71,8 @@ const briefingAlerts: HomeAlert[] = [
     buyingGroup: 'Carrefour Group',
     freshness: 'Updated today from strategy workspace',
     confidence: 'Medium',
-    href: `/negotiation/${NEGOTIATION_ID}`,
-    actionLabel: 'Open strategy',
+    href: '/buying-groups/carrefour',
+    actionLabel: 'Open buyer workspace',
     tone: 'approval'
   },
   {
@@ -81,9 +81,9 @@ const briefingAlerts: HomeAlert[] = [
     title: 'Private label pressure remains active in France.',
     detail: 'ATLAS is flagging affordability language as the likely buyer anchor. The sell story should keep value proof close to the price defense.',
     buyingGroup: 'Carrefour Group',
-    freshness: 'Public signal placeholder, refreshed this week',
+    freshness: 'Public signal watch, refreshed this week',
     confidence: 'Medium',
-    href: `/atlas-output?prompt=${encodeURIComponent('Create a negotiation news and market signal report for Carrefour Group France focused on private label pressure, affordability language, commodity movement, and pricing implications.')}`,
+    href: generatedOutputHref('Create a negotiation news and market signal report for Carrefour Group France focused on private label pressure, affordability language, commodity movement, and pricing implications.'),
     actionLabel: 'Generate signal brief',
     tone: 'signal'
   },
@@ -95,7 +95,7 @@ const briefingAlerts: HomeAlert[] = [
     buyingGroup: 'Everest Buying Group',
     freshness: 'Synthetic internal memory, Mar 22',
     confidence: 'Medium',
-    href: `/atlas-output?prompt=${encodeURIComponent('Compare Carrefour Group strategy against the Everest buying group phasing pattern and identify what can safely be reused.')}`,
+    href: generatedOutputHref('Compare Carrefour Group strategy against the Everest buying group phasing pattern and identify what can safely be reused.'),
     actionLabel: 'Compare pattern',
     tone: 'signal'
   }
@@ -113,7 +113,7 @@ const buyerGroupStatuses: BuyerGroupStatus[] = [
     risk: 'High',
     nextAction: 'Review fallback scenario',
     updatedAt: 'Today',
-    href: `/negotiation/${NEGOTIATION_ID}`
+    href: '/buying-groups/carrefour'
   },
   {
     id: 'everest',
@@ -126,7 +126,7 @@ const buyerGroupStatuses: BuyerGroupStatus[] = [
     risk: 'Medium',
     nextAction: 'Compare concession pattern',
     updatedAt: 'Yesterday',
-    href: `/atlas-output?prompt=${encodeURIComponent('Create a strategy status brief for Everest Buying Group with latest ask, PepsiCo position, risk, and reusable concession pattern.')}`
+    href: generatedOutputHref('Create a strategy status brief for Everest Buying Group with latest ask, PepsiCo position, risk, and reusable concession pattern.')
   },
   {
     id: 'rewe',
@@ -139,7 +139,7 @@ const buyerGroupStatuses: BuyerGroupStatus[] = [
     risk: 'Medium',
     nextAction: 'Generate promo risk readout',
     updatedAt: '2 days ago',
-    href: `/atlas-output?prompt=${encodeURIComponent('Create a promo exposure risk readout for REWE Group negotiation prep with placeholder pricing, margin, and source confidence.')}`
+    href: generatedOutputHref('Create a promo exposure risk readout for REWE Group negotiation prep with modeled pricing, margin, and source confidence.')
   },
   {
     id: 'emz',
@@ -152,16 +152,16 @@ const buyerGroupStatuses: BuyerGroupStatus[] = [
     risk: 'Low',
     nextAction: 'Monitor public signals',
     updatedAt: 'This week',
-    href: `/atlas-output?prompt=${encodeURIComponent('Create a monitored buying group status brief for EMZ Eurelec with public signals, cross-market watchouts, and negotiation implications.')}`
+    href: generatedOutputHref('Create a monitored buying group status brief for EMZ Eurelec with public signals, cross-market watchouts, and negotiation implications.')
   }
 ];
 
 const suggestedCommands = [
-  'Show me my strategy for Carrefour Group',
+  'Open Carrefour scenario workspace',
   'What changed this week that affects my negotiations?',
   'Run 3.2% with Q4 promo phasing',
-  'Start Live Negotiator for Carrefour',
-  'Generate the CNO brief'
+  'Add Carrefour debrief memory',
+  'Generate a scenario evidence report'
 ];
 
 function getBrowserSpeechRecognition() {
@@ -175,13 +175,17 @@ function getBrowserSpeechRecognition() {
 }
 
 function isReportRoute(href: string) {
-  return href.startsWith('/atlas-output');
+  return href.startsWith('/generated-views');
 }
 
 function writeReportLoadingPage(tab: Window | null) {
   if (!tab) return;
-  tab.document.write('<!doctype html><title>ATLAS is preparing</title><body style="margin:0;font-family:Inter,Arial,sans-serif;background:#fff;color:#0b1f33;display:grid;min-height:100vh;place-items:center;"><div style="text-align:center;"><strong style="font-size:18px;">ATLAS is preparing your report</strong><p style="color:#5f6f80;font-size:13px;">You can keep using ATLAS while this loads.</p></div></body>');
+  tab.document.write('<!doctype html><title>ATLAS is preparing</title><body style="margin:0;font-family:Inter,Arial,sans-serif;background:#fff;color:#0b1f33;display:grid;min-height:100vh;place-items:center;"><div style="text-align:center;"><strong style="font-size:18px;">ATLAS is preparing your scenario output</strong><p style="color:#5f6f80;font-size:13px;">You can keep using ATLAS while this loads.</p></div></body>');
   tab.document.close();
+}
+
+function generatedOutputHref(prompt: string) {
+  return `/generated-views?prompt=${encodeURIComponent(prompt)}&mode=draft&editable=1`;
 }
 
 function commandHref(prompt: string) {
@@ -190,26 +194,26 @@ function commandHref(prompt: string) {
   const encoded = encodeURIComponent(trimmed);
 
   if (/live|listen|negotiator|meeting room|start session/.test(normalized)) {
-    return `/negotiation/${NEGOTIATION_ID}/live`;
+    return `/buying-groups/carrefour?view=memory`;
   }
 
   if (/scenario|stress|model|3\.2|3\.0|price|pricing|lever|promo|trade spend|fallback/.test(normalized)) {
-    return `/negotiation/${NEGOTIATION_ID}?panel=scenario&scenarioPrompt=${encoded}#scenario`;
+    return `/scenario-lab?buyingGroup=carrefour&ask=${encoded}`;
   }
 
   if (/changed|news|market|signal|public|external|this week|alert|risk|at risk/.test(normalized)) {
-    return `/atlas-output?prompt=${encoded}`;
+    return `/generated-views?prompt=${encoded}&mode=draft&editable=1`;
   }
 
   if (/strategy|carrefour|buying group|buyer group|negotiation|readiness/.test(normalized)) {
-    return `/negotiation/${NEGOTIATION_ID}`;
+    return `/buying-groups/carrefour`;
   }
 
   if (/brief|deck|report|pdf|pack|output|p&l|p and l|margin|volume/.test(normalized)) {
-    return `/atlas-output?prompt=${encoded}`;
+    return `/generated-views?prompt=${encoded}&mode=draft&editable=1`;
   }
 
-  return `/atlas-output?prompt=${encoded}`;
+  return `/generated-views?prompt=${encoded}&mode=draft&editable=1`;
 }
 
 function alertIcon(tone: HomeAlert['tone']) {
@@ -297,13 +301,13 @@ export default function AtlasHome({ initialPrompt = '' }: AtlasHomeProps) {
           <span>ATLAS Strategy OS</span>
         </a>
         <nav aria-label="ATLAS primary navigation">
-          <a className="atlas-live-toplink" href={`/negotiation/${NEGOTIATION_ID}`}>
+          <a className="atlas-live-toplink" href="/buying-groups/carrefour">
             <FileText size={14} />
-            <span>Strategy</span>
+            <span>Buyer workspace</span>
           </a>
-          <a className="atlas-live-toplink" href={`/negotiation/${NEGOTIATION_ID}/live`}>
+          <a className="atlas-live-toplink" href="/scenario-lab?buyingGroup=carrefour">
             <Waves size={14} />
-            <span>Live Negotiator</span>
+            <span>Scenario Lab</span>
           </a>
         </nav>
       </header>
@@ -313,7 +317,7 @@ export default function AtlasHome({ initialPrompt = '' }: AtlasHomeProps) {
           <div className="jarvis-brand-lockup atlas-lockup">
             <span>Negotiation briefing assistant</span>
             <h1>ATLAS</h1>
-            <p>Ask what changed, open a buyer group, run a pricing move, generate a brief, or start the live negotiator.</p>
+            <p>Ask what changed, open a buyer workspace, run a pricing scenario, generate evidence, or add a debrief memory.</p>
           </div>
 
           <div className="jarvis-holo-core thought-low">
@@ -358,7 +362,7 @@ export default function AtlasHome({ initialPrompt = '' }: AtlasHomeProps) {
                 onChange={(event) => setPrompt(event.target.value)}
                 aria-label="Ask ATLAS"
                 disabled={isThinking}
-                placeholder='Say or type "Show me my strategy for Carrefour Group"'
+                placeholder='Say or type "Open Carrefour scenario workspace"'
               />
               <button
                 className="jarvis-send"
@@ -462,8 +466,8 @@ export default function AtlasHome({ initialPrompt = '' }: AtlasHomeProps) {
             <Target size={16} />
             <strong>ATLAS reads Carrefour as the negotiation that needs the fastest action.</strong>
             <span>Current counter is defensible, but fallback use should remain gated until Germany volume recovery is validated.</span>
-            <a href={`/negotiation/${NEGOTIATION_ID}`}>
-              Review strategy readiness
+            <a href="/buying-groups/carrefour">
+              Open buyer workspace
               <ArrowRight size={14} />
             </a>
           </aside>
@@ -471,9 +475,9 @@ export default function AtlasHome({ initialPrompt = '' }: AtlasHomeProps) {
           <aside className="atlas-home-readiness-note quiet" aria-label="ATLAS output readiness">
             <CheckCircle2 size={16} />
             <strong>Ready outputs</strong>
-            <span>Pricing corridor visual, CNO brief shell, and live negotiator setup are available from the command line or buyer group row.</span>
-            <a href={`/atlas-output?prompt=${encodeURIComponent('Generate a CNO-ready negotiation briefing for Carrefour Group with latest status, key watchouts, source confidence, and next actions.')}`} rel="noreferrer" target="_blank">
-              Generate CNO briefing
+            <span>Pricing corridor visuals, scenario evidence reports, and debrief memory are available from the command line or buyer group row.</span>
+            <a href={generatedOutputHref('Generate a CNO-ready scenario evidence output for Carrefour Group with latest status, key watchouts, source confidence, and next actions.')} rel="noreferrer" target="_blank">
+              Generate scenario output
               <BarChart3 size={14} />
             </a>
           </aside>

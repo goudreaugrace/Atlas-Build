@@ -148,11 +148,11 @@ export const scriptedLiveSignals: Array<Omit<LiveDetectedSignal, 'timestamp'>> =
   {
     id: 'signal-strategy-drift',
     type: 'strategy_drift',
-    summary: 'ATLAS detected a draft strategy change: fallback may be usable, but it should remain approval-gated.',
-    extractedNumbers: ['Strategy v4 draft', 'Approval dependency: Finance', 'Fallback not approved'],
+    summary: 'ATLAS detected a draft strategy change: fallback may be usable, but it should remain review-gated.',
+    extractedNumbers: ['Strategy v4 draft', 'Finance review dependency', 'Fallback not validated'],
     sourceMode: 'simulated_listener',
     confidence: 'high',
-    recommendedDocumentType: 'Strategy drift / approval risk note'
+    recommendedDocumentType: 'Strategy drift / validation risk note'
   }
 ];
 
@@ -176,7 +176,7 @@ export function buildLiveDocumentPrompt(signal: LiveDetectedSignal, buyingGroup:
   return [
     `Create a PDF-ready ${signal.recommendedDocumentType} for the live ${buyingGroup.name} negotiation.`,
     `Buying group: ${buyingGroup.name}. Region: ${buyingGroup.region}. Active market: ${buyingGroup.activeMarket}.`,
-    `Prep/strategy deck context: ${prepDeckLabel}.`,
+    `Prep/scenario evidence output context: ${prepDeckLabel}.`,
     `Detected signal: ${signal.summary}`,
     `Extracted numbers: ${signal.extractedNumbers.join(', ')}.`,
     'Show the data points, source/freshness/confidence, implications for the negotiation, and the specific open validation items.'

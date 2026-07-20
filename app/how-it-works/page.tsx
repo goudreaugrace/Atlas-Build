@@ -1,5 +1,5 @@
-import AtlasIntelligenceHub from '../atlas-intelligence-hub';
+import { redirect } from 'next/navigation';
 
 export default function HowItWorksPage() {
-  return <AtlasIntelligenceHub view="howItWorks" />;
+  redirect('/');
 }

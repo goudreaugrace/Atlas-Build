@@ -1,4 +1,4 @@
-import AtlasIntelligenceHub from '../atlas-intelligence-hub';
+import { redirect } from 'next/navigation';
 
 type ScenarioModelsPageProps = {
   searchParams: Promise<{ ask?: string; buyingGroup?: string; market?: string; prompt?: string; view?: string }>;
@@ -6,6 +6,12 @@ type ScenarioModelsPageProps = {
 
 export default async function ScenarioModelsPage({ searchParams }: ScenarioModelsPageProps) {
   const query = await searchParams;
+  const params = new URLSearchParams();
+  if (query.ask) params.set('ask', query.ask);
+  if (query.buyingGroup) params.set('buyingGroup', query.buyingGroup);
+  if (query.market) params.set('market', query.market);
+  if (query.prompt) params.set('prompt', query.prompt);
+  if (query.view) params.set('view', query.view);
 
-  return <AtlasIntelligenceHub buyingGroupId={query.buyingGroup ?? ''} marketId={query.market ?? ''} view="scenarioModels" initialGeneratedView={query.view ?? ''} initialPrompt={query.ask ?? query.prompt ?? ''} />;
+  redirect(`/scenario-lab${params.toString() ? `?${params.toString()}` : ''}`);
 }

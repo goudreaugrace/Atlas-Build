@@ -6,5 +6,5 @@ type ScenarioPageProps = {
 
 export default async function ScenarioPage({ params }: ScenarioPageProps) {
   await params;
-  redirect('/scenario-models?buyingGroup=carrefour');
+  redirect('/scenario-lab?buyingGroup=carrefour');
 }

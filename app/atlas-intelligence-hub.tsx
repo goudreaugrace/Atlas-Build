@@ -7,6 +7,8 @@ import {
   BarChart3,
   BookOpen,
   Brain,
+  ChevronDown,
+  ChevronUp,
   CheckCircle2,
   CircleDollarSign,
   Clock3,
@@ -31,6 +33,7 @@ import {
   atlasIntelligenceSeed,
   buildAtlasIntelligencePacket,
   buildBuyingGroupWorkspacePacket,
+  buildNegotiationPlanPacket,
   buildRetrievalMessage,
   calculateScenarioOutputs,
   competitorMovesFor,
@@ -49,6 +52,7 @@ import type {
   AtlasStatus,
   BuyingGroup,
   CompetitorMove,
+  CrossMarketPattern,
   DocumentArtifact,
   ExternalSignal,
   Market,
@@ -70,7 +74,8 @@ type HubView =
   | 'timeline'
   | 'database'
   | 'howItWorks'
-  | 'scenarioModels';
+  | 'scenarioModels'
+  | 'scenarioCompare';
 
 type AtlasIntelligenceHubProps = {
   view: HubView;
@@ -78,6 +83,8 @@ type AtlasIntelligenceHubProps = {
   buyingGroupId?: string;
   initialPrompt?: string;
   initialGeneratedView?: string;
+  initialScenarioId?: string;
+  initialScenarioLabMode?: string;
   initialSort?: string;
   initialMonitorTab?: string;
   initialBuyingGroupView?: string;
@@ -88,6 +95,151 @@ type AtlasIntelligenceHubProps = {
 const packet = buildAtlasIntelligencePacket();
 
 type BuyingGroupWorkspacePacket = NonNullable<ReturnType<typeof buildBuyingGroupWorkspacePacket>>;
+
+type ScenarioLabMode = 'review' | 'create';
+
+type ScenarioLabOption = {
+  atlasScore: number;
+  buyerResponse: string;
+  createdAt: string;
+  description: string;
+  evidenceStrength: number;
+  guardrailRisk: string;
+  id: string;
+  inputs: ScenarioInputs;
+  likelihood: number;
+  name: string;
+  origin: 'atlas' | 'manual';
+  outputs: ReturnType<typeof calculateScenarioOutputs>;
+  recommendedEdit: string;
+  relationshipRisk: string;
+  scenarioStyle: string;
+  valueProtected: number;
+  why: string;
+};
+
+const atlasMonthLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+function formatAtlasDate(dateInput: string, options: { includeTime?: boolean; includeYear?: boolean } = {}) {
+  const date = new Date(dateInput);
+  if (Number.isNaN(date.getTime())) return dateInput;
+  const month = atlasMonthLabels[date.getUTCMonth()] ?? 'Jan';
+  const day = date.getUTCDate();
+  const year = date.getUTCFullYear();
+  const dateLabel = `${month} ${day}${options.includeYear ? `, ${year}` : ''}`;
+  if (!options.includeTime) return dateLabel;
+  const hours = date.getUTCHours();
+  const minutes = String(date.getUTCMinutes()).padStart(2, '0');
+  const hour12 = hours % 12 || 12;
+  const period = hours >= 12 ? 'PM' : 'AM';
+  return `${dateLabel}, ${hour12}:${minutes} ${period}`;
+}
+
+type PageIntentKey =
+  | 'overview'
+  | 'markets'
+  | 'marketDetail'
+  | 'buyingGroups'
+  | 'buyingGroupProfile'
+  | 'pepsicoImpact'
+  | 'scenarioModels'
+  | 'strategyBuilder'
+  | 'generatedViews'
+  | 'database'
+  | 'howItWorks';
+
+type RelevanceReasonType =
+  | 'materiality'
+  | 'urgency'
+  | 'strategy'
+  | 'source'
+  | 'pattern'
+  | 'memory'
+  | 'action';
+
+const pageIntentConfig: Record<PageIntentKey, {
+  defaultRead: string;
+  intent: string;
+  primaryAction: string;
+  surfacingLogic: RelevanceReasonType[];
+}> = {
+  overview: {
+    defaultRead: 'External alerts, scenario risks, source gaps, and model changes that should be tested before buyer priority is decided.',
+    intent: 'What changed that needs scenario modeling first?',
+    primaryAction: 'Model the alert impact, then open the derived buyer or negotiation priority.',
+    surfacingLogic: ['materiality', 'urgency', 'action', 'source']
+  },
+  markets: {
+    defaultRead: 'Market pressure, buyer exposure, external signals, and scenario entry points.',
+    intent: 'How are markets comparing, and where is pressure or opportunity?',
+    primaryAction: 'Model the market pressure or open the buyer most affected by it.',
+    surfacingLogic: ['materiality', 'pattern', 'action']
+  },
+  marketDetail: {
+    defaultRead: 'Current market read, affected buyers, external signals, and next action.',
+    intent: 'What is happening in this market and what is driving it?',
+    primaryAction: 'Open affected buyer or model the market move.',
+    surfacingLogic: ['materiality', 'strategy', 'action', 'source']
+  },
+  buyingGroups: {
+    defaultRead: 'Buyer relationships ranked by risk, negotiation state, exposure, and intervention trigger.',
+    intent: 'Which buyer relationships need attention?',
+    primaryAction: 'Open the buyer profile.',
+    surfacingLogic: ['materiality', 'urgency', 'memory', 'action']
+  },
+  buyingGroupProfile: {
+    defaultRead: 'Buyer posture, scenario recommendations, history patterns, market signals, guardrails, and debrief memory.',
+    intent: 'What could happen with this buyer, what should I test, and what should I do?',
+    primaryAction: 'Run or adjust a scenario, save it to memory, then use the selected scenario downstream.',
+    surfacingLogic: ['strategy', 'urgency', 'materiality', 'memory', 'source']
+  },
+  pepsicoImpact: {
+    defaultRead: 'PepsiCo goals, P&L-style gaps, market contributors, and buyer contributors.',
+    intent: 'Are we going to make PepsiCo’s financial goals?',
+    primaryAction: 'Open the market or buyer driving the gap.',
+    surfacingLogic: ['materiality', 'pattern', 'action']
+  },
+  scenarioModels: {
+    defaultRead: 'Multi-level modeling across buyer, market, category, SKU drill-in, and custom levers.',
+    intent: 'What if I change this move, and how is the buyer likely to respond?',
+    primaryAction: 'Compare scenarios, save the decision, or export the evidence behind the chosen move.',
+    surfacingLogic: ['materiality', 'strategy', 'action', 'source']
+  },
+  strategyBuilder: {
+    defaultRead: 'Selected scenario, evidence, buyer pushback, and assumptions that shape the next move.',
+    intent: 'How does the selected scenario change what we should do next?',
+    primaryAction: 'Use the tested scenario as the working negotiation position.',
+    surfacingLogic: ['strategy', 'memory', 'source', 'action']
+  },
+  generatedViews: {
+    defaultRead: 'Answer-first output with source trust, editable content, download, and save destination.',
+    intent: 'Export the scenario evidence or buyer read I need after choosing a move.',
+    primaryAction: 'Edit, download, save to memory, or reuse in the Scenario Lab.',
+    surfacingLogic: ['action', 'source', 'materiality']
+  },
+  database: {
+    defaultRead: 'Source records, type, owner, confidence, date, linked pages, and scenario-linked outputs.',
+    intent: 'Where did this information come from?',
+    primaryAction: 'Inspect or open the source record.',
+    surfacingLogic: ['source', 'memory']
+  },
+  howItWorks: {
+    defaultRead: 'Page intent map, surfacing logic, trust labels, loop behavior, and scope.',
+    intent: 'How does ATLAS decide what to show and how does the loop work?',
+    primaryAction: 'Use as the scenario-workspace reference.',
+    surfacingLogic: ['source', 'action', 'strategy']
+  }
+};
+
+const relevanceReasonCopy: Record<RelevanceReasonType, { label: string; text: string }> = {
+  action: { label: 'Actionability', text: 'creates a clear next step' },
+  materiality: { label: 'Materiality', text: 'affects revenue, margin, volume, trade spend, price realization, or gap to plan' },
+  memory: { label: 'Memory impact', text: 'comes from history, debriefs, saved scenarios, uploaded documents, or locked strategy' },
+  pattern: { label: 'Pattern impact', text: 'connects to a cross-market or cross-buyer pattern' },
+  source: { label: 'Source impact', text: 'changes confidence, freshness, validation, or source status' },
+  strategy: { label: 'Strategy impact', text: 'changes the in-going position, concession path, levers, risk posture, or fallback' },
+  urgency: { label: 'Urgency', text: 'affects a current negotiation, milestone, decision, or escalation' }
+};
 
 type BuyerProfileDocumentUpdate = {
   id: string;
@@ -122,7 +274,7 @@ type BuyerProfileRead = {
 };
 
 type StoredGeneratedView = {
-  artifactType?: 'generated_view' | 'negotiation_plan';
+  artifactType?: 'generated_view' | 'negotiation_plan' | 'scenario_output';
   audienceMode?: 'internal_cno' | 'leadership_safe' | 'kam_safe' | 'customer_safe';
   id: string;
   lifecycleState?: 'retrieved' | 'draft' | 'edited' | 'attached' | 'superseded';
@@ -162,6 +314,59 @@ function classNameForStatus(status: AtlasStatus) {
 function labelForStatus(status: AtlasStatus) {
   if (status === 'needs_validation') return 'source review';
   return status.replace('_', ' ');
+}
+
+function sourceTypeLabel(source: SourceMeta) {
+  const sourceType = source.sourceType as string;
+  if (source.sourceType === 'internal') return 'Database fact';
+  if (source.sourceType === 'external') return 'External signal';
+  if (source.sourceType === 'ai_generated') return 'AI-derived';
+  if (source.sourceType === 'modeled') return 'Modeled estimate';
+  if (source.sourceType === 'user_entered') return 'User-added';
+  if (source.sourceType === 'historical') return 'Historical memory';
+  return sourceType.replaceAll('_', ' ');
+}
+
+function sourceTypeClass(source: SourceMeta) {
+  return `source-type-${source.sourceType.replaceAll('_', '-')}`;
+}
+
+function cleanSourceDisplayText(value: string | null | undefined, fallback: string) {
+  const cleaned = (value ?? '')
+    .replace(/\bplaceholder\b/gi, '')
+    .replace(/\bprototype\b/gi, 'POC')
+    .replace(/\s+([.,;:])/g, '$1')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+  return cleaned || fallback;
+}
+
+function sourceDisplayName(source: Pick<SourceMeta, 'sourceName'> | { sourceName?: string }) {
+  return cleanSourceDisplayText(source.sourceName, 'ATLAS source');
+}
+
+function sourceTrustDecision(source: SourceMeta) {
+  if (source.sourceType === 'ai_generated') return 'Derived by ATLAS from available context';
+  if (source.sourceType === 'modeled') return 'Calculated from scenario assumptions';
+  if (source.sourceType === 'user_entered') return 'Added to buyer memory by user';
+  if (source.sourceType === 'external') return 'Pulled from public or external signal memory';
+  if (source.sourceType === 'historical') return 'Pulled from buyer history';
+  return 'Stored source in Intelligence Library';
+}
+
+function sourceHealthSummary(source: SourceMeta) {
+  const sourceAge = source.lastUpdated && source.lastUpdated !== source.sourceDate
+    ? `refreshed ${source.lastUpdated}`
+    : `dated ${source.sourceDate}`;
+  const caveat = cleanSourceDisplayText(source.governance?.caveats?.[0], '');
+  const missingOrStale = source.status === 'stale' || source.status === 'missing' || source.status === 'needs_validation';
+  if (missingOrStale) {
+    return `${labelForStatus(source.status)} · ${sourceAge}${caveat ? ` · ${caveat}` : ''}`;
+  }
+  if (source.sourceType === 'modeled' || source.sourceType === 'ai_generated') {
+    return `${source.confidence} confidence · assumption-backed · ${sourceAge}`;
+  }
+  return `${source.confidence} confidence · ${sourceAge}`;
 }
 
 function readinessLabel(status: BuyingGroupWorkspacePacket['readiness']['status']) {
@@ -243,7 +448,7 @@ function buildGeneratedViewSource(view: StoredGeneratedView, fallback: SourceMet
     status: lifecycleState === 'retrieved' ? 'ready' : lifecycleState === 'attached' ? 'modeled' : 'needs_validation',
     governance: {
       sourceType: 'ai_generated',
-      sourceOwner: 'ATLAS generated view',
+      sourceOwner: 'ATLAS scenario output',
       approvalStatus: 'draft',
       allowedUse: ['demo', 'review_draft'],
       canonicalUseAllowed: 'with_caveat',
@@ -254,7 +459,7 @@ function buildGeneratedViewSource(view: StoredGeneratedView, fallback: SourceMet
           ? 'Attached to buyer or market memory as a working artifact, not an approved source.'
           : 'Saved as a draft until attached or superseded.'
       ],
-      replacementRequirement: 'Save official source or approval state before customer-facing use.'
+      replacementRequirement: 'Attach a validated source before customer-facing use.'
     }
   };
 }
@@ -316,15 +521,15 @@ function commandHref(command: string) {
         : 'snapshot';
     return `/buying-groups/${directBuyingGroup.id}?ask=${encoded}&view=${view}`;
   }
-  if (/financial|margin exposure|margin risk|revenue|gap|volume exposure|exposure|losing money|offset/.test(normalized)) return `/financial-impact?ask=${encoded}&view=money-at-risk`;
-  if (/scenario|model|price move|realization|3\.2|trade spend|stress test/.test(normalized)) return `/scenario-models?ask=${encoded}&view=scenario`;
-  if (/competitor|mondelez|kellanova|coca|nestle|private label/.test(normalized)) return `/competitors?ask=${encoded}&view=competitor-impact`;
-  if (/database|data source|source table|raw data|actual data|source link|source links/.test(normalized)) return `/database?ask=${encoded}&view=source-database`;
-  if (/document|source|file/.test(normalized)) return `/documents?ask=${encoded}&view=source-readiness`;
-  if (/timeline|memory|history|decision|debrief/.test(normalized)) return `/timeline?ask=${encoded}&view=memory-index`;
-  if (/market|germany|france|uk|united kingdom|spain|italy|poland|netherlands|belgium/.test(normalized)) return `/markets?ask=${encoded}&view=market-comparison`;
+  if (/financial|margin exposure|margin risk|revenue|gap|volume exposure|exposure|losing money|offset/.test(normalized)) return `/scenario-lab?ask=${encoded}&view=money-at-risk`;
+  if (/scenario|model|price move|realization|3\.2|trade spend|stress test/.test(normalized)) return `/scenario-lab?ask=${encoded}&view=scenario`;
+  if (/competitor|mondelez|kellanova|coca|nestle|private label/.test(normalized)) return `/?ask=${encoded}&view=competitor-impact`;
+  if (/intelligence|data source|source table|raw data|actual data|source link|source links/.test(normalized)) return `/intelligence?ask=${encoded}&view=source-database`;
+  if (/document|source|file/.test(normalized)) return `/intelligence?ask=${encoded}&view=source-readiness`;
+  if (/intelligence|memory|history|decision|debrief/.test(normalized)) return `/intelligence?ask=${encoded}&view=memory-index`;
+  if (/market|germany|france|uk|united kingdom|spain|italy|poland|netherlands|belgium/.test(normalized)) return `/scenario-lab?ask=${encoded}&view=market-impact`;
   if (/buying group|buyer|carrefour|edeka|tesco|aldi|lidl|rewe|auchan|round|intervention/.test(normalized)) return `/buying-groups?ask=${encoded}&view=buyer-ranking`;
-  if (/signal|news|changed|external|public|inflation|regulatory/.test(normalized)) return `/signals?ask=${encoded}&view=signal-impact`;
+  if (/signal|news|changed|external|public|inflation|regulatory/.test(normalized)) return `/?ask=${encoded}&view=signal-impact`;
   return `/?ask=${encoded}&view=focus`;
 }
 
@@ -398,16 +603,18 @@ function SourceTrustBar({ linked = true, source }: { linked?: boolean; source: S
   return (
     <>
       <div className="atlas-source-trust-bar" aria-label="Source trust">
-        <span>{source.sourceType.replaceAll('_', ' ')}</span>
+        <span className={`atlas-source-type-pill ${sourceTypeClass(source)}`}>{sourceTypeLabel(source)}</span>
         {source.url && linked ? (
-          <a href={source.url} rel="noreferrer" target="_blank">{source.sourceName}</a>
+          <a href={source.url} rel="noreferrer" target="_blank">{sourceDisplayName(source)}</a>
         ) : (
-          <strong>{source.sourceName}</strong>
+          <strong>{sourceDisplayName(source)}</strong>
         )}
+        <span>{sourceTrustDecision(source)}</span>
         <span>{source.sourceDate}</span>
         <span>Updated {source.lastUpdated}</span>
         <span className={`confidence-${source.confidence}`}>Confidence {source.confidence}</span>
         <span className={classNameForStatus(source.status)}>{labelForStatus(source.status)}</span>
+        <span>{sourceHealthSummary(source)}</span>
         <span>{source.governance.canonicalUseAllowed === 'yes' ? 'Canonical use' : source.governance.canonicalUseAllowed === 'with_caveat' ? 'Use with caveat' : 'Not canonical'}</span>
         <button type="button" onClick={() => setOpen(true)}>Inspect source</button>
       </div>
@@ -431,7 +638,7 @@ function SourceDetailDrawer({ onClose, source }: { onClose: () => void; source: 
         <header>
           <div>
             <span>Source detail</span>
-            <h2>{source.sourceName}</h2>
+            <h2>{sourceDisplayName(source)}</h2>
           </div>
           <button type="button" aria-label="Close source detail" onClick={onClose}><X size={17} /></button>
         </header>
@@ -442,24 +649,24 @@ function SourceDetailDrawer({ onClose, source }: { onClose: () => void; source: 
           <div><span>Canonical</span><strong>{canonicalLabel}</strong></div>
         </section>
         <dl>
-          <div><dt>Source owner</dt><dd>{governance.sourceOwner}</dd></div>
+          <div><dt>Source owner</dt><dd>{cleanSourceDisplayText(governance.sourceOwner, 'ATLAS source owner')}</dd></div>
           <div><dt>Source date</dt><dd>{source.sourceDate}</dd></div>
           <div><dt>Last updated</dt><dd>{source.lastUpdated}</dd></div>
-          <div><dt>Approval status</dt><dd>{governance.approvalStatus.replaceAll('_', ' ')}</dd></div>
+          <div><dt>Validation status</dt><dd>{governance.approvalStatus.replaceAll('_', ' ')}</dd></div>
           <div><dt>Allowed use</dt><dd>{allowedUse || 'No allowed-use state listed'}</dd></div>
-          <div><dt>Replacement requirement</dt><dd>{governance.replacementRequirement ?? 'No replacement required for prototype read'}</dd></div>
+          <div><dt>Replacement requirement</dt><dd>{cleanSourceDisplayText(governance.replacementRequirement, 'No replacement required for POC read')}</dd></div>
         </dl>
         {governance.caveats.length ? (
           <section>
             <h3>Caveats</h3>
             <ul>
-              {governance.caveats.map((caveat) => <li key={caveat}>{caveat}</li>)}
+              {governance.caveats.map((caveat) => <li key={caveat}>{cleanSourceDisplayText(caveat, 'Source caveat')}</li>)}
             </ul>
           </section>
         ) : null}
         <footer>
           {source.url ? <a href={source.url} rel="noreferrer" target="_blank">Open linked source</a> : <span>No source link connected yet</span>}
-          <a href={`/database?source=${encodeURIComponent(source.sourceName)}`}>Find in database</a>
+          <a href={`/intelligence?source=${encodeURIComponent(source.sourceName)}`}>Find in database</a>
         </footer>
       </aside>
     </div>
@@ -515,13 +722,13 @@ function SavedGeneratedViewsShelf({ buyingGroupId, marketId }: { buyingGroupId?:
   if (!savedViews.length) return null;
   const attachedCount = savedViews.filter((view) => (view.lifecycleState ?? (view.savedToProfileAt ? 'attached' : 'draft')) === 'attached').length;
   const shelfTitle = buyingGroupId
-    ? 'Generated views saved to buyer history'
+    ? 'Scenario outputs saved to buyer memory'
     : marketId
-      ? 'Generated views saved to market memory'
-      : 'Generated views saved to ATLAS';
+      ? 'Scenario outputs saved to market memory'
+      : 'Scenario outputs saved to ATLAS';
 
   return (
-    <section className="atlas-saved-generated-views" aria-label="Saved generated views">
+    <section className="atlas-saved-generated-views" aria-label="Saved scenario outputs">
       <header>
         <h3>{shelfTitle}</h3>
         <span>{attachedCount} attached / {savedViews.length} total</span>
@@ -534,7 +741,7 @@ function SavedGeneratedViewsShelf({ buyingGroupId, marketId }: { buyingGroupId?:
               <span>{view.summary ?? view.prompt}</span>
             </div>
             <em>{(view.lifecycleState ?? (view.savedToProfileAt ? 'attached' : 'draft')).replaceAll('_', ' ')}</em>
-            <small>{view.sourceName} · {new Date(view.updatedAt).toLocaleDateString('en-US')} · {view.confidence}</small>
+            <small>{sourceDisplayName({ sourceName: view.sourceName })} · {formatAtlasDate(view.updatedAt, { includeYear: true })} · {view.confidence}</small>
           </a>
         ))}
       </div>
@@ -571,6 +778,32 @@ function FinancialImpactStrip({
   );
 }
 
+function TimelineImpactPills({
+  revenue,
+  margin,
+  trade
+}: {
+  revenue?: number;
+  margin?: number;
+  trade?: number;
+}) {
+  const items: Array<readonly [string, number]> = [];
+  if (revenue !== undefined) items.push(['Revenue', revenue]);
+  if (margin !== undefined) items.push(['Margin', margin]);
+  if (trade !== undefined) items.push(['Trade', trade]);
+  if (!items.length) return null;
+  return (
+    <div className="atlas-timeline-impact-pills" aria-label="Financial impact">
+      {items.map(([label, value]) => (
+        <span className={value < 0 ? 'tone-risk' : value > 0 ? 'tone-good' : 'tone-neutral'} key={label}>
+          <small>{label}</small>
+          <strong>{signedEuroLabel(value)}</strong>
+        </span>
+      ))}
+    </div>
+  );
+}
+
 function CommandBar({ initialPrompt = '' }: { initialPrompt?: string }) {
   const [prompt, setPrompt] = useState(initialPrompt);
   const [status, setStatus] = useState('');
@@ -590,7 +823,7 @@ function CommandBar({ initialPrompt = '' }: { initialPrompt?: string }) {
     'Find competitor moves affecting Carrefour',
     'Show margin exposure by market',
     'Retrieve prior-year EDEKA debrief',
-    'Model 3.2% price realization for France'
+    'Run a 3.2% scenario for France'
   ];
 
   return (
@@ -606,7 +839,7 @@ function CommandBar({ initialPrompt = '' }: { initialPrompt?: string }) {
         aria-label="Ask ATLAS"
       />
       <button type="button" onClick={() => submit()}><ArrowRight size={16} /> Ask</button>
-      <button type="button" className="quiet" onClick={() => setStatus('Voice command placeholder ready for explicit-start capture.')}><Mic size={15} /> Voice</button>
+      <button type="button" className="quiet" onClick={() => setStatus('Voice capture ready for explicit-start input.')}><Mic size={15} /> Voice</button>
       <div className="atlas-command-examples">
         {examples.map((example) => (
           <button type="button" key={example} onClick={() => submit(example)}>{example}</button>
@@ -619,16 +852,9 @@ function CommandBar({ initialPrompt = '' }: { initialPrompt?: string }) {
 
 function isNavItemActive(href: string, view: HubView) {
   if (href === '/' && view === 'overview') return true;
-  if (href.startsWith('/markets') && (view === 'markets' || view === 'market')) return true;
   if (href.startsWith('/buying-groups') && (view === 'buyingGroups' || view === 'buyingGroup')) return true;
-  if (href.startsWith('/signals') && view === 'signals') return true;
-  if (href.startsWith('/competitors') && view === 'competitors') return true;
-  if (href.startsWith('/financial-impact') && view === 'financialImpact') return true;
-  if (href.startsWith('/scenario-models') && view === 'scenarioModels') return true;
-  if (href.startsWith('/documents') && view === 'documents') return true;
-  if (href.startsWith('/timeline') && view === 'timeline') return true;
-  if (href.startsWith('/database') && view === 'database') return true;
-  if (href.startsWith('/how-it-works') && view === 'howItWorks') return true;
+  if (href.startsWith('/scenario-lab') && (view === 'scenarioModels' || view === 'scenarioCompare' || view === 'financialImpact')) return true;
+  if (href.startsWith('/intelligence') && (view === 'database' || view === 'documents' || view === 'timeline' || view === 'signals' || view === 'competitors' || view === 'markets' || view === 'market')) return true;
   return false;
 }
 
@@ -650,9 +876,9 @@ function hubCommandConfig({
       examples: [
         `Show me ${buyingGroup.name} financial exposure`,
         `Pull ${buyingGroup.name} buyer history`,
-        `Create a ${buyingGroup.name} prep report`
+        `Model ${buyingGroup.name} buyer counter`
       ],
-      placeholder: `Ask ATLAS about ${buyingGroup.name}, its numbers, history, documents, or room reports...`
+      placeholder: `Ask ATLAS about ${buyingGroup.name}, its numbers, history, documents, or scenario options...`
     };
   }
 
@@ -671,8 +897,8 @@ function hubCommandConfig({
   if (view === 'markets') {
     return {
       basePath: '/markets',
-      examples: ['Where am I losing money by market?', 'Show offset opportunities', 'Rank markets by margin risk'],
-      placeholder: 'Ask for market risk, offsets, buyer pressure, or margin exposure...'
+      examples: ['Where am I losing money by market?', 'Which buyers are affected by market pressure?', 'Rank markets by margin risk'],
+      placeholder: 'Ask for market risk, buyer pressure, margin exposure, or scenarios to test...'
     };
   }
 
@@ -686,40 +912,40 @@ function hubCommandConfig({
 
   if (view === 'financialImpact') {
     return {
-      basePath: '/financial-impact',
+      basePath: '/scenario-lab',
       examples: ['Show margin exposure by market', 'Where am I below plan?', 'Show a risk waterfall for Carrefour'],
       placeholder: 'Ask for margin risk, gap to plan, realization, or trade spend exposure...'
     };
   }
 
-  if (view === 'scenarioModels') {
+  if (view === 'scenarioModels' || view === 'scenarioCompare') {
     return {
-      basePath: '/scenario-models',
-      examples: ['Model 3.2% realization for Carrefour', 'Compare Germany and France exposure', 'Create a scenario report for EDEKA'],
-      placeholder: 'Ask ATLAS to model a buyer, market, price move, trade spend shift, or scenario report...'
+      basePath: '/scenario-lab',
+      examples: ['Run a 3.2% scenario for Carrefour', 'Compare Germany and France exposure', 'Predict EDEKA buyer counter'],
+      placeholder: 'Ask ATLAS to model a buyer, market, SKU drill-in, custom lever, trade shift, or buyer counter...'
     };
   }
 
   if (view === 'database') {
     return {
-      basePath: '/database',
-      examples: ['Show stale source records', 'Find source links for Carrefour', 'Show high confidence competitor sources'],
-      placeholder: 'Ask for source records by buyer, market, confidence, status, or data type...'
+      basePath: '/intelligence',
+      examples: ['Show stale source records', 'Find source links for Carrefour', 'Show prediction accuracy for EDEKA'],
+      placeholder: 'Ask for memory, debriefs, prediction accuracy, sources, confidence, or approval status...'
     };
   }
 
   if (view === 'competitors') {
     return {
-      basePath: '/competitors',
+      basePath: '/signals',
       examples: ['Find competitor moves affecting Carrefour', 'Show private label pressure', 'Create competitor leverage readout'],
       placeholder: 'Ask for competitor moves, buyer leverage, affected markets, or margin impact...'
     };
   }
 
   return {
-    basePath: '/',
-    examples: ['What needs my attention today?', 'Show margin exposure across Europe', 'Create a news impact report'],
-    placeholder: 'Ask ATLAS to pull a view, report, buyer read, source, or scenario...'
+      basePath: '/',
+      examples: ['What changed across Europe this week?', 'Which alerts should I model first?', 'What scenario risk changed?'],
+      placeholder: 'Ask ATLAS to pull an alert, source gap, scenario risk, or modeled impact...'
   };
 }
 
@@ -736,52 +962,42 @@ function AppShell({
   marketId?: string;
   view: HubView;
 }) {
+  const [isNavCompact, setIsNavCompact] = useState(false);
   const commandConfig = hubCommandConfig({ buyingGroupId, marketId, view });
   const primaryNav = [
-    { label: 'Overview', href: '/' },
-    { label: 'Markets', href: '/markets' },
+    { label: 'Triage', href: '/' },
+    { label: 'Scenario Lab', href: '/scenario-lab' },
     { label: 'Buying Groups', href: '/buying-groups' },
-    { label: 'PepsiCo Impact', href: '/financial-impact' },
-    { label: 'Scenario Models', href: '/scenario-models' },
-    { label: 'Database', href: '/database' },
-    { label: 'How it works', href: '/how-it-works' }
+    { label: 'Intelligence Library', href: '/intelligence' }
   ];
-  const marketMenu = [...packet.markets]
-    .sort((a, b) => riskRank(b.pressureLevel) - riskRank(a.pressureLevel) || b.marginAtRisk - a.marginAtRisk);
   const buyingGroupMenu = [...packet.buyingGroups]
     .sort((a, b) => riskRank(b.riskLevel) - riskRank(a.riskLevel) || b.financialExposure.marginAtRisk - a.financialExposure.marginAtRisk);
+
+  useEffect(() => {
+    const updateNavState = () => setIsNavCompact(window.scrollY > 24);
+
+    updateNavState();
+    window.addEventListener('scroll', updateNavState, { passive: true });
+    return () => window.removeEventListener('scroll', updateNavState);
+  }, []);
 
   return (
     <main className="atlas-hub-shell">
       <section className="atlas-hub-main">
-        <header className="atlas-hub-header">
+        <header className={`atlas-hub-header${isNavCompact ? ' is-compact' : ''}`}>
           <a className="atlas-hub-brand" href="/">
-            <Sparkles size={18} />
-            <span>ATLAS</span>
+            <img src="/atlas-logo.png" alt="Atlas" />
           </a>
           <nav className="atlas-primary-nav" aria-label="Primary intelligence navigation">
             {primaryNav.map((item) => {
-              if (item.href === '/markets') {
-                return (
-                  <div className="atlas-primary-nav-item has-menu" key={item.href}>
-                    <a href={item.href} className={isNavItemActive(item.href, view) ? 'active' : ''}>
-                      {item.label}
-                    </a>
-                    <div className="atlas-nav-dropdown" role="menu" aria-label="Market shortcuts">
-                      {marketMenu.map((market) => (
-                        <a href={`/markets/${market.id}`} key={market.id} role="menuitem">
-                          <span>{market.name}</span>
-                          <em>{market.pressureLevel} · {euros(market.marginAtRisk)}</em>
-                        </a>
-                      ))}
-                    </div>
-                  </div>
-                );
-              }
               if (item.href === '/buying-groups') {
                 return (
                   <div className="atlas-primary-nav-item has-menu" key={item.href}>
-                    <a href={item.href} className={isNavItemActive(item.href, view) ? 'active' : ''}>
+                    <a
+                      href={item.href}
+                      className={isNavItemActive(item.href, view) ? 'active' : ''}
+                      aria-haspopup="true"
+                    >
                       {item.label}
                     </a>
                     <div className="atlas-nav-dropdown" role="menu" aria-label="Buying group shortcuts">
@@ -805,9 +1021,7 @@ function AppShell({
             })}
           </nav>
           <div className="atlas-hub-context">
-            <span>Europe CNO Hub</span>
-            <span>{new Date(packet.generatedAt).toLocaleDateString('en-US')}</span>
-            <span>EUR</span>
+            <span className="atlas-user-orb" aria-hidden="true" />
           </div>
         </header>
         {children}
@@ -876,6 +1090,48 @@ function IntentBrief({
       ) : null}
       <strong>{action}</strong>
     </section>
+  );
+}
+
+function relevanceLabels(reasons: RelevanceReasonType[]) {
+  return reasons.map((reason) => relevanceReasonCopy[reason].label).join(' / ');
+}
+
+function WhyShownLine({
+  detail,
+  reasons
+}: {
+  detail: string;
+  reasons: RelevanceReasonType[];
+}) {
+  return (
+    <div className="atlas-why-shown-line">
+      <Sparkles size={13} />
+      <span>Why shown</span>
+      <em>{relevanceLabels(reasons)}</em>
+      <small>{detail}</small>
+    </div>
+  );
+}
+
+function ClosedLoopMemoryTag({
+  label,
+  status = 'available'
+}: {
+  label: string;
+  status?: 'available' | 'saved' | 'used' | 'watch';
+}) {
+  return <span className={`atlas-loop-memory-tag status-${status}`}>{label}</span>;
+}
+
+function PageIntentNote({ intentKey }: { intentKey: PageIntentKey }) {
+  const config = pageIntentConfig[intentKey];
+  return (
+    <aside className="atlas-page-intent-note" aria-label="Page intent">
+      <strong>{config.intent}</strong>
+      <span>{config.defaultRead}</span>
+      <em>{config.primaryAction}</em>
+    </aside>
   );
 }
 
@@ -968,24 +1224,24 @@ function buildAtlasQuickAnswer(command: string, basePath: string): AtlasQuickAns
 
     if (/financial|margin|revenue|gap|volume|trade|price|realization|exposure/.test(normalized)) {
       return {
-        actionLabel: 'Open financial view',
+        actionLabel: 'Open scenario workspace',
         answer: `${buyerWorkspace.buyingGroup.name} has ${euros(exposure.marginAtRisk)} margin at risk and expected realization is ${pct(exposure.expectedPriceRealization)} versus ${pct(exposure.targetPriceRealization)} target.`,
-        href: `${basePath}?ask=${encodeURIComponent(command)}&view=financials`,
+        href: `${basePath}?ask=${encodeURIComponent(command)}&view=strategy`,
         source: profileRead.source,
-        title: 'Financial answer'
+        title: 'Scenario input answer'
       };
     }
 
     if (/history|timeline|debrief|document|source|prep|reaction|respond/.test(normalized)) {
       const latest = buyerWorkspace.timelineEvents[0];
       return {
-        actionLabel: 'Open history',
+        actionLabel: 'Open scenario memory',
         answer: latest
           ? `Latest buyer memory: ${latest.title}. This is the strongest current clue for how ${buyerWorkspace.buyingGroup.name} may respond.`
           : `No recent buyer memory is attached yet. Add a debrief or supporting document to improve the read.`,
-        href: `${basePath}?ask=${encodeURIComponent(command)}&view=memory`,
+        href: `${basePath}?ask=${encodeURIComponent(command)}&view=strategy`,
         source: latest?.source ?? buyerWorkspace.documents[0]?.source ?? profileRead.source,
-        title: 'Buyer history answer'
+        title: 'Buyer memory answer'
       };
     }
 
@@ -1002,21 +1258,21 @@ function buildAtlasQuickAnswer(command: string, basePath: string): AtlasQuickAns
     }
 
     return {
-      actionLabel: 'Open generated buyer view',
+      actionLabel: 'Open buyer scenario read',
       answer: signal
-        ? `${buyerWorkspace.buyingGroup.name} is likely to push on ${signal.title.toLowerCase()}. ATLAS created a focused view using the buyer profile, financial state, and source memory.`
-        : `${buyerWorkspace.buyingGroup.name} should be read from its current position, active financial exposure, and latest timeline event first. ATLAS created a focused view from available memory.`,
+        ? `${buyerWorkspace.buyingGroup.name} is likely to push on ${signal.title.toLowerCase()}. ATLAS created a buyer scenario read using the buyer profile, financial state, and source memory.`
+        : `${buyerWorkspace.buyingGroup.name} should be read from its current position, active financial exposure, and latest timeline event first. ATLAS created a buyer scenario read from available memory.`,
       href: `${basePath}?ask=${encodeURIComponent(command)}&view=custom`,
       source,
-      title: 'Generated buyer answer'
+      title: 'Buyer scenario answer'
     };
   }
 
   const href = commandHref(command);
   const source = packet.signals[0]?.source ?? packet.markets[0].source;
   return {
-    actionLabel: 'Open generated view',
-    answer: 'ATLAS matched this request to the closest intelligence view. Open it for the ranked data, source context, and next action.',
+    actionLabel: 'Open scenario output',
+    answer: 'ATLAS matched this request to the closest intelligence view. Open it for ranked data, source context, scenario implications, and next action.',
     href,
     source,
     title: 'Fast answer'
@@ -1081,9 +1337,9 @@ function AtlasCommandSurface({
     const pendingOutputTab = isOutput ? window.open('about:blank', '_blank') : null;
     setIsThinking(true);
     setQuickAnswer(null);
-    setStatus(isOutput ? 'ATLAS is checking the database and preparing the document...' : 'ATLAS is checking the data and source memory...');
+    setStatus(isOutput ? 'ATLAS is checking the database and preparing the scenario output...' : 'ATLAS is checking the data and source memory...');
     if (pendingOutputTab) {
-      pendingOutputTab.document.write('<!doctype html><title>ATLAS is preparing</title><body style="margin:0;font-family:Inter,Arial,sans-serif;background:#fff;color:#0b1f33;display:grid;min-height:100vh;place-items:center;"><div style="text-align:center;"><strong style="font-size:18px;">ATLAS is preparing your document</strong><p style="color:#5f6f80;font-size:13px;">Checking the database and opening the report...</p></div></body>');
+      pendingOutputTab.document.write('<!doctype html><title>ATLAS is preparing</title><body style="margin:0;font-family:Inter,Arial,sans-serif;background:#fff;color:#0b1f33;display:grid;min-height:100vh;place-items:center;"><div style="text-align:center;"><strong style="font-size:18px;">ATLAS is preparing your scenario output</strong><p style="color:#5f6f80;font-size:13px;">Checking the database and opening the evidence readout...</p></div></body>');
       pendingOutputTab.document.close();
     }
 
@@ -1093,7 +1349,7 @@ function AtlasCommandSurface({
         setIsThinking(false);
         if (pendingOutputTab) {
           pendingOutputTab.location.href = href;
-          setStatus('Generated report opened in a new tab.');
+          setStatus('Scenario output opened in a new tab.');
           return;
         }
         setStatus('Popup blocked. Opening here...');
@@ -1118,19 +1374,19 @@ function AtlasCommandSurface({
       <div>
         <Sparkles size={16} />
         <strong>Ask ATLAS</strong>
-        <span>Pull a view, report, buyer read, source, or scenario from this page.</span>
+        <span>Pull a scenario output, buyer read, source, or evidence packet from this page.</span>
       </div>
       <form onSubmit={(event) => {
         event.preventDefault();
         submit();
       }}>
-        <button type="button" className="voice" onClick={() => setStatus('Voice capture placeholder ready. In the POC, typed commands create the same generated views.')} disabled={isThinking}><Mic size={14} /> Voice</button>
+        <button type="button" className="voice" onClick={() => setStatus('Voice capture ready. Typed commands create the same scenario outputs in this POC.')} disabled={isThinking}><Mic size={14} /> Voice</button>
         <input
           ref={inputRef}
           value={prompt}
           onChange={(event) => setPrompt(event.target.value)}
           placeholder={placeholder}
-          aria-label="Ask ATLAS for a generated view"
+          aria-label="Ask ATLAS for a scenario output"
           disabled={isThinking}
         />
         <button type="submit" className="send" disabled={isThinking || !prompt.trim()}>
@@ -1348,6 +1604,12 @@ function SignalCards({ signals }: { signals: ExternalSignal[] }) {
     <section className="atlas-card-grid">
       {signals.map((signal) => {
         const firstGroup = signal.affectedBuyingGroups[0];
+        const firstMarket = signal.affectedMarkets[0];
+        const modelParams = new URLSearchParams();
+        if (firstMarket) modelParams.set('market', firstMarket);
+        if (firstGroup) modelParams.set('buyingGroup', firstGroup);
+        modelParams.set('source', 'external-alert');
+        modelParams.set('alert', signal.id);
         return (
           <IntelligenceCard
             key={signal.id}
@@ -1359,7 +1621,7 @@ function SignalCards({ signals }: { signals: ExternalSignal[] }) {
             affected={`${signal.affectedMarkets.map((id) => getMarket(id)?.name ?? id).join(', ')} / ${signal.affectedBuyingGroups.map((id) => getBuyingGroup(id)?.name ?? id).join(', ')}`}
             action={signal.recommendedAction}
             source={signal.source}
-            href={firstGroup ? `/buying-groups/${firstGroup}` : `/signals?signal=${signal.id}`}
+            href={`/scenario-lab?${modelParams.toString()}`}
           />
         );
       })}
@@ -1372,6 +1634,12 @@ function CompetitorCards({ moves }: { moves: CompetitorMove[] }) {
     <section className="atlas-card-grid">
       {moves.map((move) => {
         const firstGroup = move.affectedBuyingGroups[0];
+        const firstMarket = move.affectedMarkets[0];
+        const modelParams = new URLSearchParams();
+        if (firstMarket) modelParams.set('market', firstMarket);
+        if (firstGroup) modelParams.set('buyingGroup', firstGroup);
+        modelParams.set('source', 'competitor-alert');
+        modelParams.set('alert', move.id);
         return (
           <IntelligenceCard
             key={move.id}
@@ -1383,10 +1651,727 @@ function CompetitorCards({ moves }: { moves: CompetitorMove[] }) {
             affected={`${move.affectedMarkets.map((id) => getMarket(id)?.name ?? id).join(', ')} / ${move.affectedBuyingGroups.map((id) => getBuyingGroup(id)?.name ?? id).join(', ')}`}
             action={move.recommendedAction}
             source={move.source}
-            href={firstGroup ? `/buying-groups/${firstGroup}` : `/competitors?move=${move.id}`}
+            href={`/scenario-lab?${modelParams.toString()}`}
           />
         );
       })}
+    </section>
+  );
+}
+
+type AtlasActiveAlert = {
+  action: string;
+  affected: string;
+  alertTypeLabel: 'News alert' | 'Scenario modeled' | 'Pattern identified' | 'Competitor move' | 'Memory update';
+  effectLabel?: string;
+  href: string;
+  id: string;
+  metrics: Array<{ label: string; value: string }>;
+  modelHref?: string;
+  possibleEffect: string;
+  source: SourceMeta;
+  title: string;
+  tone: 'critical' | 'watch' | 'opportunity' | 'memory';
+  trigger: string;
+  value: string;
+};
+
+type TriageScenarioSnapshot = {
+  description?: string;
+  href: string;
+  metrics: Array<{ label: string; value: string }>;
+  status: string;
+  title: string;
+};
+
+function alertToneFromRisk(risk: AtlasRiskLevel | Market['pressureLevel']): AtlasActiveAlert['tone'] {
+  if (risk === 'critical' || risk === 'high') return 'critical';
+  if (risk === 'medium') return 'watch';
+  return 'opportunity';
+}
+
+function paramFromScenarioHref(href: string | undefined, key: string) {
+  if (!href) return null;
+  const query = href.split('?')[1];
+  if (!query) return null;
+  return new URLSearchParams(query).get(key);
+}
+
+function scenarioHrefWithId(href: string, scenarioId: string) {
+  return `${href}${href.includes('?') ? '&' : '?'}scenario=${scenarioId}`;
+}
+
+function scenarioSnapshotForAlert(alert: AtlasActiveAlert): TriageScenarioSnapshot | null {
+  if (!alert.modelHref?.startsWith('/scenario-lab') || alert.alertTypeLabel === 'Memory update') return null;
+
+  const buyingGroupId = paramFromScenarioHref(alert.modelHref, 'buyingGroup');
+  const marketId = paramFromScenarioHref(alert.modelHref, 'market');
+  const matchedScenario = packet.scenarioModels.find((model) => (
+    (buyingGroupId ? model.buyingGroupId === buyingGroupId : true)
+    && (marketId ? model.marketId === marketId : true)
+  )) ?? packet.scenarioModels.find((model) => buyingGroupId && model.buyingGroupId === buyingGroupId);
+
+  if (matchedScenario) {
+    return {
+      href: scenarioHrefWithId(alert.modelHref, matchedScenario.id),
+      metrics: [
+        { label: 'Land', value: `${Math.round(matchedScenario.inputs.buyerAcceptanceProbability)}%` },
+        { label: 'NR', value: euros(matchedScenario.outputs.revenueImpact) },
+        { label: 'Guardrail', value: matchedScenario.outputs.riskLevel === 'high' ? 'Review' : 'Inside' }
+      ],
+      status: alert.alertTypeLabel === 'Scenario modeled' ? 'Scenario already modeled' : 'ATLAS ran scenario from alert',
+      title: matchedScenario.name,
+      description: matchedScenario.outputs.recommendation
+    };
+  }
+
+  return {
+    href: alert.modelHref,
+    metrics: [
+      { label: 'Land', value: alert.tone === 'critical' ? '58%' : alert.tone === 'watch' ? '64%' : '71%' },
+      { label: 'Value at stake', value: alert.value },
+      { label: 'Guardrail', value: alert.tone === 'critical' ? 'Review' : 'Inside' }
+    ],
+    status: 'ATLAS ran scenario from alert',
+    title: alert.tone === 'critical' ? 'Counterstrategy needed' : 'Scenario impact modeled',
+    description: alert.action
+  };
+}
+
+function TriageScenarioSnapshotCard({ snapshot }: { snapshot: TriageScenarioSnapshot }) {
+  return (
+    <a className="atlas-triage-scenario-snapshot" href={snapshot.href}>
+      <span>{snapshot.status}</span>
+      <strong>{snapshot.title}</strong>
+      {snapshot.description ? <p>{snapshot.description}</p> : null}
+      <dl>
+        {snapshot.metrics.map((metric) => (
+          <div key={`${snapshot.title}-${metric.label}`}>
+            <dt>{metric.label}</dt>
+            <dd>{metric.value}</dd>
+          </div>
+        ))}
+      </dl>
+      <em>Open modeled run <ArrowRight size={12} /></em>
+    </a>
+  );
+}
+
+function triageCompletedActionsForAlert(alert: AtlasActiveAlert): TriageScenarioSnapshot[] {
+  const scenarioSnapshot = scenarioSnapshotForAlert(alert);
+  const scenarioActions = scenarioSnapshot ? [scenarioSnapshot] : [];
+  const buyerCountMetric = alert.metrics.find((metric) => /buyer/i.test(metric.label));
+  const marketCountMetric = alert.metrics.find((metric) => /market/i.test(metric.label));
+
+  return [
+    ...scenarioActions,
+    {
+      description: `ATLAS routed the trigger into the current ${alert.effectLabel?.toLowerCase() ?? 'scenario'} read so the team can see what changed before changing priority.`,
+      href: alert.modelHref ?? alert.href,
+      metrics: [
+        { label: 'Trigger', value: alert.trigger },
+        { label: buyerCountMetric?.label ?? 'Affected', value: buyerCountMetric?.value ?? alert.affected.split('·')[0]?.trim() ?? 'Review' }
+      ],
+      status: 'Impact mapped',
+      title: 'Connected alert to negotiation impact'
+    },
+    {
+      description: 'ATLAS checked the source trail and linked the alert to the evidence the CNO would need before acting.',
+      href: alert.href,
+      metrics: [
+        { label: 'Source', value: sourceDisplayName(alert.source) },
+        { label: marketCountMetric?.label ?? 'Confidence', value: marketCountMetric?.value ?? alert.source.confidence }
+      ],
+      status: 'Evidence checked',
+      title: 'Prepared evidence trail'
+    }
+  ].slice(0, 3);
+}
+
+function alertScopeForMarkets(marketIds: string[]) {
+  return marketIds.map((id) => getMarket(id)?.name ?? id).join(' / ');
+}
+
+function alertScopeForBuyers(groupIds: string[]) {
+  return groupIds.map((id) => getBuyingGroup(id)?.name ?? id).join(' / ');
+}
+
+function alertCountLabel(count: number, singular: string, plural = `${singular}s`) {
+  return `${count} ${count === 1 ? singular : plural}`;
+}
+
+function signalToAlert(signal: ExternalSignal): AtlasActiveAlert {
+  const firstBuyer = signal.affectedBuyingGroups[0];
+  const firstMarket = signal.affectedMarkets[0];
+  const firstBuyerName = firstBuyer ? getBuyingGroup(firstBuyer)?.name ?? firstBuyer : null;
+  const modelParams = new URLSearchParams();
+  if (firstMarket) modelParams.set('market', firstMarket);
+  if (firstBuyer) modelParams.set('buyingGroup', firstBuyer);
+  modelParams.set('source', 'external-alert');
+  modelParams.set('alert', signal.id);
+  const scenarioHref = modelParams.toString() ? `/scenario-lab?${modelParams.toString()}` : '/scenario-lab';
+  return {
+    action: firstBuyerName ? `Model alert impact before prioritizing ${firstBuyerName}` : 'Model alert impact',
+    affected: `${alertScopeForMarkets(signal.affectedMarkets)} · ${alertScopeForBuyers(signal.affectedBuyingGroups)}`,
+    alertTypeLabel: 'News alert',
+    effectLabel: 'Scenario assumptions / buyer priority after modeling',
+    href: scenarioHref,
+    id: `signal-${signal.id}`,
+    metrics: [
+      { label: signal.estimatedMarginImpact !== undefined ? 'Margin impact' : 'Revenue impact', value: euros(signal.estimatedMarginImpact ?? signal.estimatedRevenueImpact ?? 0) },
+      { label: 'Markets affected', value: alertCountLabel(signal.affectedMarkets.length, 'market') },
+      { label: 'Buyers affected', value: alertCountLabel(signal.affectedBuyingGroups.length, 'buyer') }
+    ],
+    modelHref: scenarioHref,
+    possibleEffect: `${signal.negotiationImplication} Model this first to see whether it changes the ask, fallback, evidence set, concession path, and downstream buyer priority.`,
+    source: signal.source,
+    title: signal.title,
+    tone: signal.estimatedMarginImpact && signal.estimatedMarginImpact > 1000000 ? 'critical' : 'watch',
+    trigger: signal.signalType === 'world_news' ? 'world news' : signal.signalType.replaceAll('_', ' '),
+    value: euros(signal.estimatedMarginImpact ?? signal.estimatedRevenueImpact ?? 0)
+  };
+}
+
+function competitorToAlert(move: CompetitorMove): AtlasActiveAlert {
+  const firstBuyer = move.affectedBuyingGroups[0];
+  const firstMarket = move.affectedMarkets[0];
+  const firstBuyerName = firstBuyer ? getBuyingGroup(firstBuyer)?.name ?? firstBuyer : null;
+  const modelParams = new URLSearchParams();
+  if (firstMarket) modelParams.set('market', firstMarket);
+  if (firstBuyer) modelParams.set('buyingGroup', firstBuyer);
+  modelParams.set('source', 'competitor-alert');
+  modelParams.set('alert', move.id);
+  const scenarioHref = modelParams.toString() ? `/scenario-lab?${modelParams.toString()}` : '/scenario-lab';
+  return {
+    action: firstBuyerName ? `Model competitor impact before prioritizing ${firstBuyerName}` : 'Model competitor impact',
+    affected: `${alertScopeForMarkets(move.affectedMarkets)} · ${alertScopeForBuyers(move.affectedBuyingGroups)}`,
+    alertTypeLabel: 'Competitor move',
+    effectLabel: 'Scenario assumptions / concession risk',
+    href: scenarioHref,
+    id: `competitor-${move.id}`,
+    metrics: [
+      { label: move.estimatedMarginImpact !== undefined ? 'Margin impact' : 'Revenue impact', value: euros(move.estimatedMarginImpact ?? move.estimatedRevenueImpact ?? 0) },
+      { label: 'Markets affected', value: alertCountLabel(move.affectedMarkets.length, 'market') },
+      { label: 'Buyers affected', value: alertCountLabel(move.affectedBuyingGroups.length, 'buyer') }
+    ],
+    modelHref: scenarioHref,
+    possibleEffect: `${move.possibleBuyerLeverage} ${move.pepsicoImplication} Model this before deciding whether it creates new buyer pushback, proof needs, or negotiation priority.`,
+    source: move.source,
+    title: `${move.competitor}: ${move.title}`,
+    tone: move.estimatedMarginImpact && move.estimatedMarginImpact > 1000000 ? 'critical' : 'watch',
+    trigger: move.moveType.replaceAll('_', ' '),
+    value: euros(move.estimatedMarginImpact ?? move.estimatedRevenueImpact ?? 0)
+  };
+}
+
+function marketToAlert(market: Market): AtlasActiveAlert {
+  const read = buildMarketDecisionRead(market);
+  const buyerName = read.topBuyer?.name ?? `${read.groups.length} buying groups`;
+  const modelParams = new URLSearchParams();
+  modelParams.set('market', market.id);
+  modelParams.set('source', 'market-pressure');
+  if (read.topBuyer) modelParams.set('buyingGroup', read.topBuyer.id);
+  const scenarioHref = `/scenario-lab?${modelParams.toString()}`;
+  return {
+    action: read.topBuyer ? `Model pressure before changing ${read.topBuyer.name}'s priority` : 'Model market exposure',
+    affected: `${buyerName} · ${market.activeBuyingGroups.length} active buyers`,
+    alertTypeLabel: 'Pattern identified',
+    effectLabel: 'Pricing corridor / derived buyer priority',
+    href: scenarioHref,
+    id: `market-${market.id}`,
+    metrics: [
+      { label: 'Margin at risk', value: euros(market.marginAtRisk) },
+      { label: 'Active buyers', value: String(market.activeBuyingGroups.length) },
+      { label: 'Pressure level', value: market.pressureLevel }
+    ],
+    modelHref: scenarioHref,
+    possibleEffect: `${market.name}'s pressure state can change pricing corridor, concession path, and buyer response assumptions.`,
+    source: market.source,
+    title: `${market.name} moved to ${market.pressureLevel} market pressure`,
+    tone: alertToneFromRisk(market.pressureLevel),
+    trigger: `${market.pressureLevel} market pressure`,
+    value: euros(market.marginAtRisk)
+  };
+}
+
+function buyerTriggeredAlertRead(group: BuyingGroup, signal?: ExternalSignal) {
+  const primaryMarket = getMarket(group.primaryMarkets[0]);
+  const targetGap = group.financialExposure.targetPriceRealization - group.financialExposure.expectedPriceRealization;
+  if (signal) {
+    return {
+      action: `Model how this changes ${group.name}'s buyer response`,
+      title: `${signal.title} affects ${group.name}`,
+      trigger: signal.signalType === 'world_news' ? 'world news alert' : signal.signalType.replaceAll('_', ' '),
+      possibleEffect: `${signal.negotiationImplication} This could change ${group.name}'s likely counter, evidence needs, and concession path.`
+    };
+  }
+  if (targetGap >= 0.8) {
+    return {
+      action: 'Test fallback and red-line response before the next round',
+      title: `${group.name} realization gap widened to ${pct(targetGap)}`,
+      trigger: 'price realization below target',
+      possibleEffect: `${group.name} is tracking ${pct(targetGap)} below target, which can change the in-going ask, fallback, red line, and buyer acceptance likelihood.`
+    };
+  }
+  if (group.financialExposure.marginAtRisk >= 3000000) {
+    return {
+      action: 'Model margin recovery options before prioritizing concessions',
+      title: `${group.name} margin exposure crossed ${euros(group.financialExposure.marginAtRisk)}`,
+      trigger: 'margin exposure threshold crossed',
+      possibleEffect: `${euros(group.financialExposure.marginAtRisk)} is at risk, so ATLAS should test price, trade spend, and volume assumptions before the next buyer move.`
+    };
+  }
+  if (group.riskLevel === 'critical' || group.riskLevel === 'high') {
+    return {
+      action: 'Run buyer-response scenario before setting the next ask',
+      title: `${group.name} moved into ${group.riskLevel} negotiation risk`,
+      trigger: `${group.riskLevel} risk state`,
+      possibleEffect: `${group.name}'s risk state can change buyer pushback, confidence in the recommended ask, and which proof should be prepared.`
+    };
+  }
+  return {
+    action: 'Check whether this changes the current scenario',
+    title: `${group.name} has a new ${primaryMarket?.name ?? 'market'} negotiation signal`,
+    trigger: 'buyer signal updated',
+    possibleEffect: `A new signal for ${group.name} may affect the current scenario assumptions and negotiation priority.`
+  };
+}
+
+function buyingGroupToAlert(group: BuyingGroup): AtlasActiveAlert {
+  const signal = signalsFor({ buyingGroupId: group.id })[0];
+  const targetGap = group.financialExposure.targetPriceRealization - group.financialExposure.expectedPriceRealization;
+  const alertRead = buyerTriggeredAlertRead(group, signal);
+  return {
+    action: alertRead.action,
+    affected: `${group.primaryMarkets.map((id) => getMarket(id)?.name ?? id).join(' / ')} · ${buyerRoundLabel(group)}`,
+    alertTypeLabel: 'Pattern identified',
+    effectLabel: 'Ask / fallback / buyer counter',
+    href: `/scenario-lab?buyingGroup=${group.id}&source=buyer-risk`,
+    id: `buyer-${group.id}`,
+    metrics: [
+      { label: 'Margin at risk', value: euros(group.financialExposure.marginAtRisk) },
+      { label: 'Realization gap', value: pct(targetGap) },
+      { label: 'Round', value: buyerRoundLabel(group) }
+    ],
+    modelHref: `/scenario-lab?buyingGroup=${group.id}&source=buyer-risk`,
+    possibleEffect: alertRead.possibleEffect,
+    source: signal?.source ?? group.source,
+    title: alertRead.title,
+    tone: alertToneFromRisk(group.riskLevel),
+    trigger: alertRead.trigger,
+    value: euros(group.financialExposure.marginAtRisk)
+  };
+}
+
+function scenarioToAlert(model = packet.scenarioModels[0]): AtlasActiveAlert {
+  const buyer = getBuyingGroup(model.buyingGroupId);
+  const market = getMarket(model.marketId);
+  const source = packet.documents.find((document) => model.sourceIds.includes(document.id))?.source ?? buyer?.source ?? market?.source ?? packet.markets[0].source;
+  const scenarioTitle = buyer?.name && model.name.toLowerCase().startsWith(buyer.name.toLowerCase())
+    ? model.name
+    : `${buyer?.name ?? model.buyingGroupId}: ${model.name}`;
+  return {
+    action: 'Review scenario result',
+    affected: `${buyer?.name ?? model.buyingGroupId} · ${market?.name ?? model.marketId}`,
+    alertTypeLabel: 'Scenario modeled',
+    effectLabel: 'Likelihood / value protected',
+    href: `/scenario-lab?buyingGroup=${model.buyingGroupId}&market=${model.marketId}`,
+    id: `scenario-${model.id}`,
+    metrics: [
+      { label: 'Risk-adjusted value', value: euros(model.outputs.riskAdjustedValue) },
+      { label: 'Expected realization', value: pct(model.inputs.expectedRealizationPercent) },
+      { label: 'Buyer acceptance', value: `${Math.round(model.inputs.buyerAcceptanceProbability)}%` }
+    ],
+    modelHref: `/scenario-lab?buyingGroup=${model.buyingGroupId}&market=${model.marketId}`,
+    possibleEffect: `${model.outputs.recommendation} CNO should decide whether to use this modeled position, adjust the fallback, or rerun the scenario before the next negotiation.`,
+    source,
+    title: scenarioTitle,
+    tone: model.outputs.riskLevel === 'high' ? 'critical' : model.outputs.riskLevel === 'medium' ? 'watch' : 'opportunity',
+    trigger: `${pct(model.inputs.expectedRealizationPercent)} expected realization`,
+    value: euros(model.outputs.riskAdjustedValue)
+  };
+}
+
+function memoryToAlert(event: TimelineEvent): AtlasActiveAlert {
+  const buyerId = event.buyingGroupIds[0];
+  const scenarioHref = buyerId ? `/buying-groups/${buyerId}?view=strategy` : '/intelligence';
+  return {
+    action: buyerId ? 'Use memory in buyer scenario' : 'Review memory',
+    affected: `${alertScopeForMarkets(event.marketIds)} · ${alertScopeForBuyers(event.buyingGroupIds)}`,
+    alertTypeLabel: 'Memory update',
+    effectLabel: 'Future prediction / buyer behavior',
+    href: scenarioHref,
+    id: `memory-${event.id}`,
+    metrics: [
+      { label: event.financialImpact?.marginImpact !== undefined ? 'Margin impact' : 'Revenue impact', value: euros(event.financialImpact?.marginImpact ?? event.financialImpact?.revenueImpact ?? 0) },
+      { label: 'Markets affected', value: alertCountLabel(event.marketIds.length, 'market') },
+      { label: 'Buyers affected', value: alertCountLabel(event.buyingGroupIds.length, 'buyer') }
+    ],
+    modelHref: scenarioHref,
+    possibleEffect: event.summary,
+    source: event.source,
+    title: event.title,
+    tone: 'memory',
+    trigger: event.eventType.replaceAll('_', ' '),
+    value: euros(event.financialImpact?.marginImpact ?? event.financialImpact?.revenueImpact ?? 0)
+  };
+}
+
+function patternToAlert(pattern: CrossMarketPattern): AtlasActiveAlert {
+  const firstBuyer = pattern.affectedBuyingGroups[0];
+  const firstMarket = pattern.affectedMarkets[0];
+  const modelParams = new URLSearchParams();
+  if (firstMarket) modelParams.set('market', firstMarket);
+  if (firstBuyer) modelParams.set('buyingGroup', firstBuyer);
+  modelParams.set('source', 'cross-market-pattern');
+  modelParams.set('pattern', pattern.id);
+  const href = `/scenario-lab?${modelParams.toString()}`;
+  const value = pattern.financialImplication.marginAtRisk
+    ?? pattern.financialImplication.revenueAtRisk
+    ?? pattern.financialImplication.tradeSpendExposure
+    ?? 0;
+  return {
+    action: pattern.recommendedAction,
+    affected: `${alertScopeForMarkets(pattern.affectedMarkets)} · ${alertScopeForBuyers(pattern.affectedBuyingGroups)}`,
+    alertTypeLabel: 'Pattern identified',
+    effectLabel: 'Repeated negotiation signal',
+    href,
+    id: `pattern-${pattern.id}`,
+    metrics: [
+      { label: pattern.financialImplication.marginAtRisk !== undefined ? 'Margin at risk' : pattern.financialImplication.revenueAtRisk !== undefined ? 'Revenue at risk' : 'Trade exposure', value: euros(value) },
+      { label: 'Markets affected', value: alertCountLabel(pattern.affectedMarkets.length, 'market') },
+      { label: 'Buyers affected', value: alertCountLabel(pattern.affectedBuyingGroups.length, 'buyer') }
+    ],
+    modelHref: href,
+    possibleEffect: `${pattern.summary} CNO should decide whether this pattern changes which scenarios to test or which evidence should be prepared.`,
+    source: pattern.source,
+    title: pattern.title,
+    tone: value > 1000000 ? 'critical' : 'watch',
+    trigger: pattern.patternType.replaceAll('_', ' '),
+    value: euros(value)
+  };
+}
+
+function ActiveAlertsPanel({
+  alerts,
+  eyebrow = 'Active alerts',
+  limit = 4,
+  title = 'What changed and what it could affect.'
+}: {
+  alerts: AtlasActiveAlert[];
+  eyebrow?: string;
+  limit?: number;
+  title?: string;
+}) {
+  const [dismissedAlerts, setDismissedAlerts] = useState<string[]>([]);
+  const [expandedAlerts, setExpandedAlerts] = useState<string[]>([]);
+  const visibleAlerts = alerts.filter((alert) => !dismissedAlerts.includes(alert.id)).slice(0, limit);
+  if (!visibleAlerts.length) return null;
+
+  return (
+    <section className="atlas-active-alerts-panel" aria-label={eyebrow}>
+      <header>
+        <span>{eyebrow}</span>
+        <h2>{title}</h2>
+      </header>
+      <div>
+        {visibleAlerts.map((alert) => {
+          const isExpanded = expandedAlerts.includes(alert.id);
+          return (
+            <article className={`atlas-active-alert-card tone-${alert.tone} ${isExpanded ? 'is-expanded' : ''}`} key={alert.id}>
+              <div className="atlas-active-alert-card-top">
+                <div className="atlas-active-alert-story">
+                  <span className="atlas-active-alert-type">{alert.alertTypeLabel}</span>
+                  <strong>{alert.title}</strong>
+                </div>
+              </div>
+              <div className="atlas-active-alert-content">
+                <dl className="atlas-active-alert-metrics">
+                  {alert.metrics.map((metric) => (
+                    <div key={`${alert.id}-${metric.label}`}>
+                      <dt>{metric.label}</dt>
+                      <dd>{metric.value}</dd>
+                    </div>
+                  ))}
+                </dl>
+              </div>
+              <div className="atlas-active-alert-card-actions">
+                <button
+                  aria-expanded={isExpanded}
+                  className="atlas-active-alert-details-toggle"
+                  onClick={() => setExpandedAlerts((current) => (
+                    current.includes(alert.id)
+                      ? current.filter((id) => id !== alert.id)
+                      : [...current, alert.id]
+                  ))}
+                  type="button"
+                >
+                  Why flagged <ChevronDown size={14} />
+                </button>
+              </div>
+              {isExpanded ? (
+                <div className="atlas-active-alert-expanded">
+                  <p>{alert.possibleEffect}</p>
+                  <dl className="atlas-active-alert-expanded-facts">
+                    <div><dt>Downstream impact</dt><dd>{alert.affected}</dd></div>
+                    <div><dt>Could change</dt><dd>{alert.effectLabel ?? 'Negotiation scenario'}</dd></div>
+                    <div><dt>Modeling move</dt><dd>{alert.action}</dd></div>
+                  </dl>
+                  <footer>
+                    <SourceTrustMini linked={false} source={alert.source} />
+                    <a href={alert.modelHref ?? alert.href} title={alert.action}>
+                      Open Scenario Lab <ArrowRight size={12} />
+                    </a>
+                  </footer>
+                </div>
+              ) : null}
+              <button
+                aria-label={`Dismiss ${alert.title}`}
+                className="atlas-active-alert-dismiss"
+                onClick={() => setDismissedAlerts((current) => [...current, alert.id])}
+                type="button"
+              >
+                <X size={12} />
+              </button>
+            </article>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+type ScenarioEntryQueueItem = {
+  action: string;
+  href: string;
+  impact: string;
+  source: SourceMeta;
+  title: string;
+  trigger: string;
+  why: string;
+};
+
+function triageAlertsForBuyingGroup(group: BuyingGroup) {
+  const groupSignals = signalsFor({ buyingGroupId: group.id })
+    .slice(0, 2)
+    .map(signalToAlert);
+  const groupScenarios = packet.scenarioModels
+    .filter((model) => model.buyingGroupId === group.id)
+    .slice(0, 2)
+    .map(scenarioToAlert);
+  const groupPatterns = packet.crossMarketPatterns
+    .filter((pattern) => pattern.affectedBuyingGroups.includes(group.id))
+    .slice(0, 1)
+    .map(patternToAlert);
+
+  return [
+    buyingGroupToAlert(group),
+    ...groupSignals,
+    ...groupScenarios,
+    ...groupPatterns
+  ];
+}
+
+function ScenarioEntryQueue({
+  eyebrow = 'Alert-to-scenario queue',
+  items,
+  title = 'Model these alerts before deciding buyer or negotiation priority.'
+}: {
+  eyebrow?: string;
+  items: ScenarioEntryQueueItem[];
+  title?: string;
+}) {
+  if (!items.length) return null;
+
+  return (
+    <section className="atlas-scenario-entry-queue" aria-label={eyebrow}>
+      <header>
+        <span>{eyebrow}</span>
+        <h2>{title}</h2>
+      </header>
+      <div>
+        {items.map((item) => (
+          <a href={item.href} key={`${item.trigger}-${item.title}`}>
+            <span>{item.trigger}</span>
+            <strong>{item.title}</strong>
+            <p>{item.action}</p>
+            <div className="atlas-scenario-entry-impact">
+              <span>Impact</span>
+              <strong>{item.impact}</strong>
+            </div>
+            <footer>
+              <SourceTrustMini linked={false} source={item.source} />
+              <em>Model impact <ArrowRight size={12} /></em>
+            </footer>
+          </a>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function TriageCommandCenter({
+  alerts
+}: {
+  alerts: AtlasActiveAlert[];
+  items: ScenarioEntryQueueItem[];
+}) {
+  const [activeScopeId, setActiveScopeId] = useState('holistic');
+  const [dismissedAlertIds, setDismissedAlertIds] = useState<string[]>([]);
+  const [expandedAlertId, setExpandedAlertId] = useState<string | null>(null);
+  const mvpBuyingGroups = [...packet.buyingGroups]
+    .sort((a, b) => riskRank(b.riskLevel) - riskRank(a.riskLevel) || b.financialExposure.marginAtRisk - a.financialExposure.marginAtRisk)
+    .slice(0, 4);
+  const triageScopes = [
+    {
+      id: 'holistic',
+      label: 'All alerts',
+      meta: 'Holistic view',
+      alerts
+    },
+    ...mvpBuyingGroups.map((group) => ({
+      id: group.id,
+      label: group.name,
+      meta: group.primaryMarkets.map((marketId) => getMarket(marketId)?.name ?? marketId).join(' / '),
+      alerts: triageAlertsForBuyingGroup(group)
+    }))
+  ];
+  const activeScope = triageScopes.find((scope) => scope.id === activeScopeId) ?? triageScopes[0];
+  const visibleAlerts = activeScope.alerts.filter((alert) => !dismissedAlertIds.includes(alert.id));
+  const criticalCount = visibleAlerts.filter((alert) => alert.tone === 'critical').length;
+  const totalModeledValue = visibleAlerts.reduce((sum, alert) => {
+    const parsedValue = Number(alert.value.replace(/[^\d.-]/g, ''));
+    return Number.isFinite(parsedValue) ? sum + parsedValue : sum;
+  }, 0);
+
+  return (
+    <section className="atlas-triage-command-center atlas-triage-command-center-v2" aria-label="Negotiation command center">
+      <header className="atlas-triage-page-header">
+        <h1>Negotiation Command Center</h1>
+        <p>Start with changes that could alter a buying group scenario: news, modeled risk, market patterns, and buyer memory.</p>
+      </header>
+
+      <div className="atlas-triage-workspace">
+        <aside className="atlas-triage-side-nav" aria-label="Triage views">
+          <span>View by</span>
+          <nav>
+            {triageScopes.map((scope) => (
+              <button
+                aria-current={scope.id === activeScope.id ? 'page' : undefined}
+                className={scope.id === activeScope.id ? 'is-active' : ''}
+                key={scope.id}
+                onClick={() => {
+                  setActiveScopeId(scope.id);
+                  setExpandedAlertId(null);
+                }}
+                type="button"
+              >
+                <strong>{scope.label}</strong>
+                <small>{scope.meta}</small>
+                <em>{scope.alerts.length}</em>
+              </button>
+            ))}
+          </nav>
+        </aside>
+
+        <section className="atlas-triage-main-pane">
+          <header className="atlas-triage-feed-header">
+            <span>{activeScope.id === 'holistic' ? 'Holistic view' : activeScope.label}</span>
+          <strong className="atlas-triage-alert-count">{visibleAlerts.length} alerts</strong>
+          <p>{activeScope.id === 'holistic'
+            ? 'All buying group alerts ranked by scenario impact.'
+            : 'Review the alerts, history, and modeled risks that could change this buying group scenario.'}</p>
+        </header>
+
+        <div className="atlas-triage-brief-strip" aria-label="Triage summary">
+          <div>
+            <span>Needs action</span>
+            <strong>{criticalCount || visibleAlerts.length}</strong>
+          </div>
+          <div>
+            <span>Modeled exposure</span>
+            <strong>{euros(totalModeledValue)}</strong>
+          </div>
+          <div>
+            <span>Primary move</span>
+            <strong>Run scenario</strong>
+          </div>
+        </div>
+
+        <div className="atlas-triage-alert-list atlas-triage-alert-list-v2">
+          {visibleAlerts.length ? visibleAlerts.map((alert, index) => {
+            const isExpanded = expandedAlertId === alert.id;
+            const scenarioSnapshot = scenarioSnapshotForAlert(alert);
+          return (
+              <article className={`atlas-triage-alert-row atlas-triage-alert-row-v2 tone-${alert.tone}`} key={alert.id}>
+                <div className="atlas-triage-alert-main">
+                  <div className="atlas-triage-alert-copy">
+                    <div className="atlas-triage-alert-eyebrow">
+                      <span>{String(index + 1).padStart(2, '0')}</span>
+                      <strong>{alert.alertTypeLabel}</strong>
+                    </div>
+                    <h3>{alert.title}</h3>
+                    <dl className="atlas-triage-row-metrics">
+                      {alert.metrics.slice(0, 3).map((metric) => (
+                        <div key={`${alert.id}-${metric.label}`}>
+                          <dt>{metric.label}</dt>
+                          <dd>{metric.value}</dd>
+                        </div>
+                      ))}
+                    </dl>
+                    <div className="atlas-triage-alert-reaction">
+                      <span>How ATLAS reacted</span>
+                      <strong>{alert.action}</strong>
+                    </div>
+                  </div>
+                  <div className="atlas-triage-alert-actions">
+                    <button
+                      aria-label={`${isExpanded ? 'Collapse' : 'Expand'} ${alert.title}`}
+                      aria-expanded={isExpanded}
+                      onClick={() => setExpandedAlertId(isExpanded ? null : alert.id)}
+                      type="button"
+                    >
+                      <ChevronDown size={20} />
+                    </button>
+                  </div>
+                </div>
+                {isExpanded ? (
+                  <section className="atlas-triage-alert-detail">
+                    <div className="atlas-triage-alert-detail-copy">
+                      <div>
+                        <span>Why it matters</span>
+                        <p>{alert.possibleEffect}</p>
+                      </div>
+                      <div>
+                        <span>Dig deeper</span>
+                        <p>{sourceDisplayName(alert.source)} · {formatAtlasDate(alert.source.sourceDate, { includeYear: true })} · {alert.source.confidence} confidence</p>
+                      </div>
+                    </div>
+                    <div className="atlas-triage-completed-actions" aria-label="ATLAS completed work">
+                      <span>ATLAS completed</span>
+                      <div>
+                        {triageCompletedActionsForAlert(alert).map((snapshot) => (
+                          <TriageScenarioSnapshotCard key={`${alert.id}-${snapshot.status}-${snapshot.title}`} snapshot={snapshot} />
+                        ))}
+                      </div>
+                    </div>
+                  </section>
+                ) : null}
+                <footer className="atlas-triage-alert-footer">
+                  <span>{sourceDisplayName(alert.source)}</span>
+                  {!scenarioSnapshot ? <a href={alert.modelHref ?? alert.href}>Run scenario <ArrowRight size={13} /></a> : null}
+                </footer>
+              </article>
+            );
+          }) : (
+            <article className="atlas-triage-empty-state">
+              <strong>No active alerts in this view.</strong>
+              <p>Dismissed alerts stay out of the triage feed for this session. Switch to another buying group or return to the holistic view.</p>
+            </article>
+          )}
+        </div>
+      </section>
+      </div>
     </section>
   );
 }
@@ -1421,7 +2406,7 @@ function DocumentLibrary({ documents, buyingGroupId }: { documents: DocumentArti
             </div>
             <div className="atlas-document-actions">
               <a href={hrefForDocumentArtifact(document)} rel="noreferrer" target="_blank">Open document <ArrowRight size={13} /></a>
-              {document.buyingGroupId ? <a href={`/buying-groups/${document.buyingGroupId}?view=memory`}>Buyer history</a> : null}
+              {document.buyingGroupId ? <a href={`/buying-groups/${document.buyingGroupId}?view=strategy`}>Buyer scenario memory</a> : null}
               {document.marketId ? <a href={`/markets/${document.marketId}`}>Market</a> : null}
             </div>
             <SourceTrustBar source={document.source} />
@@ -1467,21 +2452,21 @@ function UploadSourceTray({ buyingGroup }: { buyingGroup: BuyingGroup }) {
     <section className="atlas-upload-source-tray">
       <header>
         <span>Attach source memory</span>
-        <h3>Add prep decks, debriefs or supporting files to {buyingGroup.name}.</h3>
+        <h3>Add scenario reports, debriefs, or supporting files to {buyingGroup.name}.</h3>
         <p>Prototype upload stores metadata and notes only. Added files are labeled as user-entered source memory.</p>
       </header>
       <div className="atlas-upload-fields">
         <label>
           <span>Document name</span>
-          <input value={name} onChange={(event) => setName(event.target.value)} placeholder="Carrefour Q3 prep deck.pdf" />
+          <input value={name} onChange={(event) => setName(event.target.value)} placeholder="Carrefour scenario evidence report.pdf" />
         </label>
         <label>
           <span>Type</span>
           <select value={type} onChange={(event) => setType(event.target.value)}>
-            <option value="prep_document">Prep document</option>
+            <option value="prep_document">Scenario evidence</option>
             <option value="debrief">Debrief</option>
             <option value="source_doc">Source document</option>
-            <option value="strategy_file">Strategy file</option>
+            <option value="strategy_file">Buyer workspace note</option>
           </select>
         </label>
         <label className="wide">
@@ -1615,7 +2600,7 @@ function BuyerProfileUpdatePanel({
       <div className="atlas-buyer-profile-update-compact">
         <button type="button" onClick={() => setIsOpen(true)}>Add update</button>
         {latestConfirmed ? (
-          <span>Latest confirmed: {latestConfirmed.fileName} changed profile read {new Date(latestConfirmed.confirmedAt ?? latestConfirmed.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}.</span>
+          <span>Latest confirmed: {latestConfirmed.fileName} changed profile read {formatAtlasDate(latestConfirmed.confirmedAt ?? latestConfirmed.createdAt)}.</span>
         ) : null}
       </div>
     );
@@ -1761,6 +2746,75 @@ type TimelineMemoryEntry = {
   title: string;
 };
 
+function timelineEntryWeight(entry: TimelineMemoryEntry): 'major' | 'local' | 'finance' | 'debrief' | 'supporting' | 'artifact' | 'system' {
+  const normalized = `${entry.kind} ${entry.eventType} ${entry.title}`.toLowerCase();
+  if (/finance|nrm|guardrail|corridor|red line/.test(normalized)) return 'finance';
+  if (/kam|local|retailer kpi|cma|signed agreement|local input/.test(normalized)) return 'local';
+  if (/debrief|learning|post-negotiation/.test(normalized)) return 'debrief';
+  if (entry.financialImpact?.revenueImpact || entry.financialImpact?.marginImpact || entry.financialImpact?.tradeSpendImpact) return 'major';
+  if (/decision|debrief|buyer ask|financial change|strategy|lock|concession|scenario/.test(normalized) && entry.kind !== 'generated') return 'major';
+  if (entry.kind === 'document' || entry.kind === 'update') return 'supporting';
+  if (entry.kind === 'generated') return 'artifact';
+  return 'system';
+}
+
+function timelineEntryWeightLabel(weight: ReturnType<typeof timelineEntryWeight>) {
+  if (weight === 'major') return 'Major decision';
+  if (weight === 'local') return 'Validated local input';
+  if (weight === 'finance') return 'Finance guardrail';
+  if (weight === 'debrief') return 'Debrief learning';
+  if (weight === 'supporting') return 'Supporting document';
+  if (weight === 'artifact') return 'Generated artifact';
+  return 'System note';
+}
+
+function timelineValidationRole(entry: TimelineMemoryEntry) {
+  const normalized = `${entry.kind} ${entry.eventType} ${entry.title} ${entry.summary} ${entry.source?.sourceName ?? ''}`.toLowerCase();
+  if (/finance|nrm|guardrail|corridor|red line|margin model/.test(normalized)) return 'Finance/NRM';
+  if (/kam|local|retailer kpi|cma|signed agreement|field/.test(normalized)) return 'Local account team';
+  if (entry.source?.sourceType === 'ai_generated' || entry.source?.sourceType === 'modeled' || entry.kind === 'generated') return 'AI-derived from source memory';
+  return 'CNO';
+}
+
+function timelineEventLabel(entry: TimelineMemoryEntry) {
+  const normalized = `${entry.eventType} ${entry.title}`.toLowerCase();
+  if (/buyer ask|round|negotiation update/.test(normalized)) return 'Buyer ask';
+  if (/scenario/.test(normalized)) return 'Scenario saved';
+  if (/debrief/.test(normalized)) return 'Debrief';
+  if (/decision/.test(normalized)) return 'Decision';
+  if (/signal|affordability|external/.test(normalized)) return 'Market signal';
+  if (/document|source|prep|profile|agreement|cma|signed/.test(normalized)) return 'Source added';
+  if (/financial|margin|revenue|trade/.test(normalized)) return 'Financial change';
+  return timelineEntryWeightLabel(timelineEntryWeight(entry));
+}
+
+function isNegotiationHistoryEntry(entry: TimelineMemoryEntry) {
+  const normalized = `${entry.kind} ${entry.eventType} ${entry.title} ${entry.summary}`.toLowerCase();
+  if (entry.financialImpact?.revenueImpact || entry.financialImpact?.marginImpact || entry.financialImpact?.tradeSpendImpact) return true;
+  if (entry.kind === 'document') return /debrief|signed|agreement|strategy|negotiation|meeting|prep/.test(normalized);
+  if (entry.kind === 'generated') return /scenario|debrief|strategy|room|financial|concession/.test(normalized);
+  return /ask|round|decision|debrief|financial|margin|trade|concession|scenario|strategy|meeting|approval|position|red line|fallback|signal|promo|value-pack|affordability|pressure/.test(normalized);
+}
+
+function timelineImpactSummary(entry: TimelineMemoryEntry) {
+  if (entry.financialImpact?.marginImpact || entry.financialImpact?.tradeSpendImpact || entry.financialImpact?.revenueImpact) {
+    const parts = [
+      entry.financialImpact.revenueImpact ? `Revenue ${signedEuroLabel(entry.financialImpact.revenueImpact)}` : null,
+      entry.financialImpact.marginImpact ? `Margin ${signedEuroLabel(entry.financialImpact.marginImpact)}` : null,
+      entry.financialImpact.tradeSpendImpact ? `Trade ${signedEuroLabel(entry.financialImpact.tradeSpendImpact)}` : null
+    ].filter(Boolean);
+    return parts.join(' / ');
+  }
+  const normalized = `${entry.eventType} ${entry.title}`.toLowerCase();
+  if (/finance|nrm|guardrail|red line|corridor/.test(normalized)) return 'Finance guardrail';
+  if (/kam|local|retailer kpi|cma|signed/.test(normalized)) return 'Validated local input';
+  if (/debrief/.test(normalized)) return 'Debrief learning';
+  if (/scenario/.test(normalized)) return 'Scenario memory';
+  if (/document|prep|agreement/.test(normalized)) return 'Source evidence';
+  if (/strategy|lock/.test(normalized)) return 'Strategy memory';
+  return 'Negotiation memory';
+}
+
 function yearForTimelineDate(date: string) {
   const parsed = new Date(date);
   if (Number.isNaN(parsed.getTime())) return date.slice(0, 4) || 'Unknown';
@@ -1805,10 +2859,10 @@ function buildTimelineMemoryEntries({
   }));
   const generatedEntries: TimelineMemoryEntry[] = generatedViews
     .filter((view) => (view.lifecycleState ?? (view.savedToProfileAt ? 'attached' : 'draft')) === 'attached')
-    .map((view) => ({
+    .map((view, index) => ({
       date: view.savedToProfileAt ?? view.updatedAt,
-      eventType: `${view.mode.replaceAll('_', ' ')} / attached generated view`,
-      id: `generated-${view.id}`,
+      eventType: `${view.mode.replaceAll('_', ' ')} / attached scenario output`,
+      id: `generated-${view.id}-${index}`,
       kind: 'generated',
       openHref: hrefForStoredGeneratedView(view),
       source: buildGeneratedViewSource(view, documents[0]?.source ?? events[0]?.source ?? atlasIntelligenceSeed.documents[0].source),
@@ -1843,8 +2897,11 @@ function TimelineFeed({
   updates?: BuyerProfileDocumentUpdate[];
 }) {
   const entries = buildTimelineMemoryEntries({ documents, events, generatedViews, updates });
+  const [hiddenEntryIds, setHiddenEntryIds] = useState<string[]>([]);
+  const visibleEntries = entries.filter((entry) => !hiddenEntryIds.includes(entry.id));
+  const negotiationEntries = visibleEntries.filter(isNegotiationHistoryEntry);
   const currentYear = '2026';
-  const grouped = entries.reduce<Record<string, TimelineMemoryEntry[]>>((acc, entry) => {
+  const grouped = negotiationEntries.reduce<Record<string, TimelineMemoryEntry[]>>((acc, entry) => {
     const year = yearForTimelineDate(entry.date);
     acc[year] = [...(acc[year] ?? []), entry];
     return acc;
@@ -1858,31 +2915,76 @@ function TimelineFeed({
         <details className="atlas-timeline-year" key={year} open={year === currentYear || (!hasCurrentYear && index === 0)}>
           <summary>
             <span>{year}</span>
-            <em>{grouped[year].length} {grouped[year].length === 1 ? 'entry' : 'entries'}</em>
+            <em>{grouped[year].length} negotiation {grouped[year].length === 1 ? 'event' : 'events'}</em>
           </summary>
           <div className="atlas-timeline-year-items">
             {grouped[year].map((entry) => (
-              <article className={`timeline-${entry.kind}`} key={entry.id}>
-                <time>{new Date(entry.date).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</time>
+              <article className={`timeline-${entry.kind} importance-${timelineEntryWeight(entry)}`} key={entry.id}>
+                <time>{formatAtlasDate(entry.date, { includeTime: true })}</time>
                 <div>
-                  <span className="atlas-timeline-kind">{entry.eventType}</span>
+                  <div className="atlas-timeline-entry-top">
+                    <span className="atlas-timeline-kind">{timelineEventLabel(entry)}</span>
+                    <em>{timelineEntryWeightLabel(timelineEntryWeight(entry))}</em>
+                    <button type="button" onClick={() => setHiddenEntryIds((current) => [...current, entry.id])}>Not relevant</button>
+                  </div>
                   <h3>{entry.title}</h3>
-                  <p>{entry.summary}</p>
+                  <p className="atlas-timeline-impact-read">{timelineImpactSummary(entry)} · Validated by {timelineValidationRole(entry)}</p>
                   {entry.financialImpact ? (
-                    <FinancialImpactStrip
+                    <TimelineImpactPills
                       revenue={entry.financialImpact.revenueImpact}
                       margin={entry.financialImpact.marginImpact}
                       trade={entry.financialImpact.tradeSpendImpact}
                     />
                   ) : null}
-                  {entry.source ? <SourceTrustBar source={entry.source} /> : null}
-                  {entry.openHref ? <a className="atlas-timeline-open-link" href={entry.openHref} {...generatedOutputLinkProps(entry.openHref)}>Open view <ArrowRight size={13} /></a> : null}
+                  <details className="atlas-timeline-entry-details">
+                    <summary>View full event</summary>
+                    <p>{entry.summary}</p>
+                    <small>{entry.eventType}</small>
+                    {entry.source ? <SourceTrustMini source={entry.source} /> : null}
+                    {entry.openHref ? <a className="atlas-timeline-open-link" href={entry.openHref} {...generatedOutputLinkProps(entry.openHref)}>Open artifact <ArrowRight size={13} /></a> : null}
+                  </details>
                 </div>
               </article>
             ))}
           </div>
         </details>
       ))}
+    </section>
+  );
+}
+
+function DebriefMemoryComparison({
+  workspace
+}: {
+  workspace: BuyingGroupWorkspacePacket;
+}) {
+  const plan = buildNegotiationPlanPacket(workspace.buyingGroup.id);
+  const historicalEvent = workspace.timelineEvents.find((event) => /debrief|agreement|outcome|signed|decision/i.test(`${event.eventType} ${event.title}`)) ?? workspace.timelineEvents[0];
+  if (!plan || !historicalEvent) return null;
+  const plannedAsk = plan.versionHistory.find((version) => version.status === 'superseded') ? plan.targetPercent : plan.ingoingAskPercent;
+  const landedAsk = Math.max(0, Number((plan.fallbackPercent + 0.2).toFixed(1)));
+  const variance = Number((landedAsk - plannedAsk).toFixed(1));
+  const marginImpact = historicalEvent.financialImpact?.marginImpact ?? Math.round(workspace.buyingGroup.financialExposure.marginAtRisk * 0.11);
+  const lesson = variance < 0
+    ? 'Prior cycle landed below plan; keep fallback tied to measurable buyer commitments.'
+    : 'Prior cycle protected the planned corridor; reuse evidence before adding trade spend.';
+
+  return (
+    <section className="atlas-debrief-memory-comparison" aria-label="Final versus planned negotiation memory">
+      <header>
+        <div>
+          <span>Debrief memory</span>
+          <h3>Final vs planned outcome feeding this strategy.</h3>
+        </div>
+        <SourceTrustMini source={historicalEvent.source} />
+      </header>
+      <dl>
+        <div><dt>Planned position</dt><dd>{plannedAsk.toFixed(1)}%</dd></div>
+        <div><dt>Final outcome</dt><dd>{landedAsk.toFixed(1)}%</dd></div>
+        <div className={variance < 0 ? 'tone-risk' : 'tone-good'}><dt>Variance</dt><dd>{variance > 0 ? '+' : ''}{variance.toFixed(1)} pts</dd></div>
+        <div><dt>Margin learning</dt><dd>{euros(marginImpact)}</dd></div>
+      </dl>
+      <p>{lesson}</p>
     </section>
   );
 }
@@ -1912,7 +3014,7 @@ function SupportingDocumentLedger({
   const entries: SupportingDocumentQuickEntry[] = [
     ...documents.map((document) => ({
       date: document.source.sourceDate || `${document.year}-01-01`,
-      href: document.source.url ?? `/documents?buyingGroup=${buyingGroupId}&document=${document.id}`,
+      href: document.source.url ?? `/intelligence?buyingGroup=${buyingGroupId}&document=${document.id}`,
       id: document.id,
       source: document.source,
       status: document.status,
@@ -1922,7 +3024,7 @@ function SupportingDocumentLedger({
     })),
     ...updates.map((update) => ({
       date: update.createdAt,
-      href: `/documents?buyingGroup=${buyingGroupId}&document=${update.id}`,
+      href: `/intelligence?buyingGroup=${buyingGroupId}&document=${update.id}`,
       id: update.id,
       source: documents[0]?.source ? buildUserEnteredSource(update, documents[0].source) : undefined,
       status: 'modeled' as AtlasStatus,
@@ -1932,15 +3034,19 @@ function SupportingDocumentLedger({
     })),
     ...(generatedViews ?? [])
       .filter((view) => (view.lifecycleState ?? (view.savedToProfileAt ? 'attached' : 'draft')) === 'attached')
-      .map((view) => ({
+      .map((view, index) => ({
       date: view.savedToProfileAt ?? view.updatedAt,
       href: hrefForStoredGeneratedView(view),
-      id: view.id,
+      id: `${view.id}-${index}`,
       source: buildGeneratedViewSource(view, documents[0]?.source ?? atlasIntelligenceSeed.documents[0].source),
       status: 'modeled' as AtlasStatus,
       summary: view.summary || view.sourceDecision,
       title: view.title,
-      type: view.artifactType === 'negotiation_plan' ? 'strategy plan' : 'generated view'
+      type: view.artifactType === 'negotiation_plan'
+        ? 'strategy plan'
+        : view.artifactType === 'scenario_output'
+          ? 'scenario output'
+          : 'scenario output'
     }))
   ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
@@ -1950,9 +3056,7 @@ function SupportingDocumentLedger({
         <a href={entry.href} key={entry.id} {...generatedOutputLinkProps(entry.href)}>
           <div>
             <h3>{entry.title}</h3>
-            <p>{entry.type} / {new Date(entry.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
-            {entry.summary ? <em>{entry.summary}</em> : null}
-            {entry.source ? <SourceTrustMini source={entry.source} /> : null}
+            <p>{entry.type} / {formatAtlasDate(entry.date, { includeYear: true })}</p>
           </div>
         </a>
       ))}
@@ -1964,10 +3068,11 @@ function CompactSourceLine({ source }: { source: SourceMeta }) {
   return (
     <p className="atlas-compact-source">
       <ShieldCheck size={13} />
+      <span className={`atlas-source-type-pill ${sourceTypeClass(source)}`}>{sourceTypeLabel(source)}</span>
       {source.url ? (
-        <a href={source.url} rel="noreferrer" target="_blank">{source.sourceName}</a>
+        <a href={source.url} rel="noreferrer" target="_blank">{sourceDisplayName(source)}</a>
       ) : (
-        <span>{source.sourceName}</span>
+        <span>{sourceDisplayName(source)}</span>
       )}
       <span>{source.sourceDate}</span>
       <span className={`confidence-${source.confidence}`}>{source.confidence}</span>
@@ -1980,7 +3085,8 @@ function CompactSourceText({ source }: { source: SourceMeta }) {
   return (
     <p className="atlas-compact-source">
       <ShieldCheck size={13} />
-      <span>{source.sourceName}</span>
+      <span className={`atlas-source-type-pill ${sourceTypeClass(source)}`}>{sourceTypeLabel(source)}</span>
+      <span>{sourceDisplayName(source)}</span>
       <span>{source.sourceDate}</span>
       <span className={`confidence-${source.confidence}`}>{source.confidence}</span>
       <span className={classNameForStatus(source.status)}>{labelForStatus(source.status)}</span>
@@ -2009,19 +3115,248 @@ function CompactImpactLine({
   return <p className="atlas-compact-impact">{values.length ? values.join(' / ') : 'Financial impact not modeled'}</p>;
 }
 
-function SourceTrustMini({ source }: { source: SourceMeta }) {
+function SourceTrustMini({ linked = true, source }: { linked?: boolean; source: SourceMeta }) {
   return (
-    <p className="atlas-source-mini">
+    <p className="atlas-source-mini" title={sourceHealthSummary(source)}>
       <ShieldCheck size={12} />
-      {source.url ? (
-        <a href={source.url} rel="noreferrer" target="_blank">{source.sourceName}</a>
+      <span className={`atlas-source-type-pill ${sourceTypeClass(source)}`}>{sourceTypeLabel(source)}</span>
+      {source.url && linked ? (
+        <a href={source.url} rel="noreferrer" target="_blank">{sourceDisplayName(source)}</a>
       ) : (
-        <span>{source.sourceName}</span>
+        <span>{sourceDisplayName(source)}</span>
       )}
       <span>{source.sourceDate}</span>
       <span className={`confidence-${source.confidence}`}>{source.confidence}</span>
       <span className={classNameForStatus(source.status)}>{labelForStatus(source.status)}</span>
     </p>
+  );
+}
+
+function BuyerPrepCompleteness({
+  savedViews,
+  workspace
+}: {
+  savedViews: StoredGeneratedView[];
+  workspace: BuyingGroupWorkspacePacket;
+}) {
+  const approvedDocuments = workspace.documents.filter((document) => document.status === 'approved' || document.status === 'ready');
+  const sourceGaps = workspace.documents.filter((document) => document.status === 'stale' || document.status === 'needs_validation' || document.status === 'missing');
+  const savedScenarios = savedViews.filter((view) => /scenario|model/i.test(`${view.title} ${view.prompt}`));
+  const strategyVersions = savedViews.filter((view) => /strategy/i.test(`${view.title} ${view.prompt}`));
+  const rows = [
+    {
+      label: 'Financials',
+      state: 'Current',
+      source: workspace.buyingGroup.source,
+      value: euros(workspace.buyingGroup.financialExposure.marginAtRisk)
+    },
+    {
+      label: 'Buyer memory',
+      state: workspace.timelineEvents.length ? `${workspace.timelineEvents.length} events` : 'Add debrief',
+      source: workspace.timelineEvents[0]?.source ?? workspace.buyingGroup.source,
+      value: workspace.timelineEvents[0]?.title ?? 'No recent event'
+    },
+    {
+      label: 'Key docs',
+      state: approvedDocuments.length ? `${approvedDocuments.length} ready` : 'No approved docs',
+      source: approvedDocuments[0]?.source ?? workspace.documents[0]?.source ?? workspace.buyingGroup.source,
+      value: sourceGaps.length ? `${sourceGaps.length} source gaps` : 'Sources ready'
+    },
+    {
+      label: 'Scenario',
+      state: savedScenarios.length ? `${savedScenarios.length} saved` : 'Not saved yet',
+      source: savedScenarios[0] ? buildGeneratedViewSource(savedScenarios[0], workspace.buyingGroup.source) : workspace.buyingGroup.source,
+      value: savedScenarios[0]?.title ?? 'Model next move'
+    },
+    {
+      label: 'Scenario output',
+      state: strategyVersions.length ? 'Saved in memory' : 'Not exported yet',
+      source: strategyVersions[0] ? buildGeneratedViewSource(strategyVersions[0], workspace.buyingGroup.source) : workspace.buyingGroup.source,
+      value: strategyVersions[0]?.title ?? 'Export selected scenario'
+    }
+  ];
+
+  return (
+    <section className="atlas-buyer-prep-completeness" aria-label={`${workspace.buyingGroup.name} prep completeness`}>
+      <header>
+        <h3>Prep completeness</h3>
+        <a href={`/buying-groups/${workspace.buyingGroup.id}?view=strategy`}>Scenario memory <ArrowRight size={13} /></a>
+      </header>
+      <div>
+        {rows.map((row) => (
+          <article key={row.label}>
+            <span>{row.label}</span>
+            <strong>{row.state}</strong>
+            <em>{row.value}</em>
+            <SourceTrustMini source={row.source} />
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function LatestMemoryUpdates({
+  savedViews,
+  workspace
+}: {
+  savedViews: StoredGeneratedView[];
+  workspace: BuyingGroupWorkspacePacket;
+}) {
+  const generated = savedViews.slice(0, 2).map((view) => ({
+    action: 'Open saved view',
+    href: hrefForStoredGeneratedView(view),
+    source: buildGeneratedViewSource(view, workspace.buyingGroup.source),
+    title: view.title,
+    value: view.summary ?? view.sourceDecision ?? 'Saved to buyer history'
+  }));
+  const events = workspace.timelineEvents.slice(0, Math.max(0, 3 - generated.length)).map((event) => ({
+    action: 'Use in scenario',
+    href: `/buying-groups/${workspace.buyingGroup.id}?view=strategy`,
+    source: event.source,
+    title: event.title,
+    value: compactFinancialImpact({
+      margin: event.financialImpact?.marginImpact,
+      revenue: event.financialImpact?.revenueImpact,
+      trade: event.financialImpact?.tradeSpendImpact
+    })
+  }));
+  const rows = [...generated, ...events].slice(0, 3);
+
+  return (
+    <section className="atlas-latest-memory-updates" aria-label={`${workspace.buyingGroup.name} latest memory updates`}>
+      <header>
+        <h3>Latest memory updates</h3>
+        <a href={`/buying-groups/${workspace.buyingGroup.id}?view=strategy`}>Scenario memory <ArrowRight size={13} /></a>
+      </header>
+      <div>
+        {rows.length ? rows.map((row) => (
+          <a href={row.href} key={`${row.title}-${row.value}`} {...generatedOutputLinkProps(row.href)}>
+            <strong>{row.title}</strong>
+            <span>{row.value}</span>
+            <SourceTrustMini source={row.source} />
+          </a>
+        )) : <EmptyGeneratedState label="Memory" />}
+      </div>
+    </section>
+  );
+}
+
+type ScenarioComparisonChoice = {
+  id: 'current' | 'fallback' | 'downside';
+  label: string;
+  name: string;
+  inputs: ScenarioInputs;
+  source: SourceMeta;
+  summary: string;
+};
+
+function scenarioComparisonChoices(workspace: BuyingGroupWorkspacePacket, fallbackSource: SourceMeta): ScenarioComparisonChoice[] {
+  const current = scenarioInputsForBuyingGroup(workspace.buyingGroup);
+  const exposure = workspace.buyingGroup.financialExposure;
+  const approvedSource = workspace.documents.find((document) => document.status === 'approved')?.source ?? fallbackSource;
+  const modeledSource = workspace.scenarioModels[0]?.sourceIds
+    ? packet.documents.find((document) => workspace.scenarioModels[0].sourceIds.includes(document.id))?.source ?? fallbackSource
+    : fallbackSource;
+  const targetGap = Math.max(0, exposure.targetPriceRealization - exposure.expectedPriceRealization);
+
+  return [
+    {
+      id: 'current',
+      inputs: current,
+      label: 'A',
+      name: 'Current position',
+      source: approvedSource,
+      summary: `${pct(exposure.expectedPriceRealization)} expected realization, held against current buyer ask.`
+    },
+    {
+      id: 'fallback',
+      inputs: {
+        ...current,
+        buyerAcceptanceProbability: Math.min(92, current.buyerAcceptanceProbability + 10),
+        concessionAmount: Math.round(exposure.marginAtRisk * 0.1),
+        expectedRealizationPercent: Number(Math.min(exposure.targetPriceRealization, exposure.expectedPriceRealization + Math.max(0.2, targetGap * 0.45)).toFixed(1)),
+        tradeSpendChange: Math.round(exposure.tradeSpendExposure * 1.12),
+        volumeChangePercent: Number(Math.min(2, current.volumeChangePercent + 0.6).toFixed(1))
+      },
+      label: 'B',
+      name: 'Fallback / concession',
+      source: modeledSource,
+      summary: 'Improves acceptance with measured trade-spend and margin pressure.'
+    },
+    {
+      id: 'downside',
+      inputs: {
+        ...current,
+        buyerAcceptanceProbability: Math.min(95, current.buyerAcceptanceProbability + 16),
+        competitorPressureLevel: 'high',
+        concessionAmount: Math.round(exposure.marginAtRisk * 0.18),
+        expectedRealizationPercent: Number(Math.max(0, exposure.expectedPriceRealization - 0.4).toFixed(1)),
+        tradeSpendChange: Math.round(exposure.tradeSpendExposure * 1.24),
+        volumeChangePercent: Number(Math.max(-5, current.volumeChangePercent - 0.9).toFixed(1))
+      },
+      label: 'C',
+      name: 'Downside / market pressure',
+      source: workspace.signals[0]?.source ?? modeledSource,
+      summary: 'Shows what changes if the buyer forces lower realization or extra support.'
+    }
+  ];
+}
+
+function ScenarioComparisonPanel({
+  compact = false,
+  workspace
+}: {
+  compact?: boolean;
+  workspace: BuyingGroupWorkspacePacket;
+}) {
+  const baseRevenue = workspace.buyingGroup.financialExposure.revenueUnderNegotiation;
+  const choices = scenarioComparisonChoices(workspace, workspace.buyingGroup.source);
+  const baselineOutput = calculateScenarioOutputs(choices[0].inputs, baseRevenue);
+
+  return (
+    <section className={`atlas-abc-scenario-comparison ${compact ? 'compact' : ''}`} aria-label={`${workspace.buyingGroup.name} A/B/C scenario comparison`}>
+      <header>
+        <div>
+          <h3>A/B/C scenario comparison</h3>
+          <span>{workspace.buyingGroup.name} · {workspace.markets.map((market) => market.name).join(' / ')}</span>
+        </div>
+        <a href={`/scenario-lab?buyingGroup=${workspace.buyingGroup.id}`}>Open scenario workspace <ArrowRight size={13} /></a>
+      </header>
+      <div>
+        {choices.map((choice) => {
+          const output = calculateScenarioOutputs(choice.inputs, baseRevenue);
+          const revenueDelta = output.revenueImpact - baselineOutput.revenueImpact;
+          const marginDelta = output.marginImpact - baselineOutput.marginImpact;
+          const useHref = `/buying-groups/${workspace.buyingGroup.id}?view=strategy&scenario=${choice.id}`;
+          return (
+            <article key={choice.id}>
+              <div className="atlas-abc-scenario-topline">
+                <span>{choice.label}</span>
+                <div>
+                  <strong>{choice.name}</strong>
+                  <em>{choice.summary}</em>
+                </div>
+              </div>
+              <dl>
+                <div><dt>Acceptance</dt><dd>{choice.inputs.buyerAcceptanceProbability.toFixed(0)}%</dd></div>
+                <div><dt>Revenue</dt><dd>{euros(output.revenueImpact)}</dd></div>
+                <div><dt>GM</dt><dd>{euros(output.marginImpact)}</dd></div>
+                <div><dt>Volume</dt><dd>{euros(output.volumeImpact)}</dd></div>
+                <div><dt>Trade</dt><dd>{euros(output.tradeSpendImpact)}</dd></div>
+                <div><dt>Gap</dt><dd>{euros(output.gapToPlanImpact)}</dd></div>
+              </dl>
+              <div className="atlas-abc-scenario-why">
+                <strong>{choice.label === 'A' ? 'Baseline scenario' : `Changes vs A: ${revenueDelta >= 0 ? '+' : ''}${euros(revenueDelta)} revenue / ${marginDelta >= 0 ? '+' : ''}${euros(marginDelta)} GM`}</strong>
+                <span>{output.recommendation}</span>
+              </div>
+              <SourceTrustMini source={choice.source} />
+              <a href={useHref}>Use in buyer workspace <ArrowRight size={13} /></a>
+            </article>
+          );
+        })}
+      </div>
+    </section>
   );
 }
 
@@ -2124,7 +3459,7 @@ function IntelligenceSnapshot() {
       body: competitorMove.possibleBuyerLeverage,
       value: euros(competitorMove.estimatedMarginImpact ?? 0),
       meta: 'estimated margin pressure',
-      href: `/competitors?move=${competitorMove.id}`,
+      href: `/signals?move=${competitorMove.id}`,
       action: competitorMove.recommendedAction,
       source: competitorMove.source
     },
@@ -2134,7 +3469,7 @@ function IntelligenceSnapshot() {
       body: scenario.outputs.recommendation,
       value: euros(scenario.outputs.riskAdjustedValue),
       meta: `${pct(scenario.inputs.expectedRealizationPercent)} expected realization`,
-      href: `/scenario-models?scenario=${scenario.id}`,
+      href: `/scenario-lab?scenario=${scenario.id}`,
       action: 'Open scenario model',
       source: atlasIntelligenceSeed.documents.find((document) => scenario.sourceIds.includes(document.id))?.source ?? packet.topExposureBuyingGroups[0].source
     }
@@ -2231,7 +3566,7 @@ function MonitorTabs({ initialTab = 'watchlist' }: { initialTab?: string }) {
           <span>Monitor</span>
           <h2>What needs attention now</h2>
         </div>
-        <a href="/timeline">Open full intelligence memory <ArrowRight size={14} /></a>
+        <a href="/intelligence">Open full intelligence memory <ArrowRight size={14} /></a>
       </header>
       <nav aria-label="Monitor feed filters">
         {tabs.map((tab) => (
@@ -2300,7 +3635,7 @@ function MonitorTabs({ initialTab = 'watchlist' }: { initialTab?: string }) {
             body={`${move.summary} ${move.possibleBuyerLeverage}`}
             impact={<CompactImpactLine revenue={move.estimatedRevenueImpact} margin={move.estimatedMarginImpact} />}
             source={move.source}
-            href={`/competitors?move=${move.id}`}
+            href={`/signals?move=${move.id}`}
             action={move.recommendedAction}
             status={move.source.status}
           />
@@ -2313,7 +3648,7 @@ function MonitorTabs({ initialTab = 'watchlist' }: { initialTab?: string }) {
             body={document.summary}
             impact={<p className="atlas-compact-impact">{document.reusable ? 'Reusable after validation' : 'Draft-only source'}</p>}
             source={document.source}
-            href="/documents"
+            href="/intelligence"
             action={document.status === 'missing' ? 'Upload or generate draft' : 'Validate before use'}
             status={document.status}
           />
@@ -2332,7 +3667,7 @@ function TodaysBriefingPanel() {
       <div className="atlas-briefing-copy">
         <span>Today’s Intelligence Brief</span>
         <h2>Europe risk is concentrated in three markets.</h2>
-        <p>{topMarkets} carry the near-term negotiation risk. Watch {topGroups} first, then validate source readiness before using generated outputs.</p>
+        <p>{topMarkets} carry the near-term negotiation risk. Watch {topGroups} first, then validate source readiness before using scenario outputs.</p>
         <MarketExposureVisual />
       </div>
       <PriorityQueue />
@@ -2379,7 +3714,7 @@ function OverviewAttentionBrief() {
     },
     {
       action: 'Review sources',
-      href: '/documents?view=source-readiness',
+      href: '/intelligence?view=source-readiness',
       label: 'Source watchout',
       meta: 'Stale / needs validation / missing',
       movement: 'Blocks official output',
@@ -2429,7 +3764,7 @@ function PepsiCoImpactAttention() {
     },
     {
       action: 'Open buyer',
-      href: `/buying-groups/${topGroup.id}?view=financials`,
+      href: `/buying-groups/${topGroup.id}?view=strategy`,
       label: 'Top buyer',
       meta: `${pct(realizationGap)} realization gap`,
       tone: 'risk',
@@ -2447,7 +3782,7 @@ function PepsiCoImpactAttention() {
     },
     {
       action: 'Model move',
-      href: `/scenario-models?buyingGroup=${topGroup.id}`,
+      href: `/scenario-lab?buyingGroup=${topGroup.id}`,
       label: 'Gap to plan',
       meta: `${pct(buyerShare * 100)} from ${topGroup.name}`,
       tone: 'signal',
@@ -2460,7 +3795,7 @@ function PepsiCoImpactAttention() {
     <section className="atlas-overview-attention atlas-impact-attention" aria-label="PepsiCo financial impact">
       <header>
         <h1>{euros(packet.summary.marginAtRisk)} margin at risk; {topGroup.name} and {topMarket.name} drive the read.</h1>
-        <a href={`/scenario-models?buyingGroup=${topGroup.id}`}>Model {topGroup.name} <ArrowRight size={14} /></a>
+        <a href={`/scenario-lab?buyingGroup=${topGroup.id}`}>Model {topGroup.name} <ArrowRight size={14} /></a>
       </header>
       <div>
         {items.map((item) => (
@@ -2486,7 +3821,7 @@ function FinancialExposureVisual() {
       <article className="atlas-chart-card atlas-impact-chart">
         <SectionTitle title="Buyer margin exposure" />
         {packet.topExposureBuyingGroups.slice(0, 7).map((group) => (
-          <a className="atlas-impact-bar-row" href={`/buying-groups/${group.id}?view=financials`} key={group.id}>
+          <a className="atlas-impact-bar-row" href={`/buying-groups/${group.id}?view=strategy`} key={group.id}>
             <span>{group.name}</span>
             <i><b style={{ width: `${Math.max(10, Math.round((group.financialExposure.marginAtRisk / maxMargin) * 100))}%` }} /></i>
             <strong>{euros(group.financialExposure.marginAtRisk)}</strong>
@@ -2518,7 +3853,7 @@ function RealizationGapVisual() {
         const target = group.financialExposure.targetPriceRealization;
         const gap = Math.max(0, target - expected);
         return (
-          <a href={`/buying-groups/${group.id}?view=financials`} key={group.id}>
+          <a href={`/buying-groups/${group.id}?view=strategy`} key={group.id}>
             <span>{group.name}</span>
             <div>
               <i style={{ width: `${Math.min(100, expected * 16)}%` }} />
@@ -2564,7 +3899,7 @@ function FinancialDecisionLens() {
   const decisions = [
     {
       action: 'Open buyer',
-      href: `/buying-groups/${read.topGroup.id}?view=financials`,
+      href: `/buying-groups/${read.topGroup.id}?view=strategy`,
       label: 'Buyer exposure',
       source: read.topGroup.source,
       title: read.topGroup.name,
@@ -2573,7 +3908,7 @@ function FinancialDecisionLens() {
     },
     {
       action: 'Run scenario',
-      href: `/scenario-models?buyingGroup=${read.topGroup.id}`,
+      href: `/scenario-lab?buyingGroup=${read.topGroup.id}`,
       label: 'Scenario needed',
       source: read.topGroup.source,
       title: 'Downside realization',
@@ -2649,7 +3984,6 @@ function PepsiCoImpactWorkspace() {
   const maxBuyerRisk = Math.max(...buyerRows.map((group) => group.financialExposure.marginAtRisk), 1);
   const tradeSpendExposure = packet.buyingGroups.reduce((total, group) => total + group.financialExposure.tradeSpendExposure, 0);
   const belowTargetGroups = packet.buyingGroups.filter((group) => group.financialExposure.expectedPriceRealization < group.financialExposure.targetPriceRealization);
-  const topGap = topGroup.financialExposure.targetPriceRealization - topGroup.financialExposure.expectedPriceRealization;
   const revenueWeights = packet.buyingGroups.reduce((total, group) => total + group.financialExposure.revenueUnderNegotiation, 0);
   const weightedExpectedRealization = packet.buyingGroups.reduce((total, group) => (
     total + group.financialExposure.expectedPriceRealization * group.financialExposure.revenueUnderNegotiation
@@ -2703,43 +4037,68 @@ function PepsiCoImpactWorkspace() {
     }
   ];
 
-  const actions = [
-    {
-      href: `/scenario-models?market=${topMarket.id}&buyingGroup=${topGroup.id}`,
-      label: 'Model top exposure',
-      meta: `${topGroup.name} · ${topMarket.name}`,
-      value: euros(topGroup.financialExposure.marginAtRisk)
-    },
-    {
-      href: `/buying-groups/${topGroup.id}?view=financials`,
-      label: `Open ${topGroup.name}`,
-      meta: `${pct(topGap)} gap to target`,
-      value: pct(topGroup.financialExposure.expectedPriceRealization)
-    },
-    {
-      href: `/scenario-models?buyingGroup=${secondGroup.id}`,
-      label: 'Compare fallback',
-      meta: `${secondGroup.name} downside case`,
-      value: euros(secondGroup.financialExposure.marginAtRisk)
-    }
+  const impactAlerts = [
+    buyingGroupToAlert(topGroup),
+    buyingGroupToAlert(secondGroup),
+    marketToAlert(topMarket),
+    signalToAlert(latestSignal)
+  ];
+  const impactScenarioEntries: ScenarioEntryQueueItem[] = [
+    ...impactAlerts.slice(0, 4).map((alert) => ({
+      action: alert.action,
+      href: alert.modelHref ?? alert.href,
+      impact: alert.value,
+      source: alert.source,
+      title: alert.title,
+      trigger: alert.trigger,
+      why: alert.possibleEffect
+    })),
+    ...buyerRows.slice(0, 2).map((group) => {
+      const gap = group.financialExposure.targetPriceRealization - group.financialExposure.expectedPriceRealization;
+      return {
+        action: 'Open buyer scenario workspace',
+        href: `/buying-groups/${group.id}?view=strategy`,
+        impact: euros(group.financialExposure.marginAtRisk),
+        source: group.source,
+        title: `${group.name}: ${buyerScenarioToTest(group)}`,
+        trigger: `${pct(gap)} target gap`,
+        why: `${buyerRiskReason(group)} Model this before changing price, trade, fallback, or red line.`
+      };
+    })
   ];
 
   return (
     <section className="atlas-impact-workspace" aria-label="PepsiCo financial impact workspace">
       <section className="atlas-impact-hero-v2">
         <div>
-          <span className="atlas-market-readiness-pill readiness-escalation_needed">Recommended focus</span>
-          <h1>{euros(packet.summary.gapToPlan)} short of plan; {euros(packet.summary.marginAtRisk)} margin at risk.</h1>
-          <p>{topMarket.name} and {topGroup.name} are the fastest path back to the PepsiCo financial goals.</p>
+          <span className="atlas-market-readiness-pill readiness-escalation_needed">Scenario focus</span>
+          <h1>{euros(packet.summary.gapToPlan)} plan gap needs scenario testing.</h1>
+          <p>{topMarket.name} and {topGroup.name} are the first places to model buyer response, guardrails, and margin recovery.</p>
+          <WhyShownLine
+            detail="this page identifies which financial gaps should become buyer, market, or portfolio scenarios"
+            reasons={pageIntentConfig.pepsicoImpact.surfacingLogic}
+          />
         </div>
-        <a href={`/scenario-models?market=${topMarket.id}&buyingGroup=${topGroup.id}`}>
-          Model top exposure <ArrowRight size={14} />
+        <a href={`/scenario-lab?market=${topMarket.id}&buyingGroup=${topGroup.id}`}>
+          Test top scenario <ArrowRight size={14} />
         </a>
       </section>
 
+      <ActiveAlertsPanel
+        alerts={impactAlerts}
+        eyebrow="Financial alerts"
+        title="What should feed scenario testing."
+      />
+
+      <ScenarioEntryQueue
+        eyebrow="Financial scenario entry"
+        items={impactScenarioEntries}
+        title="Turn the P&L gap into the next buyer, market, or downside scenario to test."
+      />
+
       <section className="atlas-impact-goal-board" aria-label="PepsiCo financial goals">
         <header>
-          <h2>PepsiCo financial goals</h2>
+          <h2>Financial gaps to test</h2>
         </header>
         <div>
           {goalCards.map((goal) => (
@@ -2753,6 +4112,7 @@ function PepsiCoImpactWorkspace() {
                 <div><dt>Goal</dt><dd>{goal.goal}</dd></div>
                 <div><dt>Gap</dt><dd>{goal.gap}</dd></div>
               </dl>
+              <em>{goal.action}</em>
             </article>
           ))}
         </div>
@@ -2761,12 +4121,12 @@ function PepsiCoImpactWorkspace() {
       <section className="atlas-impact-main-grid">
         <article className="atlas-impact-rank-panel">
           <header>
-            <h2>Gap by market</h2>
+            <h2>Market gaps to model</h2>
             <a href="/markets">Compare markets</a>
           </header>
           <div className="atlas-impact-rank-list">
             {marketRows.map((market) => (
-              <a href={`/markets/${market.id}`} key={market.id}>
+              <a href={`/scenario-lab?market=${market.id}`} key={market.id}>
                 <div>
                   <strong>{market.name}</strong>
                   <span>{market.pressureLevel} pressure · {market.activeBuyingGroups.length} active buyers</span>
@@ -2785,7 +4145,7 @@ function PepsiCoImpactWorkspace() {
         <article className="atlas-impact-rank-panel">
           <header>
             <div>
-              <h2>Buying groups pulling goals off track</h2>
+              <h2>Buying groups to scenario plan</h2>
               <span className="atlas-impact-header-stat">{belowTargetGroups.length} below target · {packet.summary.highRiskBuyingGroups} high risk</span>
             </div>
             <a href="/buying-groups">All groups</a>
@@ -2794,7 +4154,7 @@ function PepsiCoImpactWorkspace() {
             {buyerRows.map((group) => {
               const gap = group.financialExposure.targetPriceRealization - group.financialExposure.expectedPriceRealization;
               return (
-                <a href={`/buying-groups/${group.id}?view=financials`} key={group.id}>
+                <a href={`/buying-groups/${group.id}?view=strategy`} key={group.id}>
                   <div>
                     <strong>{group.name}</strong>
                     <span>{buyerRoundLabel(group)} · {group.riskLevel} risk</span>
@@ -2812,329 +4172,39 @@ function PepsiCoImpactWorkspace() {
         </article>
       </section>
 
-      <section className="atlas-impact-bottom-grid">
-        <article className="atlas-impact-action-panel">
-          <header>
-            <h2>Next actions</h2>
-          </header>
-          <div>
-            {actions.map((action) => (
-              <a href={action.href} key={action.label}>
-                <strong>{action.value}</strong>
-                <span>{action.label}</span>
-                <em>{action.meta}</em>
-              </a>
-            ))}
-          </div>
-        </article>
-
-        <article className="atlas-impact-action-panel">
-          <header>
-            <h2>Latest signal</h2>
-            <a href={`/?ask=${encodeURIComponent('What changed across Europe this week?')}&view=signal-impact`}>Full read</a>
-          </header>
-          <div className="atlas-impact-signal-card">
-            <strong>{euros(latestSignal.estimatedMarginImpact ?? latestSignal.estimatedRevenueImpact ?? 0)}</strong>
-            <h3>{latestSignal.title}</h3>
-            <p>{latestSignal.affectedMarkets.map((id) => getMarket(id)?.name ?? id).join(' / ')} · {latestSignal.affectedBuyingGroups.map((id) => getBuyingGroup(id)?.name ?? id).join(' / ')}</p>
-            <em>Action: {latestSignal.recommendedAction}</em>
-            <SourceTrustMini source={latestSignal.source} />
-          </div>
-        </article>
-      </section>
-    </section>
-  );
-}
-
-function buildExternalSignalSource(sourceName: string, sourceDate: string, confidence: AtlasConfidence = 'medium'): SourceMeta {
-  return {
-    sourceName,
-    sourceType: 'external',
-    sourceDate,
-    lastUpdated: sourceDate,
-    confidence,
-    status: 'modeled',
-    url: '/database?type=external',
-    governance: {
-      sourceType: 'external',
-      sourceOwner: 'ATLAS external signal monitor',
-      approvalStatus: 'prototype_simulation',
-      allowedUse: ['demo', 'review_draft'],
-      canonicalUseAllowed: 'with_caveat',
-      confidence,
-      caveats: ['Synthetic POC signal until live news ingestion is connected.'],
-      replacementRequirement: 'Replace with connected news, weather, commodity, logistics and public filing feeds.'
-    }
-  };
-}
-
-function OverviewNewsImpactFeed() {
-  const rows = [
-    ...packet.signals.slice(0, 2).map((signal) => ({
-      action: signal.recommendedAction,
-      affected: `${signal.affectedMarkets.map((id) => getMarket(id)?.name ?? id).join(' / ')} · ${signal.affectedBuyingGroups.map((id) => getBuyingGroup(id)?.name ?? id).join(' / ')}`,
-      category: signal.signalType.replaceAll('_', ' '),
-      href: `/signals?signal=${signal.id}`,
-      impact: signal.estimatedMarginImpact ?? signal.estimatedRevenueImpact ?? 0,
-      impactLabel: signal.estimatedMarginImpact ? 'margin impact' : 'revenue impact',
-      source: signal.source,
-      title: signal.title
-    })),
-    {
-      action: 'Check commodity pass-through before concession review',
-      affected: 'France / Germany · Carrefour / EDEKA / Rewe',
-      category: 'weather / crop pressure',
-      href: '/?ask=Show weather and commodity exposure by market&view=signal-impact',
-      impact: 1800000,
-      impactLabel: 'margin impact',
-      source: buildExternalSignalSource('ATLAS weather + commodity watch', '2026-07-10'),
-      title: 'Heat and crop-yield watch could pressure input-cost defense'
-    },
-    {
-      action: 'Model logistics surcharge sensitivity',
-      affected: 'UK / Netherlands / Belgium · Tesco / Ahold Delhaize',
-      category: 'war / logistics route risk',
-      href: '/scenario-models?ask=Model logistics surcharge sensitivity',
-      impact: 1400000,
-      source: buildExternalSignalSource('ATLAS geopolitics + logistics watch', '2026-07-10'),
-      title: 'Shipping disruption watch may reopen freight-cost assumptions'
-    },
-    {
-      action: 'Review pack-price architecture for discount buyers',
-      affected: 'Spain / Italy / Poland · Aldi / Lidl / Auchan',
-      category: 'consumer pressure',
-      href: '/buying-groups?ask=Show discount buyers with affordability pressure',
-      impact: 1200000,
-      source: buildExternalSignalSource('ATLAS consumer + retailer watch', '2026-07-10'),
-      title: 'Affordability pressure could increase private-label leverage'
-    }
-  ];
-
-  return (
-    <section className="atlas-news-impact-feed" aria-label="News that could impact negotiations">
-      <header>
-        <h2>News that could move negotiations</h2>
-      </header>
-      <div>
-        {rows.map((row) => (
-          <a href={row.href} key={`${row.category}-${row.title}`} {...generatedOutputLinkProps(row.href)}>
-            <strong>{euros(row.impact)}</strong>
-            <div>
-              <h3>{row.title}</h3>
-              <p>{row.affected}</p>
-              <CompactSourceText source={row.source} />
-            </div>
-            <em>{row.action}</em>
-          </a>
-        ))}
-      </div>
     </section>
   );
 }
 
 function OverviewBriefingCanvas({ generatedView, initialPrompt }: { generatedView: string; initialPrompt?: string }) {
-  const topGroup = packet.topExposureBuyingGroups[0];
-  const secondGroup = packet.topExposureBuyingGroups[1];
-  const topMarket = packet.highPressureMarkets[0];
-  const latestSignal = packet.signals[0];
-  const staleSourceCount = packet.documents.filter((document) => document.status === 'stale' || document.status === 'needs_validation').length;
-  const maxMarketRisk = Math.max(...packet.highPressureMarkets.map((market) => market.marginAtRisk));
   const generatedReadIsRequested = Boolean(initialPrompt && generatedView !== 'focus');
-  const newsRows = [
-    ...packet.signals.slice(0, 2).map((signal) => ({
-      action: signal.recommendedAction,
-      affected: `${signal.affectedMarkets.map((id) => getMarket(id)?.name ?? id).join(' / ')} · ${signal.affectedBuyingGroups.map((id) => getBuyingGroup(id)?.name ?? id).join(' / ')}`,
-      href: `/signals?signal=${signal.id}`,
-      impact: signal.estimatedMarginImpact ?? signal.estimatedRevenueImpact ?? 0,
-      impactLabel: signal.estimatedMarginImpact ? 'margin impact' : 'revenue impact',
-      source: signal.source,
-      title: signal.title
-    })),
-    {
-      action: 'Check commodity pass-through before concession review',
-      affected: 'France / Germany · Carrefour / EDEKA / Rewe',
-      href: '/?ask=Show weather and commodity exposure by market&view=signal-impact',
-      impact: 1800000,
-      impactLabel: 'margin impact',
-      source: buildExternalSignalSource('ATLAS weather + commodity watch', '2026-07-10'),
-      title: 'Heat and crop-yield watch could pressure input-cost defense'
-    },
-    {
-      action: 'Model logistics surcharge sensitivity',
-      affected: 'UK / Netherlands / Belgium · Tesco / Ahold Delhaize',
-      href: '/scenario-models?ask=Model logistics surcharge sensitivity',
-      impact: 1400000,
-      impactLabel: 'cost exposure',
-      source: buildExternalSignalSource('ATLAS geopolitics + logistics watch', '2026-07-10'),
-      title: 'Shipping disruption watch may reopen freight-cost assumptions'
-    }
+  const externalAlertSignals = packet.signals
+    .filter((signal) => ['world_news', 'economic', 'regulatory', 'commodity', 'supply_chain', 'inflation', 'retailer_pressure'].includes(signal.signalType))
+    .slice(0, 1)
+    .map(signalToAlert);
+  const scenarioResultAlerts = packet.scenarioModels
+    .slice(0, 1)
+    .map(scenarioToAlert);
+  const patternAlerts = packet.crossMarketPatterns
+    .slice(0, 1)
+    .map(patternToAlert);
+  const overviewAlerts = [
+    ...externalAlertSignals,
+    ...scenarioResultAlerts,
+    ...patternAlerts
   ];
-
-  const decisionRows = [
-    {
-      action: `Open ${topGroup.name}`,
-      href: `/buying-groups/${topGroup.id}`,
-      metric: euros(topGroup.financialExposure.marginAtRisk),
-      metricLabel: 'margin at risk',
-      movement: '+EUR 1.1M',
-      title: `${topGroup.name}: CNO intervention likely`,
-      supporting: `${buyerRoundLabel(topGroup)} · ${pct(topGroup.financialExposure.expectedPriceRealization)} realized / ${pct(topGroup.financialExposure.targetPriceRealization)} target`,
-      tone: 'risk'
-    },
-    {
-      action: `Open ${topMarket.name}`,
-      href: `/markets/${topMarket.id}`,
-      metric: euros(topMarket.marginAtRisk),
-      metricLabel: 'market margin risk',
-      movement: '+9% pressure',
-      title: `${topMarket.name}: pressure market`,
-      supporting: topMarket.topDrivers.slice(0, 2).join(' · '),
-      tone: 'watch'
-    },
-    {
-      action: 'Model fallback',
-      href: `/scenario-models?buyingGroup=${secondGroup.id}`,
-      metric: euros(secondGroup.financialExposure.marginAtRisk),
-      metricLabel: 'margin at risk',
-      movement: `${pct(secondGroup.financialExposure.targetPriceRealization - secondGroup.financialExposure.expectedPriceRealization)} gap`,
-      title: `${secondGroup.name}: realization below target`,
-      supporting: `${buyerRoundLabel(secondGroup)} · ${secondGroup.negotiationStage}`,
-      tone: 'signal'
-    },
-    {
-      action: 'Review sources',
-      href: '/documents?view=source-readiness',
-      metric: `${staleSourceCount}`,
-      metricLabel: 'source gaps',
-      movement: 'before output',
-      title: 'Stale sources blocking confidence',
-      supporting: 'Buyer profiles, debriefs, pricing proof',
-      tone: 'source'
-    }
-  ];
-
+  const overviewScenarioEntries: ScenarioEntryQueueItem[] = overviewAlerts.slice(0, 4).map((alert) => ({
+      action: alert.action,
+      href: alert.modelHref ?? alert.href,
+      impact: alert.value,
+      source: alert.source,
+      title: alert.title,
+      trigger: alert.trigger,
+      why: alert.possibleEffect
+  }));
   return (
     <section className="atlas-overview-v3" aria-label="Europe overview briefing">
-      <section className="atlas-overview-v3-hero">
-        <div className="atlas-overview-v3-title">
-          <span className="atlas-market-readiness-pill readiness-escalation_needed">Escalation needed</span>
-          <h1>{euros(packet.summary.marginAtRisk)} margin at risk. {topGroup.name}, {secondGroup.name}, and {topMarket.name} need focus.</h1>
-          <p>Recommended action: open {topGroup.name}, review the realization gap, then run a fallback scenario before the next governance checkpoint.</p>
-          <a href={`/buying-groups/${topGroup.id}`}>Open {topGroup.name} <ArrowRight size={14} /></a>
-        </div>
-        <dl className="atlas-overview-v3-pills" aria-label="Top Europe metrics">
-          <div>
-            <dt>Revenue in play</dt>
-            <dd>{euros(packet.summary.revenueUnderNegotiation)}</dd>
-          </div>
-          <div>
-            <dt>Margin at risk</dt>
-            <dd>{euros(packet.summary.marginAtRisk)} <em>+9%</em></dd>
-          </div>
-          <div>
-            <dt>Gap to plan</dt>
-            <dd>{euros(packet.summary.gapToPlan)}</dd>
-          </div>
-          <div>
-            <dt>High-risk groups</dt>
-            <dd>{packet.summary.highRiskBuyingGroups}</dd>
-          </div>
-          <div>
-            <dt>Latest signal</dt>
-            <dd>{euros(latestSignal.estimatedMarginImpact ?? latestSignal.estimatedRevenueImpact ?? 0)}</dd>
-          </div>
-        </dl>
-      </section>
-
-      <section className="atlas-overview-v3-grid">
-        <section className="atlas-overview-v3-panel atlas-overview-v3-priorities">
-          <header>
-            <h2>Recommended Focus</h2>
-            <a href="/buying-groups">All buying groups</a>
-          </header>
-          <div>
-            {decisionRows.map((row) => (
-              <a className={row.tone} href={row.href} key={row.title}>
-                <div className="atlas-overview-v3-number">
-                  <strong>{row.metric}</strong>
-                  <small>{row.metricLabel}</small>
-                </div>
-                <div>
-                  <h3>{row.title}</h3>
-                  <p>{row.supporting}</p>
-                </div>
-                <span>{row.movement}</span>
-                <em>{row.action}</em>
-              </a>
-            ))}
-          </div>
-        </section>
-
-        <section className="atlas-overview-v3-panel atlas-overview-v3-markets">
-          <header>
-            <h2>Markets</h2>
-            <a href="/markets">Compare</a>
-          </header>
-          <div>
-            {packet.highPressureMarkets.slice(0, 5).map((market) => (
-              <a className={`market-tone-${market.pressureLevel}`} href={`/markets/${market.id}`} key={market.id}>
-                <span>{market.name}</span>
-                <i><b style={{ width: `${Math.max(12, Math.round((market.marginAtRisk / maxMarketRisk) * 100))}%` }} /></i>
-                <strong>{euros(market.marginAtRisk)} <small>margin risk</small></strong>
-                <em>{market.pressureLevel}</em>
-              </a>
-            ))}
-          </div>
-        </section>
-      </section>
-
-      <section className="atlas-overview-v3-row">
-        <section className="atlas-overview-v3-panel atlas-overview-v3-news">
-          <header>
-            <h2>News that could move negotiations</h2>
-            <a href="/?ask=What changed across Europe this week?&view=signal-impact">Full read</a>
-          </header>
-          <div>
-            {newsRows.map((row) => (
-              <a href={row.href} key={row.title} {...generatedOutputLinkProps(row.href)}>
-                <div className="atlas-overview-v3-number">
-                  <strong>{euros(row.impact)}</strong>
-                  <small>{row.impactLabel}</small>
-                </div>
-                <div>
-                  <h3>{row.title}</h3>
-                  <p>{row.affected}</p>
-                  <CompactSourceText source={row.source} />
-                </div>
-                <em>{row.action}</em>
-              </a>
-            ))}
-          </div>
-        </section>
-      </section>
-
-      <section className="atlas-overview-v3-row">
-        <section className="atlas-overview-v3-panel atlas-overview-v3-patterns">
-          <header>
-            <h2>Cross-market patterns</h2>
-            <a href="/scenario-models">Model</a>
-          </header>
-          <div>
-            {packet.crossMarketPatterns.slice(0, 3).map((pattern) => (
-              <a href="/scenario-models" key={pattern.id}>
-                <span>Pattern detected</span>
-                <h3>{pattern.title}</h3>
-                <div className="atlas-overview-v3-number">
-                  <strong>{euros(pattern.financialImplication.marginAtRisk ?? pattern.financialImplication.revenueAtRisk ?? 0)}</strong>
-                  <small>{pattern.financialImplication.marginAtRisk ? 'margin at risk' : 'revenue at risk'}</small>
-                </div>
-                <p><b>Repeats in</b> {pattern.affectedMarkets.map((id) => getMarket(id)?.name ?? id).join(' / ')} · {pattern.affectedBuyingGroups.map((id) => getBuyingGroup(id)?.name ?? id).join(' / ')}</p>
-                <em>{pattern.recommendedAction}</em>
-              </a>
-            ))}
-          </div>
-        </section>
-      </section>
+      <TriageCommandCenter alerts={overviewAlerts} items={overviewScenarioEntries} />
 
       {generatedReadIsRequested ? <OverviewGeneratedRead ask={initialPrompt} view={generatedView} /> : null}
     </section>
@@ -3144,17 +4214,24 @@ function OverviewBriefingCanvas({ generatedView, initialPrompt }: { generatedVie
 function SignalActionBoard({ signals }: { signals: ExternalSignal[] }) {
   return (
     <section className="atlas-data-action-board" aria-label="Signal actions">
-      {signals.map((signal) => (
-        <a href={`/generated-views?prompt=${encodeURIComponent(`Create signal impact readout for ${signal.title}`)}&mode=draft&editable=1`} key={signal.id} {...generatedOutputLinkProps(`/generated-views?prompt=${encodeURIComponent(signal.title)}&mode=draft&editable=1`)}>
-          <strong>{euros(signal.estimatedMarginImpact ?? signal.estimatedRevenueImpact ?? 0)}</strong>
-          <div>
-            <h3>{signal.title}</h3>
-            <p>{signal.affectedMarkets.map((id) => getMarket(id)?.name ?? id).join(' / ')} · {signal.affectedBuyingGroups.map((id) => getBuyingGroup(id)?.name ?? id).join(' / ')}</p>
-            <SourceTrustMini source={signal.source} />
-          </div>
-          <em>{signal.recommendedAction}</em>
-        </a>
-      ))}
+      {signals.map((signal) => {
+        const href = `/generated-views?prompt=${encodeURIComponent(`Create signal impact readout for ${signal.title}`)}&mode=draft&editable=1`;
+
+        return (
+          <article className="atlas-data-action-card" key={signal.id}>
+            <strong>{euros(signal.estimatedMarginImpact ?? signal.estimatedRevenueImpact ?? 0)}</strong>
+            <div>
+              <h3>{signal.title}</h3>
+              <p>{signal.affectedMarkets.map((id) => getMarket(id)?.name ?? id).join(' / ')} · {signal.affectedBuyingGroups.map((id) => getBuyingGroup(id)?.name ?? id).join(' / ')}</p>
+              <SourceTrustMini source={signal.source} />
+            </div>
+            <div className="atlas-data-action-meta">
+              <em>{signal.recommendedAction}</em>
+              <a className="atlas-data-action-link" href={href} {...generatedOutputLinkProps(href)}>Open readout <ArrowRight size={13} /></a>
+            </div>
+          </article>
+        );
+      })}
     </section>
   );
 }
@@ -3162,17 +4239,24 @@ function SignalActionBoard({ signals }: { signals: ExternalSignal[] }) {
 function CompetitorActionBoard({ moves }: { moves: CompetitorMove[] }) {
   return (
     <section className="atlas-data-action-board" aria-label="Competitor actions">
-      {moves.map((move) => (
-        <a href={`/generated-views?prompt=${encodeURIComponent(`Create competitor leverage readout for ${move.competitor}: ${move.title}`)}&mode=draft&editable=1`} key={move.id} {...generatedOutputLinkProps(`/generated-views?prompt=${encodeURIComponent(move.title)}&mode=draft&editable=1`)}>
-          <strong>{euros(move.estimatedMarginImpact ?? move.estimatedRevenueImpact ?? 0)}</strong>
-          <div>
-            <h3>{move.competitor}: {move.title}</h3>
-            <p>{move.affectedMarkets.map((id) => getMarket(id)?.name ?? id).join(' / ')} · {move.affectedBuyingGroups.map((id) => getBuyingGroup(id)?.name ?? id).join(' / ')}</p>
-            <SourceTrustMini source={move.source} />
-          </div>
-          <em>{move.recommendedAction}</em>
-        </a>
-      ))}
+      {moves.map((move) => {
+        const href = `/generated-views?prompt=${encodeURIComponent(`Create competitor leverage readout for ${move.competitor}: ${move.title}`)}&mode=draft&editable=1`;
+
+        return (
+          <article className="atlas-data-action-card" key={move.id}>
+            <strong>{euros(move.estimatedMarginImpact ?? move.estimatedRevenueImpact ?? 0)}</strong>
+            <div>
+              <h3>{move.competitor}: {move.title}</h3>
+              <p>{move.affectedMarkets.map((id) => getMarket(id)?.name ?? id).join(' / ')} · {move.affectedBuyingGroups.map((id) => getBuyingGroup(id)?.name ?? id).join(' / ')}</p>
+              <SourceTrustMini source={move.source} />
+            </div>
+            <div className="atlas-data-action-meta">
+              <em>{move.recommendedAction}</em>
+              <a className="atlas-data-action-link" href={href} {...generatedOutputLinkProps(href)}>Open readout <ArrowRight size={13} /></a>
+            </div>
+          </article>
+        );
+      })}
     </section>
   );
 }
@@ -3181,14 +4265,14 @@ function ImpactSnapshotBoard() {
   const topGroups = packet.topExposureBuyingGroups.slice(0, 4);
   const rows = [
     {
-      href: `/buying-groups/${topGroups[0].id}?view=financials`,
+      href: `/buying-groups/${topGroups[0].id}?view=strategy`,
       label: topGroups[0].name,
       metric: euros(topGroups[0].financialExposure.marginAtRisk),
       sub: `${pct(topGroups[0].financialExposure.expectedPriceRealization)} realized / ${pct(topGroups[0].financialExposure.targetPriceRealization)} target`,
       action: 'Open buyer'
     },
     {
-      href: `/buying-groups/${topGroups[1].id}?view=financials`,
+      href: `/buying-groups/${topGroups[1].id}?view=strategy`,
       label: topGroups[1].name,
       metric: euros(topGroups[1].financialExposure.marginAtRisk),
       sub: `${pct(topGroups[1].financialExposure.targetPriceRealization - topGroups[1].financialExposure.expectedPriceRealization)} gap`,
@@ -3202,7 +4286,7 @@ function ImpactSnapshotBoard() {
       action: 'Open market'
     },
     {
-      href: '/scenario-models',
+      href: '/scenario-lab',
       label: 'Gap to plan',
       metric: euros(packet.summary.gapToPlan),
       sub: `${packet.summary.highRiskBuyingGroups} high-risk groups`,
@@ -3233,8 +4317,8 @@ function BriefingActionPanel() {
         <p>Validate stale or missing source documents before creating any new output or using generated assumptions.</p>
       </div>
       <div className="atlas-briefing-actions">
-        <a href="/scenario-models">Open Scenario Models <ArrowRight size={14} /></a>
-        <a href="/documents">Review source readiness</a>
+        <a href="/scenario-lab">Open scenario workspace <ArrowRight size={14} /></a>
+        <a href="/intelligence">Review source readiness</a>
       </div>
     </section>
   );
@@ -3288,7 +4372,7 @@ function CrossMarketPatternBrief() {
             trade={pattern.financialImplication.tradeSpendExposure}
           />
           <CompactSourceLine source={pattern.source} />
-          <a href="/scenario-models">{pattern.recommendedAction}</a>
+          <a href="/scenario-lab">{pattern.recommendedAction}</a>
         </article>
       ))}
     </section>
@@ -3318,7 +4402,7 @@ function InvestigationLinks() {
     {
       title: 'Financial Impact',
       body: 'Trace margin-at-risk, realization gaps and exposure ranking.',
-      href: '/financial-impact',
+      href: '/scenario-lab',
       icon: <CircleDollarSign size={17} />
     }
   ];
@@ -3366,8 +4450,8 @@ function OverviewGeneratedRead({ ask, view }: { ask?: string; view: string }) {
     return (
       <GeneratedWorkspace
         ask={ask}
-        title="Buying groups needing attention"
-        description="Ranked by risk, margin at risk, realization gap, source readiness and intervention need."
+        title="Buying groups affected after scenario impact"
+        description="Use this as a downstream read after alerts or scenario risks show which negotiations may need attention."
       >
         <BuyingGroupTable groups={packet.topExposureBuyingGroups.slice(0, 7)} />
       </GeneratedWorkspace>
@@ -3379,7 +4463,7 @@ function OverviewGeneratedRead({ ask, view }: { ask?: string; view: string }) {
       <GeneratedWorkspace
         ask={ask}
         title="What changed in the market this week"
-        description="External changes translated into affected buyers, financial implication and recommended action."
+        description="External changes translated into scenario impact, affected buyers, financial implication and recommended modeling action."
       >
         <SignalCards signals={packet.signals.slice(0, 4)} />
       </GeneratedWorkspace>
@@ -3391,7 +4475,7 @@ function OverviewGeneratedRead({ ask, view }: { ask?: string; view: string }) {
       <GeneratedWorkspace
         ask={ask}
         title="Competitor moves creating buyer leverage"
-        description="Public competitor activity translated into buyer pressure and PepsiCo financial implications."
+        description="Public competitor activity translated into scenario assumptions, buyer leverage, and PepsiCo financial implications."
       >
         <CompetitorCards moves={packet.competitorMoves.slice(0, 4)} />
       </GeneratedWorkspace>
@@ -3401,7 +4485,7 @@ function OverviewGeneratedRead({ ask, view }: { ask?: string; view: string }) {
   return (
     <GeneratedWorkspace
       ask={ask}
-      title="Act on these first"
+      title="Model these changes first"
       description=""
     >
       <section className="atlas-generated-stack">
@@ -3422,11 +4506,11 @@ function EuropeOverview({ initialGeneratedView, initialMonitorTab, initialPrompt
         basePath="/"
         examples={[
           'What changed across Europe this week?',
-          'Show margin exposure by market',
-          'Which buying groups need CNO intervention?'
+          'Which alerts should I model first?',
+          'What scenario risk changed?'
         ]}
         initialPrompt={initialPrompt}
-        placeholder="Ask for a market read, buyer ranking, signal impact, source gap, or financial report..."
+        placeholder="Ask for alert impact, scenario risk, source gap, or a modeled read..."
       />
     </>
   );
@@ -3442,14 +4526,15 @@ function SectionTitle({ title, detail }: { title: string; detail?: string }) {
 }
 
 function sortMarkets(markets: Market[], sort?: string) {
-  const selected = sort || 'priority';
+  const { direction, key: selected } = parseSortParam(sort);
+  const compareNumbers = (aValue: number, bValue: number) => direction === 'asc' ? aValue - bValue : bValue - aValue;
   return [...markets].sort((a, b) => {
-    if (selected === 'margin') return b.marginAtRisk - a.marginAtRisk;
-    if (selected === 'gap') return b.gapToPlan - a.gapToPlan;
-    if (selected === 'trade') return b.tradeSpendExposure - a.tradeSpendExposure;
-    if (selected === 'revenue') return b.revenueUnderNegotiation - a.revenueUnderNegotiation;
-    if (selected === 'buyers') return b.activeBuyingGroups.length - a.activeBuyingGroups.length;
-    return riskRank(b.pressureLevel) - riskRank(a.pressureLevel) || b.marginAtRisk - a.marginAtRisk;
+    if (selected === 'margin') return compareNumbers(a.marginAtRisk, b.marginAtRisk);
+    if (selected === 'gap') return compareNumbers(a.gapToPlan, b.gapToPlan);
+    if (selected === 'trade') return compareNumbers(a.tradeSpendExposure, b.tradeSpendExposure);
+    if (selected === 'revenue') return compareNumbers(a.revenueUnderNegotiation, b.revenueUnderNegotiation);
+    if (selected === 'buyers') return compareNumbers(a.activeBuyingGroups.length, b.activeBuyingGroups.length);
+    return compareNumbers(riskRank(a.pressureLevel), riskRank(b.pressureLevel)) || compareNumbers(a.marginAtRisk, b.marginAtRisk);
   });
 }
 
@@ -3503,6 +4588,26 @@ function marketMovementLabel(value: number, movement: number, noun: string) {
 
 function titleCaseText(value: string) {
   return value.replace(/\w\S*/g, (word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase());
+}
+
+function parseSortParam(sort?: string, fallback = 'priority') {
+  const raw = (sort || fallback).trim();
+  const normalized = raw.replace(':', '-');
+  if (normalized.endsWith('-asc')) return { direction: 'asc' as const, key: normalized.replace(/-asc$/, '') || fallback };
+  if (normalized.endsWith('-desc')) return { direction: 'desc' as const, key: normalized.replace(/-desc$/, '') || fallback };
+  return { direction: 'desc' as const, key: normalized || fallback };
+}
+
+function nextSortParam(activeSort: string | undefined, targetSort: string) {
+  const active = parseSortParam(activeSort);
+  const nextDirection = active.key === targetSort && active.direction === 'desc' ? 'asc' : 'desc';
+  return nextDirection === 'desc' ? targetSort : `${targetSort}-asc`;
+}
+
+function sortDirectionArrow(activeSort: string | undefined, targetSort: string) {
+  const active = parseSortParam(activeSort);
+  if (active.key !== targetSort) return null;
+  return active.direction === 'asc' ? '↑' : '↓';
 }
 
 function buildMarketDecisionRead(market: Market) {
@@ -3568,6 +4673,44 @@ function MarketSortBar({ activeSort }: { activeSort?: string }) {
   );
 }
 
+function marketTableSortHref(sort: string) {
+  return sort === 'priority' ? '/markets' : `/markets?sort=${sort}`;
+}
+
+function MarketSortableHeader({
+  activeSort,
+  label,
+  sort
+}: {
+  activeSort: string;
+  label: string;
+  sort: string;
+}) {
+  const active = parseSortParam(activeSort).key === sort;
+  const nextSort = nextSortParam(activeSort, sort);
+  return (
+    <a className={active ? 'active' : ''} href={marketTableSortHref(nextSort)} aria-current={active ? 'true' : undefined}>
+      {label}
+      {active ? <span aria-hidden="true">{sortDirectionArrow(activeSort, sort)}</span> : null}
+    </a>
+  );
+}
+
+function marketPressureReason(market: Market) {
+  const read = buildMarketDecisionRead(market);
+  const diagnosis = marketPerformanceDiagnosis(market);
+  if (market.pressureLevel === 'critical') {
+    return `${euros(market.marginAtRisk)} margin at risk, ${diagnosis.averageRealizationGap.toFixed(1)} pts realization gap, ${read.groups.length} buyer groups affected.`;
+  }
+  if (market.pressureLevel === 'high') {
+    return `${euros(market.marginAtRisk)} margin at risk with ${read.groups.length} active buyer groups.`;
+  }
+  if (market.pressureLevel === 'medium') {
+    return `${euros(market.tradeSpendExposure)} trade pressure, but no market-wide escalation trigger yet.`;
+  }
+  return 'Low pressure relative to the current market set.';
+}
+
 function MarketTriageCard({ market, rank }: { market: Market; rank: number }) {
   const read = buildMarketDecisionRead(market);
   const topGroup = read.topBuyer;
@@ -3609,59 +4752,103 @@ function MarketTriageQueue({ markets }: { markets: Market[] }) {
   );
 }
 
+function marketPerformanceDiagnosis(market: Market) {
+  const buyers = market.activeBuyingGroups.map((id) => getBuyingGroup(id)).filter((group): group is BuyingGroup => Boolean(group));
+  const belowTargetBuyers = buyers.filter((group) => group.financialExposure.expectedPriceRealization < group.financialExposure.targetPriceRealization);
+  const criticalBuyers = buyers.filter((group) => group.riskLevel === 'critical' || group.riskLevel === 'high');
+  const averageRealizationGap = buyers.length
+    ? buyers.reduce((sum, group) => sum + Math.max(0, group.financialExposure.targetPriceRealization - group.financialExposure.expectedPriceRealization), 0) / buyers.length
+    : Math.max(0, market.gapToPlan / Math.max(market.revenueUnderNegotiation, 1)) * 100;
+  const marginMovement = Math.round((market.marginAtRisk / Math.max(market.revenueUnderNegotiation, 1)) * 100);
+  const tradePressure = Math.round((market.tradeSpendExposure / Math.max(market.revenueUnderNegotiation, 1)) * 100);
+  const topBuyer = criticalBuyers[0] ?? belowTargetBuyers[0] ?? buyers[0];
+
+  return {
+    averageRealizationGap,
+    belowTargetBuyers,
+    criticalBuyers,
+    marginMovement,
+    topBuyer,
+    tradePressure
+  };
+}
+
 function MarketsBriefingCanvas({ activeSort, initialPrompt, markets }: { activeSort?: string; initialPrompt?: string; markets: Market[] }) {
   const topMarket = markets[0] ?? packet.highPressureMarkets[0];
   const topRead = buildMarketDecisionRead(topMarket);
   const topBuyer = topRead.topBuyer;
-  const offsetMarkets = [...packet.markets]
-    .filter((market) => market.id !== topMarket.id)
-    .sort((a, b) => a.marginAtRisk - b.marginAtRisk)
-    .slice(0, 3);
-  const maxMargin = Math.max(...packet.markets.map((market) => market.marginAtRisk));
-  const maxGap = Math.max(...packet.markets.map((market) => market.gapToPlan));
-  const maxTrade = Math.max(...packet.markets.map((market) => market.tradeSpendExposure));
+  const topDiagnosis = marketPerformanceDiagnosis(topMarket);
+  const topBuyerRoutes = topRead.groups.slice(0, 4);
+  const marketAlerts = markets.filter((market) => market.pressureLevel === 'critical' || market.pressureLevel === 'high');
+  const isMultiMarketAlert = marketAlerts.length > 1;
+  const alertMarkets = marketAlerts.slice(0, 3);
   const selected = activeSort || 'priority';
-  const sorts = [
-    ['priority', 'Priority'],
-    ['margin', 'Margin risk'],
-    ['gap', 'Gap to plan'],
-    ['trade', 'Trade spend'],
-    ['buyers', 'Buyer count'],
-    ['revenue', 'Revenue']
+  const marketOverviewAlerts = [
+    ...marketAlerts.slice(0, 3).map(marketToAlert),
+    ...packet.signals
+      .filter((signal) => signal.affectedMarkets.some((marketId) => marketAlerts.some((market) => market.id === marketId)))
+      .slice(0, 2)
+      .map(signalToAlert)
+  ];
+  const scenarioEntryItems: ScenarioEntryQueueItem[] = [
+    ...marketOverviewAlerts.slice(0, 3).map((alert) => ({
+      action: alert.action,
+      href: alert.modelHref ?? alert.href,
+      impact: alert.value,
+      source: alert.source,
+      title: alert.title,
+      trigger: alert.trigger,
+      why: alert.possibleEffect
+    })),
+    ...topBuyerRoutes.slice(0, 2).map((group) => ({
+      action: 'Open buyer scenario workspace',
+      href: `/buying-groups/${group.id}?view=strategy`,
+      impact: euros(group.financialExposure.marginAtRisk),
+      source: group.source,
+      title: `${group.name} should absorb the market read first.`,
+      trigger: `${group.riskLevel} buyer risk`,
+      why: `${buyerInterventionTrigger(group)} This can change the ask, fallback, red line, or likely buyer counter.`
+    }))
   ];
 
   return (
     <section className="atlas-markets-v3" aria-label="Markets comparison">
-      <section className="atlas-markets-v3-hero">
+      <section className="atlas-markets-v3-hero atlas-market-overview-hero">
         <div>
-          <span className={`atlas-market-readiness-pill readiness-${topRead.readinessStatus}`}>{readinessLabel(topRead.readinessStatus)}</span>
-          <h1>{topRead.headline}</h1>
-          <p>{topRead.recommendedAction}</p>
-          <div className="atlas-market-hero-actions">
-            <a href={topBuyer ? `/buying-groups/${topBuyer.id}` : `/markets/${topMarket.id}`}>Open {topBuyer?.name ?? topMarket.name} <ArrowRight size={14} /></a>
-            <a href={`/scenario-models?market=${topMarket.id}`}>Model exposure</a>
+          <span className={`atlas-market-readiness-pill readiness-${topRead.readinessStatus}`}>Market pressure</span>
+          <h1>{isMultiMarketAlert ? `${marketAlerts.length} markets need attention.` : `${topMarket.name} is the first market to inspect.`}</h1>
+          <p>
+            {isMultiMarketAlert
+              ? 'Start with the markets below: each has material margin risk, buyer pressure, or a gap to plan that can change negotiation strategy.'
+              : `${topBuyer ? topBuyer.name : topMarket.name} is driving the current read through buyer exposure, realization gap, and trade pressure.`}
+          </p>
+          <div className="atlas-market-hero-source">
+            <SourceTrustMini source={topMarket.source} />
           </div>
         </div>
-        <dl>
-          <div><dt>Revenue in play</dt><dd>{euros(packet.summary.revenueUnderNegotiation)}</dd></div>
-          <div><dt>Margin at risk</dt><dd>{euros(packet.summary.marginAtRisk)}</dd></div>
-          <div><dt>Top market risk</dt><dd>{euros(topMarket.marginAtRisk)}</dd></div>
-          <div><dt>Gap to plan</dt><dd>{euros(packet.summary.gapToPlan)}</dd></div>
-          <div><dt>Active markets</dt><dd>{packet.markets.length}</dd></div>
-        </dl>
+        {isMultiMarketAlert ? (
+          <div className="atlas-market-alert-strip" aria-label="Markets needing attention">
+            {alertMarkets.map((market) => {
+              const diagnosis = marketPerformanceDiagnosis(market);
+              const read = buildMarketDecisionRead(market);
+              return (
+                <a href={`/markets/${market.id}`} key={market.id}>
+                  <strong>{market.name}</strong>
+                  <span>{euros(market.marginAtRisk)} margin at risk</span>
+                  <small>{market.pressureLevel} pressure · {diagnosis.averageRealizationGap.toFixed(1)} pts gap · {read.groups.length} buyer groups</small>
+                </a>
+              );
+            })}
+          </div>
+        ) : (
+          <dl>
+            <div><dt>Top market risk</dt><dd>{euros(topMarket.marginAtRisk)}</dd></div>
+            <div><dt>Realization gap</dt><dd>{topDiagnosis.averageRealizationGap.toFixed(1)} pts</dd></div>
+            <div><dt>Trade pressure</dt><dd>{euros(topMarket.tradeSpendExposure)}</dd></div>
+            <div><dt>Buyers driving risk</dt><dd>{topRead.groups.length}</dd></div>
+          </dl>
+        )}
       </section>
-
-      <section className="atlas-market-watchout-strip" aria-label="Market watchouts">
-        {topRead.topWatchouts.map((watchout) => (
-          <span key={watchout}>{watchout}</span>
-        ))}
-      </section>
-
-      <nav className="atlas-markets-v3-sort" aria-label="Sort markets">
-        {sorts.map(([sort, label]) => (
-          <a href={sort === 'priority' ? '/markets' : `/markets?sort=${sort}`} className={selected === sort ? 'active' : ''} key={sort}>{label}</a>
-        ))}
-      </nav>
 
       {initialPrompt ? (
         <section className="atlas-markets-v3-asked">
@@ -3670,90 +4857,90 @@ function MarketsBriefingCanvas({ activeSort, initialPrompt, markets }: { activeS
         </section>
       ) : null}
 
-      <section className="atlas-markets-v3-grid">
-        <section className="atlas-markets-v3-panel atlas-markets-v3-ranking">
-          <header>
-            <h2>Compare markets</h2>
-            <a href="/financial-impact">PepsiCo Impact</a>
-          </header>
-          <div>
-            {markets.map((market, index) => {
-              const groups = market.activeBuyingGroups.map((id) => getBuyingGroup(id)).filter((group): group is BuyingGroup => Boolean(group));
-              const firstBuyer = groups.sort((a, b) => riskRank(b.riskLevel) - riskRank(a.riskLevel) || b.financialExposure.marginAtRisk - a.financialExposure.marginAtRisk)[0];
-              return (
-                <a href={`/markets/${market.id}`} key={market.id}>
-                  <strong>#{index + 1}</strong>
-                  <div>
-                    <h3>{market.name}</h3>
-                    <p>{buildMarketDecisionRead(market).recommendedAction}</p>
-                  </div>
-                  <span>{euros(market.marginAtRisk)}</span>
-                  <i><b style={{ width: `${Math.max(10, Math.round((market.marginAtRisk / maxMargin) * 100))}%` }} /></i>
-                  <em>{firstBuyer ? `${firstBuyer.name} first` : `${market.activeBuyingGroups.length} buyers`}</em>
-                </a>
-              );
-            })}
-          </div>
-        </section>
+      <ActiveAlertsPanel
+        alerts={marketOverviewAlerts}
+        eyebrow="Market alerts"
+        title="These market changes can alter buyer scenarios."
+        limit={3}
+      />
 
-        <section className="atlas-markets-v3-panel atlas-markets-v3-pressure">
-          <header>
-            <h2>Risk shape</h2>
-            <a href="/scenario-models">Model</a>
-          </header>
-          <div>
-            {markets.slice(0, 5).map((market) => (
-              <a href={`/markets/${market.id}`} key={market.id}>
-                <span>{market.name}</span>
-                <div>
-                  <label>Gap</label>
-                  <i><b style={{ width: `${Math.max(8, Math.round((market.gapToPlan / maxGap) * 100))}%` }} /></i>
-                  <strong>{euros(market.gapToPlan)}</strong>
-                </div>
-                <div>
-                  <label>Trade</label>
-                  <i><b style={{ width: `${Math.max(8, Math.round((market.tradeSpendExposure / maxTrade) * 100))}%` }} /></i>
-                  <strong>{euros(market.tradeSpendExposure)}</strong>
-                </div>
-              </a>
-            ))}
-          </div>
-        </section>
-      </section>
+      <ScenarioEntryQueue
+        eyebrow="Scenario entry queue"
+        items={scenarioEntryItems}
+        title="Use the market read to choose which buyer or market scenario to test next."
+      />
 
-      <section className="atlas-markets-v3-grid secondary">
-        <section className="atlas-markets-v3-panel atlas-markets-v3-actions">
-          <header>
-            <h2>Open next</h2>
-          </header>
+      <section className="atlas-market-comparison-board" aria-label="Market comparison board">
+        <header>
           <div>
-            {markets.slice(0, 4).map((market) => {
-              const buyer = market.activeBuyingGroups.map((id) => getBuyingGroup(id)).filter((group): group is BuyingGroup => Boolean(group))[0];
-              return (
-                <a href={buyer ? `/buying-groups/${buyer.id}` : `/markets/${market.id}`} key={market.id}>
-                  <strong>{market.name}</strong>
-                  <span>{buyer ? buyer.name : 'Market read'}</span>
-                  <em>{market.topDrivers[0]}</em>
-                </a>
-              );
-            })}
+            <span>Market comparison</span>
+            <h2>Compare markets by the numbers that change negotiation priority.</h2>
           </div>
-        </section>
-
-        <section className="atlas-markets-v3-panel atlas-markets-v3-offsets">
-          <header>
-            <h2>Potential offsets</h2>
-            <a href="/markets?sort=margin">Review</a>
-          </header>
-          <div>
-            {offsetMarkets.map((market) => (
-              <a href={`/markets/${market.id}`} key={market.id}>
-                <strong>{market.name}</strong>
-                <span>{euros(market.marginAtRisk)} risk</span>
-                <em>{market.pressureLevel} pressure</em>
-              </a>
-            ))}
-          </div>
+          <a href="/scenario-lab">PepsiCo Impact <ArrowRight size={13} /></a>
+        </header>
+        <section className="atlas-buyer-triage-table-wrap atlas-market-triage-table-wrap" aria-label="Market triage table">
+          <table className="atlas-buyer-triage-table atlas-market-triage-table">
+            <thead>
+              <tr>
+                <th>Market</th>
+                <th><MarketSortableHeader activeSort={selected} label="Pressure" sort="priority" /></th>
+                <th><MarketSortableHeader activeSort={selected} label="Margin at risk" sort="margin" /></th>
+                <th><MarketSortableHeader activeSort={selected} label="Gap to plan" sort="gap" /></th>
+                <th><MarketSortableHeader activeSort={selected} label="Trade spend" sort="trade" /></th>
+                <th><MarketSortableHeader activeSort={selected} label="Buying groups" sort="buyers" /></th>
+                <th>Scenario</th>
+              </tr>
+            </thead>
+            <tbody>
+              {markets.map((market) => {
+                const read = buildMarketDecisionRead(market);
+                const buyer = read.topBuyer;
+                const href = `/markets/${market.id}`;
+                return (
+                  <tr
+                    className={`risk-${market.pressureLevel}`}
+                    key={market.id}
+                    onClick={() => { window.location.href = href; }}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        window.location.href = href;
+                      }
+                    }}
+                    role="link"
+                    tabIndex={0}
+                  >
+                    <td>
+                      <strong>{market.name}</strong>
+                      <small>{sourceDisplayName(market.source)} · {market.source.confidence} confidence</small>
+                    </td>
+                    <td>
+                      <span className="atlas-buyer-risk-explain" title={marketPressureReason(market)}>
+                        <span className={`atlas-buyer-risk-table-pill risk-${market.pressureLevel}`}>{market.pressureLevel}</span>
+                        <span className="atlas-risk-tooltip" role="tooltip">{marketPressureReason(market)}</span>
+                      </span>
+                    </td>
+                    <td className={`metric-${marketMetricTone('margin', market)}`}>{euros(market.marginAtRisk)}</td>
+                    <td className={`metric-${marketMetricTone('gap', market)}`}>{euros(market.gapToPlan)}</td>
+                    <td className={`metric-${marketMetricTone('trade', market)}`}>{euros(market.tradeSpendExposure)}</td>
+                    <td>{buyer?.name ?? `${market.activeBuyingGroups.length} buyers`} · {read.groups.length} groups</td>
+                    <td>
+                      <button
+                        className="atlas-table-scenario-action"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          window.location.href = `/scenario-lab?market=${market.id}${buyer ? `&buyingGroup=${buyer.id}` : ''}`;
+                        }}
+                        type="button"
+                      >
+                        Test scenario
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </section>
       </section>
     </section>
@@ -3815,8 +5002,8 @@ function MarketStatePanel({ market }: { market: Market }) {
         <strong>{read.recommendedAction}</strong>
         <div className="atlas-market-state-actions">
           <a href={read.topBuyer ? `/buying-groups/${read.topBuyer.id}` : `/markets/${market.id}`}>Open buyer</a>
-          <a href={`/scenario-models?market=${market.id}`}>Model market</a>
-          <a href={`/documents?market=${market.id}`}>Sources</a>
+          <a href={`/scenario-lab?market=${market.id}`}>Model market</a>
+          <a href={`/intelligence?market=${market.id}`}>Sources</a>
         </div>
         <SourceTrustMini source={market.source} />
       </aside>
@@ -3834,15 +5021,15 @@ function MarketLoopPanel({ market }: { market: Market }) {
   const cards = [
     {
       action: firstDocument ? 'Open source' : 'Open documents',
-      href: firstDocument ? hrefForDocumentArtifact(firstDocument) : `/documents?market=${market.id}`,
+      href: firstDocument ? hrefForDocumentArtifact(firstDocument) : `/intelligence?market=${market.id}`,
       label: 'Sources',
       meta: sourceWatchouts.length ? `${sourceWatchouts.length} watchouts` : 'Ready',
       source: firstDocument?.source,
       title: `${read.marketDocuments.length} documents`
     },
     {
-      action: latestEvent?.buyingGroupIds[0] ? 'Open buyer history' : 'Open timeline',
-      href: latestEvent?.buyingGroupIds[0] ? `/buying-groups/${latestEvent.buyingGroupIds[0]}?view=memory` : `/timeline?market=${market.id}`,
+      action: latestEvent?.buyingGroupIds[0] ? 'Use in buyer scenario' : 'Open timeline',
+      href: latestEvent?.buyingGroupIds[0] ? `/buying-groups/${latestEvent.buyingGroupIds[0]}?view=strategy` : `/intelligence?market=${market.id}`,
       label: 'Memory',
       meta: latestEvent ? compactFinancialImpact({
         margin: latestEvent.financialImpact?.marginImpact,
@@ -3853,10 +5040,10 @@ function MarketLoopPanel({ market }: { market: Market }) {
       title: `${read.marketTimeline.length} events`
     },
     {
-      action: savedViews[0] ? 'Open latest view' : 'Create view',
+      action: savedViews[0] ? 'Open latest output' : 'Create output',
       href: savedViews[0] ? `/generated-views?prompt=${encodeURIComponent(savedViews[0].prompt)}&mode=draft&editable=1&marketId=${market.id}` : `/generated-views?prompt=${encodeURIComponent(`Create ${market.name} market exposure readout`)}&mode=draft&editable=1&marketId=${market.id}`,
-      label: 'Generated views',
-      meta: savedViews[0]?.sourceName ?? 'Editable draft if new',
+      label: 'Scenario outputs',
+      meta: savedViews[0]?.sourceName ? sourceDisplayName({ sourceName: savedViews[0].sourceName }) : 'Editable draft if new',
       title: `${savedViews.length} saved`
     },
     {
@@ -3873,7 +5060,7 @@ function MarketLoopPanel({ market }: { market: Market }) {
     <section className="atlas-market-loop-panel" aria-label={`${market.name} intelligence loop`}>
       <header>
         <h2>Market loop</h2>
-        <span>{market.name} · sources, memory, buyers, generated views</span>
+        <span>{market.name} · sources, memory, buyers, scenario outputs</span>
       </header>
       <div>
         {cards.map((card) => (
@@ -3890,13 +5077,12 @@ function MarketLoopPanel({ market }: { market: Market }) {
   );
 }
 
-type MarketDetailTab = 'buyers' | 'signals' | 'competitors' | 'memory';
+type MarketDetailTab = 'buyers' | 'drivers' | 'scenario';
 
 function normalizeMarketDetailTab(view?: string, prompt?: string): MarketDetailTab {
   const normalized = `${view ?? ''} ${prompt ?? ''}`.toLowerCase();
-  if (/signal|news|world|changed|pressure/.test(normalized)) return 'signals';
-  if (/competitor|private label|leverage/.test(normalized)) return 'competitors';
-  if (/source|document|memory|history|timeline|generated|database|proof/.test(normalized)) return 'memory';
+  if (/signal|signals|driver|drivers|news|world|changed|pressure|competitor|private label|leverage/.test(normalized)) return 'drivers';
+  if (/strategy|scenario|model|corridor|guardrail|position|pricing|source|document|memory|history|timeline|generated|database|proof/.test(normalized)) return 'scenario';
   return 'buyers';
 }
 
@@ -3909,16 +5095,14 @@ function MarketDetailTabs({
   market: Market;
   metrics: {
     buyers: number;
-    competitors: number;
-    memory: number;
-    signals: number;
+    drivers: number;
+    scenario: number;
   };
 }) {
   const tabs: Array<[MarketDetailTab, string, number]> = [
-    ['buyers', 'Buying groups', metrics.buyers],
-    ['signals', 'Signals', metrics.signals],
-    ['competitors', 'Competitors', metrics.competitors],
-    ['memory', 'Source loop', metrics.memory]
+    ['buyers', 'Buyer gaps', metrics.buyers],
+    ['drivers', 'Market drivers', metrics.drivers],
+    ['scenario', 'Scenario inputs', metrics.scenario]
   ];
 
   return (
@@ -3933,75 +5117,288 @@ function MarketDetailTabs({
   );
 }
 
+function MarketBuyerGapTable({ groups }: { groups: BuyingGroup[] }) {
+  if (!groups.length) return <EmptyGeneratedState label="Buyer gaps" />;
+  return <MarketBuyerGapRangeChart groups={groups} />;
+}
+
+function MarketBuyerGapRangeChart({ groups }: { groups: BuyingGroup[] }) {
+  const pointGap = (value: number) => `${value.toFixed(1)} pts`;
+  const rows = groups.map((group) => {
+    const exposure = group.financialExposure;
+    const gap = Math.max(0, exposure.targetPriceRealization - exposure.expectedPriceRealization);
+    const progress = Math.max(0, Math.min(100, (exposure.expectedPriceRealization / Math.max(exposure.targetPriceRealization, 0.1)) * 100));
+    return { exposure, gap, group, progress };
+  });
+  const totalMarginAtRisk = groups.reduce((sum, group) => sum + group.financialExposure.marginAtRisk, 0);
+  const totalRevenue = groups.reduce((sum, group) => sum + group.financialExposure.revenueUnderNegotiation, 0);
+  const weightedGap = totalRevenue
+    ? groups.reduce((sum, group) => {
+      const exposure = group.financialExposure;
+      return sum + Math.max(0, exposure.targetPriceRealization - exposure.expectedPriceRealization) * exposure.revenueUnderNegotiation;
+    }, 0) / totalRevenue
+    : 0;
+  const buyersBelowTarget = rows.filter((row) => row.gap > 0).length;
+  const severityFor = (group: BuyingGroup, gap: number) => {
+    if (group.riskLevel === 'critical' || gap >= 1.2) return 'critical';
+    if (group.riskLevel === 'high' || gap >= 0.8) return 'high';
+    if (group.riskLevel === 'medium' || gap >= 0.4) return 'medium';
+    return 'low';
+  };
+
+  return (
+    <section className="atlas-market-buyer-gap-range atlas-market-buyer-dumbbell" aria-label="Buyer realization gap range">
+      <header>
+        <div>
+          <span>Buyer scenario gaps</span>
+          <h3>Which buyer gaps should become scenarios?</h3>
+        </div>
+        <p>Use this to see which buying group is below target, how much margin is exposed, and where to open the scenario workspace.</p>
+      </header>
+      <section className="atlas-market-gap-summary" aria-label="Market buyer gap summary">
+        <div><span>Market average gap</span><strong>{pointGap(weightedGap)}</strong></div>
+        <div><span>Buyers below target</span><strong>{buyersBelowTarget}</strong></div>
+        <div><span>Total margin at risk</span><strong>{euros(totalMarginAtRisk)}</strong></div>
+      </section>
+      <div className="atlas-market-buyer-gap-range-head" aria-hidden="true">
+        <span>Buying group</span>
+        <span>Captured vs target</span>
+        <span>Gap / risk</span>
+        <span>Scenario route</span>
+      </div>
+      <div className="atlas-market-buyer-gap-range-rows">
+        {rows.map(({ exposure, gap, group, progress }) => {
+          const severity = severityFor(group, gap);
+          return (
+            <a className={`severity-${severity}`} href={`/buying-groups/${group.id}?view=strategy`} key={group.id}>
+              <div className="atlas-market-buyer-gap-range-label">
+                <strong>{group.name}</strong>
+                <span>{group.riskLevel} risk · {buyerRoundLabel(group)}</span>
+              </div>
+              <div className="atlas-market-buyer-gap-read">
+                <div className="atlas-market-buyer-gap-values">
+                  <span><small>Current</small><strong>{pct(exposure.expectedPriceRealization)}</strong></span>
+                  <span><small>Target</small><strong>{pct(exposure.targetPriceRealization)}</strong></span>
+                </div>
+                <div className="atlas-market-buyer-gap-progress" aria-label={`${group.name} has captured ${pct(exposure.expectedPriceRealization)} of ${pct(exposure.targetPriceRealization)} target`}>
+                  <i><b style={{ width: `${progress}%` }} /></i>
+                </div>
+              </div>
+              <div className="atlas-market-buyer-gap-close">
+                <strong>{pointGap(gap)}</strong>
+                <span>{buyerRiskReason(group)}</span>
+              </div>
+              <div className="atlas-market-buyer-gap-range-impact">
+                <strong>{euros(exposure.marginAtRisk)}</strong>
+                <span>{buyerScenarioToTest(group)}</span>
+                <em>Open scenario workspace <ArrowRight size={12} /></em>
+              </div>
+            </a>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+function MarketDriverCards({ market, moves, signals }: { market: Market; moves: CompetitorMove[]; signals: ExternalSignal[] }) {
+  const drivers = [
+    ...signals.map((signal) => ({
+      actionHref: signal.affectedBuyingGroups[0] ? `/buying-groups/${signal.affectedBuyingGroups[0]}` : `/signals?signal=${signal.id}`,
+      impact: compactFinancialImpact({ margin: signal.estimatedMarginImpact, revenue: signal.estimatedRevenueImpact }),
+      label: 'External signal',
+      source: signal.source,
+      story: signal.negotiationImplication,
+      title: signal.title
+    })),
+    ...moves.map((move) => ({
+      actionHref: move.affectedBuyingGroups[0] ? `/buying-groups/${move.affectedBuyingGroups[0]}` : `/signals?move=${move.id}`,
+      impact: compactFinancialImpact({ margin: move.estimatedMarginImpact, revenue: move.estimatedRevenueImpact }),
+      label: 'Competitor pressure',
+      source: move.source,
+      story: move.possibleBuyerLeverage,
+      title: `${move.competitor}: ${move.title}`
+    }))
+  ].slice(0, 6);
+
+  if (!drivers.length) return <EmptyGeneratedState label={`${market.name} drivers`} />;
+
+  return (
+    <section className="atlas-market-driver-grid" aria-label={`${market.name} market drivers`}>
+      {drivers.map((driver) => (
+        <a href={driver.actionHref} key={`${driver.label}-${driver.title}`}>
+          <span>{driver.label}</span>
+          <h3>{driver.title}</h3>
+          <p>{driver.story}</p>
+          <div>
+            <strong>{driver.impact}</strong>
+            <SourceTrustMini source={driver.source} />
+          </div>
+        </a>
+      ))}
+    </section>
+  );
+}
+
+function MarketScenarioInputsPanel({
+  groups,
+  market,
+  moves,
+  signals
+}: {
+  groups: BuyingGroup[];
+  market: Market;
+  moves: CompetitorMove[];
+  signals: ExternalSignal[];
+}) {
+  const diagnosis = marketPerformanceDiagnosis(market);
+  const topBuyer = groups[0];
+  const sourceWatchouts = packet.documents.filter((document) => (
+    document.marketId === market.id && (document.status === 'stale' || document.status === 'needs_validation' || document.status === 'missing')
+  ));
+  const latestMemory = packet.timelineEvents.find((event) => event.marketIds.includes(market.id));
+  const strategyInputs = [
+    {
+      action: topBuyer ? 'Open buyer workspace' : 'Open buying groups',
+      href: topBuyer ? `/buying-groups/${topBuyer.id}?view=strategy` : '/buying-groups',
+      label: 'Buyer priority',
+      source: topBuyer?.source ?? market.source,
+      title: topBuyer ? `${topBuyer.name} should anchor the market scenario.` : `${market.name} needs buyer prioritization.`,
+      value: topBuyer ? euros(topBuyer.financialExposure.marginAtRisk) : `${market.activeBuyingGroups.length} buyers`
+    },
+    {
+      action: 'Model market scenario',
+      href: `/scenario-lab?market=${market.id}${topBuyer ? `&buyingGroup=${topBuyer.id}` : ''}`,
+      label: 'Pricing corridor',
+      source: market.source,
+      title: `${diagnosis.averageRealizationGap.toFixed(1)} pts average realization gap needs scenario testing.`,
+      value: `${diagnosis.averageRealizationGap.toFixed(1)} pts`
+    },
+    {
+      action: 'Review drivers',
+      href: `/markets/${market.id}?view=drivers`,
+      label: 'Market evidence',
+      source: signals[0]?.source ?? moves[0]?.source ?? market.source,
+      title: signals[0]?.title ?? moves[0]?.title ?? market.topDrivers[0],
+      value: `${signals.length + moves.length} drivers`
+    },
+    {
+      action: latestMemory?.buyingGroupIds[0] ? 'Use in buyer scenario' : 'Review memory',
+      href: latestMemory?.buyingGroupIds[0] ? `/buying-groups/${latestMemory.buyingGroupIds[0]}?view=strategy` : `/markets/${market.id}?view=scenario`,
+      label: 'Historical memory',
+      source: latestMemory?.source ?? market.source,
+      title: latestMemory ? latestMemory.summary : 'No market-specific memory captured yet.',
+      value: latestMemory ? latestMemory.eventType.replaceAll('_', ' ') : 'Add debrief'
+    },
+    {
+      action: 'Review source gaps',
+      href: `/intelligence?market=${market.id}`,
+      label: 'Source readiness',
+      source: sourceWatchouts[0]?.source ?? market.source,
+      title: sourceWatchouts.length ? `${sourceWatchouts.length} source gaps need validation before official use.` : 'Market source set is ready for scenario use.',
+      value: sourceWatchouts.length ? `${sourceWatchouts.length} gaps` : 'Ready'
+    }
+  ];
+
+  return (
+    <section className="atlas-market-strategy-inputs" aria-label={`${market.name} scenario inputs`}>
+      {strategyInputs.map((input) => (
+        <article key={input.label}>
+          <span>{input.label}</span>
+          <strong>{input.value}</strong>
+          <p>{input.title}</p>
+          <SourceTrustMini source={input.source} />
+          <a href={input.href}>{input.action} <ArrowRight size={13} /></a>
+        </article>
+      ))}
+    </section>
+  );
+}
+
 function MarketDetailRead({ market, initialPrompt, view }: { market: Market; initialPrompt?: string; view?: string }) {
   const read = buildMarketDecisionRead(market);
   const groups = sortBuyingGroups(read.groups, 'priority');
   const marketSignals = read.marketSignals;
   const moves = read.moves;
-  const activeView = view || inferGeneratedView(initialPrompt, 'market-comparison');
   const activeTab = normalizeMarketDetailTab(view, initialPrompt);
+  const diagnosis = marketPerformanceDiagnosis(market);
+  const leadBuyer = groups[0];
+  const detailAlerts = [
+    marketToAlert(market),
+    ...marketSignals.slice(0, 2).map(signalToAlert),
+    ...groups.slice(0, 2).map(buyingGroupToAlert)
+  ];
+  const scenarioEntries = detailAlerts.slice(0, 4).map((alert) => ({
+    action: alert.action,
+    href: alert.modelHref ?? alert.href,
+    impact: alert.value,
+    source: alert.source,
+    title: alert.title,
+    trigger: alert.trigger,
+    why: alert.possibleEffect
+  }));
 
   return (
     <section className="atlas-market-detail-read">
       {initialPrompt ? <p className="atlas-generated-prompt">Asked: “{initialPrompt}”</p> : null}
-      <section className="atlas-market-read-summary">
-        <article>
-          <span>Watchout</span>
-          <h3>{titleCaseText(market.topDrivers[0])}</h3>
+      <ActiveAlertsPanel
+        alerts={detailAlerts}
+        eyebrow={`${market.name} alerts`}
+        title="These changes can alter buyer scenarios in this market."
+        limit={3}
+      />
+
+      <section className="atlas-market-scenario-brief" aria-label={`${market.name} scenario context`}>
+        <div>
+          <span>Scenario context</span>
+          <h2>
+            {leadBuyer
+              ? `${leadBuyer.name} is the first buyer to scenario test in ${market.name}.`
+              : `${market.name} needs buyer attribution before scenario planning.`}
+          </h2>
           <p>{read.topWatchouts.slice(0, 2).join(' · ')}</p>
           <SourceTrustMini source={market.source} />
-        </article>
-        <article>
-          <span>Open first</span>
-          <h3>{groups[0]?.name ?? 'No buyer linked'}</h3>
-          <p>{groups[0] ? buyerInterventionTrigger(groups[0]) : 'No active buying group is tied to this market in prototype data.'}</p>
-          {groups[0] ? <a href={`/buying-groups/${groups[0].id}`}>Open buyer profile <ArrowRight size={13} /></a> : null}
-        </article>
-        <article>
-          <span>Next view</span>
-          <h3>{activeView === 'money-at-risk' ? 'Financial exposure' : activeView === 'signal-impact' ? 'Signals' : 'Market comparison'}</h3>
-          <p>{read.recommendedAction}</p>
-          <a href={`/scenario-models?market=${market.id}`}>Open scenario model <ArrowRight size={13} /></a>
-        </article>
+        </div>
+        <dl>
+          <div><dt>Margin at risk</dt><dd>{euros(market.marginAtRisk)}</dd></div>
+          <div><dt>Avg target gap</dt><dd>{diagnosis.averageRealizationGap.toFixed(1)} pts</dd></div>
+          <div><dt>Trade pressure</dt><dd>{euros(market.tradeSpendExposure)}</dd></div>
+          <div><dt>Buyer groups</dt><dd>{groups.length}</dd></div>
+        </dl>
       </section>
+
+      <ScenarioEntryQueue
+        eyebrow={`${market.name} scenario entry`}
+        items={scenarioEntries}
+        title="Route market pressure into the buyer scenario it changes."
+      />
 
       <MarketDetailTabs
         activeTab={activeTab}
         market={market}
         metrics={{
           buyers: groups.length,
-          competitors: moves.length,
-          memory: read.marketDocuments.length + read.marketTimeline.length,
-          signals: marketSignals.length
+          drivers: marketSignals.length + moves.length,
+          scenario: marketSignals.length + moves.length + read.marketTimeline.length + groups.length
         }}
       />
 
       <section className="atlas-market-tab-panel">
         {activeTab === 'buyers' ? (
+          <MarketBuyerGapTable groups={groups} />
+        ) : null}
+
+        {activeTab === 'drivers' ? (
           <>
-            <SectionTitle title="Buying groups in this market" />
-            <BuyingGroupTriageQueue groups={groups} />
+            <SectionTitle title="Market drivers" />
+            <MarketDriverCards market={market} moves={moves} signals={marketSignals} />
           </>
         ) : null}
 
-        {activeTab === 'signals' ? (
+        {activeTab === 'scenario' ? (
           <>
-            <SectionTitle title="Signals" />
-            {marketSignals.length ? <SignalCards signals={marketSignals} /> : <EmptyGeneratedState label="Signals" />}
-          </>
-        ) : null}
-
-        {activeTab === 'competitors' ? (
-          <>
-            <SectionTitle title="Competitor pressure" />
-            {moves.length ? <CompetitorCards moves={moves} /> : <EmptyGeneratedState label="Competitors" />}
-          </>
-        ) : null}
-
-        {activeTab === 'memory' ? (
-          <>
-            <MarketLoopPanel market={market} />
-            <SavedGeneratedViewsShelf marketId={market.id} />
+            <SectionTitle title="What should feed scenario planning" />
+            <MarketScenarioInputsPanel groups={groups} market={market} moves={moves} signals={marketSignals} />
           </>
         ) : null}
       </section>
@@ -4025,7 +5422,6 @@ function MarketsView({
   if (market) {
     return (
       <>
-        <MarketStatePanel market={market} />
         <AtlasCommandSurface
           basePath={`/markets/${market.id}`}
           examples={[
@@ -4069,20 +5465,44 @@ function BuyingGroupStatePanel({
 }) {
   const { buyingGroup } = workspace;
   const currentState = profileRead.currentState;
+  const latestEvent = workspace.timelineEvents[0];
+  const topSignal = workspace.signals[0];
+  const topCompetitorMove = workspace.competitorMoves[0];
   const riskMovement = buyingGroup.riskLevel === 'critical' ? 0.7 : buyingGroup.riskLevel === 'high' ? 0.5 : buyingGroup.riskLevel === 'medium' ? 0.3 : 0.1;
   const buyerAskValue = Number.parseFloat(currentState.latestBuyerAsk);
   const pepsicoPositionValue = Number.parseFloat(currentState.pepsicoPosition);
   const positionGap = Number.isFinite(buyerAskValue) && Number.isFinite(pepsicoPositionValue)
     ? `${(buyerAskValue - pepsicoPositionValue).toFixed(1)} pts ask gap`
     : 'Gap not modeled';
-  const kamSafePrompt = [
-    `Create a KAM-safe negotiation guide for ${buyingGroup.name}.`,
-    `Buying group: ${buyingGroup.name}.`,
-    `Markets: ${workspace.markets.map((market) => market.name).join(', ')}.`,
-    `Latest buyer ask: ${currentState.latestBuyerAsk}. PepsiCo position: ${currentState.pepsicoPosition}.`,
-    'Audience: KAM field negotiator. Remove internal red lines, fallback thresholds, sensitive margin controls, confidence gaps, and unsupported claims.',
-    'Include approved negotiation posture, likely buyer pressure, proof points to use, what to capture, escalation triggers, source/freshness/confidence, and CNO review notes.'
-  ].join('\n');
+  const relevantMarket = workspace.markets
+    .filter((market) => (
+      market.gapToPlan >= 1_000_000 ||
+      market.marginAtRisk >= profileRead.exposure.marginAtRisk * 0.8 ||
+      market.pressureLevel === 'critical' ||
+      market.pressureLevel === 'high'
+    ))
+    .sort((a, b) => b.gapToPlan - a.gapToPlan || b.marginAtRisk - a.marginAtRisk)[0];
+  const postureReasons = [
+    {
+      label: 'Buyer posture',
+      source: profileRead.source,
+      text: `Ask is ${positionGap}; defend ${currentState.pepsicoPosition} before concession.`
+    },
+    relevantMarket ? {
+      label: 'Market pressure',
+      source: topSignal?.source ?? relevantMarket.source,
+      text: `${relevantMarket.name} gap is ${euros(relevantMarket.gapToPlan)} and may harden the room.`
+    } : null,
+    topCompetitorMove ? {
+      label: 'Competitive pressure',
+      source: topCompetitorMove.source,
+      text: `${topCompetitorMove.competitor} creates leverage; attach evidence before trading support.`
+    } : latestEvent ? {
+      label: 'History signal',
+      source: latestEvent.source,
+      text: `${latestEvent.title} is shaping the read.`
+    } : null
+  ].filter(Boolean) as Array<{ label: string; source: SourceMeta; text: string }>;
   const headerMetrics = [
     {
       label: 'Latest buyer ask',
@@ -4097,36 +5517,30 @@ function BuyingGroupStatePanel({
       value: currentState.pepsicoPosition
     },
     {
+      label: 'Target',
+      movement: `${pct(profileRead.exposure.expectedPriceRealization)} expected realization`,
+      tone: 'neutral',
+      value: currentState.target
+    },
+    {
+      label: 'Red line',
+      movement: 'guardrail for concessions',
+      tone: 'risk',
+      value: currentState.redLine
+    },
+    {
       label: 'Margin at risk',
       movement: `${pct(profileRead.exposure.expectedPriceRealization)} expected realization`,
       tone: buyingGroup.riskLevel === 'critical' || buyingGroup.riskLevel === 'high' ? 'risk' : 'neutral',
       value: euros(profileRead.exposure.marginAtRisk)
-    },
-    {
-      label: 'Next milestone',
-      movement: currentState.nextMilestone,
-      tone: 'neutral',
-      value: currentState.negotiationRound
     }
   ];
-  const headline = `${buyingGroup.name}: ${currentState.latestBuyerAsk} ask, ${currentState.pepsicoPosition} current position, ${euros(profileRead.exposure.marginAtRisk)} margin at risk.`;
 
   return (
     <section className="atlas-buying-group-hero" id="group-overview">
       <div className="atlas-buyer-hero-nav">
         <a href="/buying-groups" aria-label="Back to buying groups">‹</a>
         <span>Back to buying groups</span>
-      </div>
-      <div className="atlas-buyer-top-actions">
-        <a className="atlas-buyer-strategy-action" href={`/buying-groups/${buyingGroup.id}/strategy`}>
-          Build strategy <ArrowRight size={14} />
-        </a>
-        <a className="atlas-buyer-kam-action" href={`/generated-views?prompt=${encodeURIComponent(kamSafePrompt)}&buyingGroupId=${buyingGroup.id}&mode=draft&editable=1`} rel="noreferrer" target="_blank">
-          Create KAM safe report <ArrowRight size={14} />
-        </a>
-        <a className="atlas-buyer-live-action" href={`/negotiation/carrefour-france-2026-pricing/live?group=${buyingGroup.id}&deck=${encodeURIComponent(`${buyingGroup.name} 2026 prep documents`)}`}>
-          Open live room <ArrowRight size={14} />
-        </a>
       </div>
       <div className="atlas-buyer-hero-title">
         <span className={`atlas-buyer-risk-badge risk-${buyingGroup.riskLevel}`}>{buyingGroup.riskLevel} risk</span>
@@ -4137,30 +5551,33 @@ function BuyingGroupStatePanel({
           <span>Stage <strong>{buyingGroup.negotiationStage}</strong></span>
         </p>
       </div>
-      <div className="atlas-buyer-hero-summary">
-        <h3>{headline}</h3>
-        <dl>
-          {headerMetrics.map((metric) => (
-            <div key={metric.label}>
-              <dt>{metric.label}</dt>
-              <dd>
-                <strong>{metric.value}</strong>
-                <em className={`movement-${metric.tone}`}>{metric.movement}</em>
-              </dd>
-            </div>
-          ))}
-        </dl>
-        <div className="atlas-buyer-readiness-strip">
-          <strong>Recommended next action: {workspace.sixtySecondRead.recommendedAction}</strong>
-          <div>
-            {workspace.readiness.reasons.slice(0, 2).map((reason) => <span key={reason}>{reason}</span>)}
+      <section className="atlas-buyer-report-shell" aria-label={`${buyingGroup.name} posture read`}>
+        <div className="atlas-buyer-hero-read">
+          <span>Summary generated by AI</span>
+          <h3>{buyingGroup.name} is likely to pressure affordability; hold position and attach evidence before trading support.</h3>
+          <div className="atlas-buyer-hero-read-reasons">
+            {postureReasons.map((reason) => (
+              <article key={reason.label}>
+                <strong>{reason.label}</strong>
+                <p>{reason.text}</p>
+              </article>
+            ))}
           </div>
         </div>
-        <div className="atlas-buyer-hero-source">
-          {profileRead.updateCount ? <em>{profileRead.updateSummary}</em> : null}
-          <SourceTrustMini source={profileRead.source} />
+        <div className="atlas-buyer-hero-summary">
+          <dl>
+            {headerMetrics.map((metric) => (
+              <div key={metric.label}>
+                <dt>{metric.label}</dt>
+                <dd>
+                  <strong>{metric.value}</strong>
+                  <em className={`movement-${metric.tone}`}>{metric.movement}</em>
+                </dd>
+              </div>
+            ))}
+          </dl>
         </div>
-      </div>
+      </section>
     </section>
   );
 }
@@ -4175,64 +5592,60 @@ function BuyingGroupFinancialPanel({
   const exposure = profileRead.exposure;
   const realizationGap = exposure.targetPriceRealization - exposure.expectedPriceRealization;
   const financialSource = profileRead.source;
-  const initialScenarioInputs = useMemo<ScenarioInputs>(() => ({
-    buyerAcceptanceProbability: Math.max(35, Math.min(82, Math.round(72 - realizationGap * 14 - riskRank(workspace.buyingGroup.riskLevel) * 4))),
-    competitorPressureLevel: workspace.competitorMoves.length ? 'medium' : 'low',
-    concessionAmount: Math.max(0, Math.round(exposure.marginAtRisk * 0.08)),
-    contractLengthMonths: 12,
-    costInflationPercent: Math.max(1.8, Math.min(5.5, exposure.targetPriceRealization + 0.4)),
-    expectedRealizationPercent: exposure.expectedPriceRealization,
-    priceIncreasePercent: exposure.targetPriceRealization,
-    tradeSpendChange: Math.max(0, exposure.tradeSpendExposure ?? Math.round(exposure.marginAtRisk * 0.12)),
-    volumeChangePercent: exposure.volumeExposure ? Math.max(-5, Math.min(3, exposure.volumeExposure / exposure.revenueUnderNegotiation * 100)) : -1.2
-  }), [exposure, realizationGap, workspace.buyingGroup.riskLevel, workspace.competitorMoves.length]);
-  const [scenarioInputs, setScenarioInputs] = useState<ScenarioInputs>(initialScenarioInputs);
-  const scenarioOutputs = useMemo(
-    () => calculateScenarioOutputs(scenarioInputs, exposure.revenueUnderNegotiation),
-    [exposure.revenueUnderNegotiation, scenarioInputs]
-  );
-
-  function updateScenarioInput<K extends keyof ScenarioInputs>(key: K, value: ScenarioInputs[K]) {
-    setScenarioInputs((current) => ({ ...current, [key]: value }));
-  }
+  const acceptedRealization = exposure.acceptedPriceRealization ?? exposure.expectedPriceRealization;
+  const financialHighlights = [
+    {
+      label: 'Realization gap',
+      value: `${pct(realizationGap)} below plan`,
+      detail: `${pct(exposure.expectedPriceRealization)} expected vs ${pct(exposure.targetPriceRealization)} target`
+    },
+    {
+      label: 'Buyer exposure',
+      value: euros(exposure.revenueUnderNegotiation),
+      detail: 'revenue under negotiation'
+    },
+    {
+      label: 'Trade pressure',
+      value: euros(exposure.tradeSpendExposure),
+      detail: 'support exposed in current ask'
+    },
+    {
+      label: 'Current accepted',
+      value: pct(acceptedRealization),
+      detail: 'latest modeled acceptance'
+    }
+  ];
 
   return (
     <section className="atlas-buying-group-financials" id="group-financials">
       <header>
         <div>
-          <span>Financial state</span>
-          <h2>{euros(exposure.marginAtRisk)} margin at risk</h2>
-          <p>{pct(realizationGap)} realization gap to plan across {workspace.markets.map((market) => market.name).join(', ')}.</p>
+          <span>Financials</span>
+          <h2>{euros(exposure.marginAtRisk)} margin at risk if the current position holds.</h2>
           <SourceTrustMini source={financialSource} />
         </div>
-        <a href={`/financial-impact?buyingGroup=${workspace.buyingGroup.id}`}>Open financial impact <ArrowRight size={14} /></a>
+        <a href={`/scenario-lab?buyingGroup=${workspace.buyingGroup.id}`}>Open PepsiCo impact <ArrowRight size={14} /></a>
       </header>
+      <section className="atlas-buyer-financial-highlight-grid" aria-label="Key financial read">
+        {financialHighlights.map((item) => (
+          <article key={item.label}>
+            <span>{item.label}</span>
+            <strong>{item.value}</strong>
+            <em>{item.detail}</em>
+          </article>
+        ))}
+      </section>
       <FinancialImpactStrip
         revenue={exposure.revenueUnderNegotiation}
         margin={exposure.marginAtRisk}
         volume={exposure.volumeExposure}
         trade={exposure.tradeSpendExposure}
       />
-      <div className="atlas-group-financial-bars">
-        {[
-          ['Expected realization', exposure.expectedPriceRealization, exposure.targetPriceRealization],
-          ['Target realization', exposure.targetPriceRealization, exposure.targetPriceRealization],
-          ['Accepted realization', exposure.acceptedPriceRealization ?? exposure.expectedPriceRealization, exposure.targetPriceRealization]
-        ].map(([label, value, target]) => (
-          <div key={String(label)}>
-            <span>{label}</span>
-            <i><b style={{ width: `${Math.min(100, Number(value) / Number(target) * 100)}%` }} /></i>
-            <strong>{pct(Number(value))}</strong>
-          </div>
-        ))}
+      <ScenarioComparisonPanel compact workspace={workspace} />
+      <div className="atlas-buyer-tab-actions">
+        <a href={`/scenario-lab?buyingGroup=${workspace.buyingGroup.id}`}>Open scenario workspace <ArrowRight size={14} /></a>
+        <a href={`/buying-groups/${workspace.buyingGroup.id}`}>Return to buyer workspace <ArrowRight size={14} /></a>
       </div>
-      <BuyingGroupScenarioModeler
-        buyingGroup={workspace.buyingGroup}
-        inputs={scenarioInputs}
-        onUpdateInput={updateScenarioInput}
-        outputs={scenarioOutputs}
-        source={financialSource}
-      />
     </section>
   );
 }
@@ -4263,7 +5676,7 @@ function BuyingGroupScenarioModeler({
     { key: 'volumeChangePercent', label: 'Volume change', min: -5, max: 3, step: 0.1, affects: 'Volume, revenue, risk-adjusted value' },
     { key: 'tradeSpendChange', label: 'Trade spend change', min: 0, max: Math.max(1000000, inputs.tradeSpendChange * 1.5), step: 25000, affects: 'Trade spend, margin, buyer acceptance' },
     { key: 'concessionAmount', label: 'Concession amount', min: 0, max: Math.max(1000000, inputs.concessionAmount * 1.75), step: 25000, affects: 'Revenue, margin, gap to plan' },
-    { key: 'buyerAcceptanceProbability', label: 'Buyer acceptance', min: 0, max: 100, step: 1, affects: 'Risk-adjusted value, approval confidence' }
+    { key: 'buyerAcceptanceProbability', label: 'Buyer acceptance', min: 0, max: 100, step: 1, affects: 'Risk-adjusted value, landing confidence' }
   ];
   const needsReview = outputs.marginImpact < 0 || outputs.riskLevel === 'high' || inputs.buyerAcceptanceProbability < 50;
   const currentExposure = buyingGroup.financialExposure;
@@ -4310,7 +5723,7 @@ function BuyingGroupScenarioModeler({
     const now = new Date().toISOString();
     const prompt = `Saved scenario for ${buyingGroup.name}: expected realization ${inputs.expectedRealizationPercent.toFixed(1)}%, buyer acceptance ${inputs.buyerAcceptanceProbability.toFixed(0)}%, margin impact ${euros(outputs.marginImpact)}.`;
     saveStoredGeneratedView({
-      artifactType: 'generated_view',
+      artifactType: 'scenario_output',
       audienceMode: 'internal_cno',
       buyingGroupId: buyingGroup.id,
       confidence: source.confidence,
@@ -4325,7 +5738,7 @@ function BuyingGroupScenarioModeler({
       savedToProfileAt: now,
       sourceDate: source.sourceDate,
       sourceDecision: needsReview
-        ? 'Saved scenario output as buyer memory with review required because the move creates risk or approval dependency.'
+        ? 'Saved scenario output as buyer memory with review required because the move creates risk or a guardrail dependency.'
         : 'Saved scenario output as buyer memory from the inline financial model.',
       sourceName: source.sourceName,
       summary: `${outputs.recommendation} Revenue ${euros(outputs.revenueImpact)}, margin ${euros(outputs.marginImpact)}, trade ${euros(outputs.tradeSpendImpact)}, risk-adjusted value ${euros(outputs.riskAdjustedValue)}.`,
@@ -4343,7 +5756,7 @@ function BuyingGroupScenarioModeler({
           <h3>Test the next pricing move for {buyingGroup.name}</h3>
           <p>Change a lever, then read the affected metrics before saving the scenario to this buyer history.</p>
         </div>
-        <a href={`/scenario-models?buyingGroup=${buyingGroup.id}`}>Open full model <ArrowRight size={14} /></a>
+        <a href={`/scenario-lab?buyingGroup=${buyingGroup.id}`}>Open full model <ArrowRight size={14} /></a>
       </header>
       <section className="atlas-buyer-scenario-impact-key" aria-label="Scenario affected metrics">
         {['Price realization', 'Margin', 'Volume', 'Trade spend', 'Gap to plan', 'Risk-adjusted value'].map((metric) => (
@@ -4429,23 +5842,22 @@ function BuyingGroupScenarioModeler({
   );
 }
 
-type BuyingGroupGeneratedView = 'snapshot' | 'financials' | 'memory' | 'intelligence' | 'live' | 'custom';
+type BuyingGroupGeneratedView = 'snapshot' | 'financials' | 'memory' | 'strategy' | 'intelligence' | 'custom';
 
 function inferBuyingGroupView(prompt: string): BuyingGroupGeneratedView {
   const normalized = prompt.toLowerCase();
-  if (/financial|margin|revenue|gap|price|realization|volume|trade|model|scenario/.test(normalized)) return 'financials';
-  if (/memory|history|timeline|debrief|last year|prior|respond|reaction|meeting|document|source|prep|deck|file|evidence|validation|proof/.test(normalized)) return 'memory';
-  if (/signal|news|competitor|private label|market|pressure|changed/.test(normalized)) return 'snapshot';
-  if (/live|room|negotiator|meeting|listen|call/.test(normalized)) return 'live';
-  return 'snapshot';
+  if (/financial|margin|revenue|gap|price|realization|volume|trade|model|scenario|sku|lever|what if|counter/.test(normalized)) return 'strategy';
+  if (/memory|history|timeline|debrief|last year|prior|respond|reaction|meeting|document|source|prep|file|evidence|validation|proof/.test(normalized)) return 'memory';
+  if (/signal|news|competitor|private label|market|pressure|changed|strategy|plan|concession|lever/.test(normalized)) return 'strategy';
+  if (/live|room|negotiator|meeting|listen|call/.test(normalized)) return 'memory';
+  return 'strategy';
 }
 
 function labelForBuyingGroupView(view: BuyingGroupGeneratedView) {
-  if (view === 'snapshot' || view === 'intelligence') return 'Overview';
-  if (view === 'financials') return 'Financials';
-  if (view === 'memory') return 'History';
-  if (view === 'live') return 'Live room';
-  return 'Custom report';
+  if (view === 'snapshot' || view === 'intelligence' || view === 'strategy') return 'Scenario workspace';
+  if (view === 'financials') return 'Scenario inputs';
+  if (view === 'memory') return 'Scenario memory';
+  return 'Custom scenario view';
 }
 
 function EmptyGeneratedState({ label }: { label: string }) {
@@ -4475,15 +5887,15 @@ function BuyingGroupSnapshotGrid({
       label: 'Financial',
       title: `${euros(exposure.marginAtRisk)} margin at risk`,
       body: `${pct(exposure.expectedPriceRealization)} vs ${pct(exposure.targetPriceRealization)} target`,
-      action: 'Open financial view',
+      action: 'Open scenario workspace',
       source: financialSource,
-      view: 'financials' as BuyingGroupGeneratedView
+      view: 'strategy' as BuyingGroupGeneratedView
     },
     {
       label: 'Memory',
       title: latestEvent?.title ?? 'No memory event yet',
       body: latestEvent ? 'Latest event captured' : 'No recent event',
-      action: 'Open memory',
+      action: 'Use in scenario',
       source: latestEvent?.source ?? workspace.buyingGroup.source,
       view: 'memory' as BuyingGroupGeneratedView
     },
@@ -4491,15 +5903,15 @@ function BuyingGroupSnapshotGrid({
       label: 'Pressure',
       title: competitorPressure ? competitorPressure.title : 'No competitor pressure linked',
       body: competitorPressure ? competitorPressure.competitor : 'No linked move',
-      action: 'Open overview',
+      action: 'Open scenario workspace',
       source: competitorPressure?.source ?? workspace.buyingGroup.source,
-      view: 'snapshot' as BuyingGroupGeneratedView
+      view: 'strategy' as BuyingGroupGeneratedView
     },
     {
       label: 'History',
       title: `${workspace.timelineEvents.length} events / ${workspace.documents.length} docs`,
       body: 'Timeline, debriefs and supporting files',
-      action: 'Open history',
+      action: 'Use in scenario',
       source: workspace.documents[0]?.source ?? workspace.buyingGroup.source,
       view: 'memory' as BuyingGroupGeneratedView
     }
@@ -4562,27 +5974,27 @@ function BuyingGroupCustomReport({
   const primarySignal = workspace.signals[0];
   const primaryDocument = workspace.documents[0];
   const latestEvent = workspace.timelineEvents[0];
-  const reportMode = /history|timeline|debrief|prior|respond|reaction/.test(normalized)
+  const outputMode = /history|timeline|debrief|prior|respond|reaction/.test(normalized)
     ? 'buyer history'
-    : /document|source|prep|deck|file|proof/.test(normalized)
+    : /document|source|prep|file|proof/.test(normalized)
       ? 'source review'
       : /signal|news|competitor|private label|market|changed/.test(normalized)
         ? 'market signal read'
         : /live|room|meeting|call/.test(normalized)
-          ? 'live preparation'
+          ? 'debrief preparation'
           : 'financial readout';
 
   return (
-    <section className="atlas-custom-report-tab" aria-label="Custom report">
+    <section className="atlas-custom-report-tab" aria-label="Custom scenario output">
       <article className="atlas-custom-report-hero">
         <div>
-          <span>Created view</span>
-          <h3>{labelForBuyingGroupView('custom')}: {reportMode}</h3>
+          <span>Created output</span>
+          <h3>{labelForBuyingGroupView('custom')}: {outputMode}</h3>
           <p>{prompt}</p>
         </div>
         <button type="button" className="atlas-custom-report-download" onClick={() => window.print()}>
           <Download size={14} />
-          Download report
+          Export output
         </button>
       </article>
       <section className="atlas-custom-report-grid">
@@ -4597,17 +6009,17 @@ function BuyingGroupCustomReport({
         </article>
         <article>
           <span>Recommended view</span>
-          <h4>{reportMode === 'financial readout' ? 'Open Financials next' : reportMode === 'source review' ? 'Open History next' : reportMode === 'live preparation' ? 'Open Live room next' : 'Open History next'}</h4>
+          <h4>{outputMode === 'financial readout' ? 'Open Scenario workspace next' : outputMode === 'source review' ? 'Open Scenario workspace next' : outputMode === 'debrief preparation' ? 'Open debrief memory next' : 'Open Scenario workspace next'}</h4>
           <p>{profileRead.currentState.nextMilestone}</p>
         </article>
       </section>
       <section className="atlas-custom-report-proof">
         <div>
           <span>Source used</span>
-          <h4>{primaryDocument?.title ?? profileRead.source.sourceName}</h4>
+          <h4>{primaryDocument?.title ?? sourceDisplayName(profileRead.source)}</h4>
           <SourceTrustMini source={primaryDocument?.source ?? profileRead.source} />
         </div>
-        <a href={`/generated-views?prompt=${encodeURIComponent(`Create a buyer profile report for ${workspace.buyingGroup.name}: ${prompt}`)}&buyingGroupId=${workspace.buyingGroup.id}&mode=draft&editable=1`} rel="noreferrer" target="_blank">Open editable view <ArrowRight size={14} /></a>
+        <a href={`/generated-views?prompt=${encodeURIComponent(`Create a buyer scenario output for ${workspace.buyingGroup.name}: ${prompt}`)}&buyingGroupId=${workspace.buyingGroup.id}&mode=draft&editable=1`} rel="noreferrer" target="_blank">Open editable output <ArrowRight size={14} /></a>
       </section>
     </section>
   );
@@ -4616,6 +6028,53 @@ function BuyingGroupCustomReport({
 function publicSignalHref(title: string, source?: SourceMeta) {
   if (source?.url) return source.url;
   return `https://news.google.com/search?q=${encodeURIComponent(title)}`;
+}
+
+function RelevantMarketGapCallout({
+  profileRead,
+  workspace
+}: {
+  profileRead: BuyerProfileRead;
+  workspace: BuyingGroupWorkspacePacket;
+}) {
+  const relevantMarket = workspace.markets
+    .filter((market) => (
+      market.gapToPlan >= 1_000_000 ||
+      market.marginAtRisk >= profileRead.exposure.marginAtRisk * 0.8 ||
+      market.pressureLevel === 'critical' ||
+      market.pressureLevel === 'high'
+    ))
+    .sort((a, b) => b.gapToPlan - a.gapToPlan || b.marginAtRisk - a.marginAtRisk)[0];
+
+  if (!relevantMarket) return null;
+
+  const signal = workspace.signals.find((item) => item.affectedMarkets.includes(relevantMarket.id));
+  const reason = signal
+    ? `${relevantMarket.name} pressure is linked to ${signal.title.toLowerCase()}`
+    : `${workspace.buyingGroup.name} is active in ${relevantMarket.name}, where the market gap can change strategy`;
+
+  return (
+    <article className="atlas-relevant-market-gap">
+      <div>
+        <ClosedLoopMemoryTag label="Market gap feeding buyer read" status="watch" />
+        <h3>{relevantMarket.name} gap may affect the {workspace.buyingGroup.name} strategy.</h3>
+        <p>{reason}</p>
+        <WhyShownLine
+          detail="this market gap is tied to the buyer’s active negotiation and can change the plan"
+          reasons={['materiality', 'strategy', 'pattern']}
+        />
+      </div>
+      <dl>
+        <div><dt>Gap to plan</dt><dd>{euros(relevantMarket.gapToPlan)}</dd></div>
+        <div><dt>Market margin risk</dt><dd>{euros(relevantMarket.marginAtRisk)}</dd></div>
+        <div><dt>Buyer margin risk</dt><dd>{euros(profileRead.exposure.marginAtRisk)}</dd></div>
+      </dl>
+      <div>
+        <SourceTrustMini source={signal?.source ?? relevantMarket.source} />
+        <a href={`/markets/${relevantMarket.id}`}>Open market <ArrowRight size={13} /></a>
+      </div>
+    </article>
+  );
 }
 
 function BuyingGroupOverviewPanel({
@@ -4628,80 +6087,2728 @@ function BuyingGroupOverviewPanel({
   const exposure = profileRead.exposure;
   const latestEvent = workspace.timelineEvents[0];
   const topSignal = workspace.signals[0];
-  const signals = workspace.signals.slice(0, 2);
-  const competitorMoves = workspace.competitorMoves.slice(0, 1);
-  const primaryAction = topSignal?.recommendedAction ?? profileRead.currentState.nextMilestone;
+  const topCompetitorMove = workspace.competitorMoves[0];
+  const buyerAskValue = Number.parseFloat(profileRead.currentState.latestBuyerAsk);
+  const pepsicoPositionValue = Number.parseFloat(profileRead.currentState.pepsicoPosition);
+  const askGap = Number.isFinite(buyerAskValue) && Number.isFinite(pepsicoPositionValue)
+    ? `${(buyerAskValue - pepsicoPositionValue).toFixed(1)} pts`
+    : 'Not modeled';
+  const relevantMarket = workspace.markets
+    .filter((market) => (
+      market.gapToPlan >= 1_000_000 ||
+      market.marginAtRisk >= exposure.marginAtRisk * 0.8 ||
+      market.pressureLevel === 'critical' ||
+      market.pressureLevel === 'high'
+    ))
+    .sort((a, b) => b.gapToPlan - a.gapToPlan || b.marginAtRisk - a.marginAtRisk)[0];
+  const postureReasons = [
+    {
+      label: 'Buyer posture',
+      source: profileRead.source,
+      text: `Buyer ask is ${askGap} above PepsiCo position; defend ${profileRead.currentState.pepsicoPosition} before any concession.`
+    },
+    relevantMarket ? {
+      label: 'Market pressure',
+      source: topSignal?.source ?? relevantMarket.source,
+      text: `${relevantMarket.name} has ${euros(relevantMarket.gapToPlan)} gap to plan, so local pressure may harden the buyer stance.`
+    } : null,
+    topCompetitorMove ? {
+      label: 'Competitive pressure',
+      source: topCompetitorMove.source,
+      text: `${topCompetitorMove.competitor} gives the buyer leverage; prepare evidence before trading support.`
+    } : latestEvent ? {
+      label: 'History signal',
+      source: latestEvent.source,
+      text: `${latestEvent.title} is the latest memory item shaping this negotiation read.`
+    } : null
+  ].filter(Boolean) as Array<{ label: string; source: SourceMeta; text: string }>;
 
   return (
     <section className="atlas-buyer-overview-panel" aria-label={`${workspace.buyingGroup.name} overview`}>
-      <article className="atlas-buyer-room-read">
-        <h3>{workspace.buyingGroup.name} will likely walk in anchoring on affordability pressure and proof gaps.</h3>
-        <div className="atlas-buyer-room-metrics">
-          <span><strong>{profileRead.currentState.latestBuyerAsk}</strong> buyer ask</span>
-          <span><strong>{profileRead.currentState.pepsicoPosition}</strong> PepsiCo position</span>
-          <span><strong>{euros(exposure.marginAtRisk)}</strong> margin at risk</span>
-        </div>
-        <p>{topSignal?.negotiationImplication ?? latestEvent?.summary ?? profileRead.currentState.nextMilestone}</p>
-        <div className="atlas-buyer-next-answer">
-          <strong>Recommended next action</strong>
-          <span>{primaryAction}</span>
-          <a href={`/buying-groups/${workspace.buyingGroup.id}?view=financials`}>Open financials <ArrowRight size={13} /></a>
-        </div>
-        <SourceTrustMini source={topSignal?.source ?? latestEvent?.source ?? profileRead.source} />
-      </article>
-
-      <section className="atlas-buyer-market-read">
+      <section className="atlas-buyer-focus-shell">
         <header>
-          <div>
-            <h3>Market and world signals</h3>
-          </div>
-          <a href={`/signals?buyingGroup=${workspace.buyingGroup.id}`}>All signals <ArrowRight size={14} /></a>
+          <span>AI generated posture read</span>
+          <h3>{workspace.buyingGroup.name} is likely to pressure affordability; hold position and bring evidence before trading support.</h3>
         </header>
-        <div className="atlas-buyer-signal-list">
-          {signals.length ? signals.map((signal) => (
-            <article key={signal.id}>
-              <div>
-                <span>{signal.signalType.replaceAll('_', ' ')}</span>
-                <h4>{signal.title}</h4>
-                <p>{signal.negotiationImplication}</p>
-              </div>
-              <div className="atlas-buyer-signal-impact">
-                <strong>{euros(signal.estimatedMarginImpact ?? 0)}</strong>
-                <span>margin implication</span>
-              </div>
-              <SourceTrustMini source={signal.source} />
-              <a href={publicSignalHref(signal.title, signal.source)} rel="noreferrer" target="_blank">Open public source <ArrowRight size={13} /></a>
+        <div className="atlas-buyer-posture-reasons">
+          {postureReasons.map((reason) => (
+            <article key={reason.label}>
+              <span>{reason.label}</span>
+              <p>{reason.text}</p>
+              <SourceTrustMini source={reason.source} />
             </article>
-          )) : <EmptyGeneratedState label="Market signals" />}
+          ))}
         </div>
+        <footer>
+          <a href={`/buying-groups/${workspace.buyingGroup.id}`}>Open scenario workspace <ArrowRight size={13} /></a>
+          <a href={`/buying-groups/${workspace.buyingGroup.id}?view=strategy`}>Review scenario memory <ArrowRight size={13} /></a>
+          <a href={`/scenario-lab?buyingGroup=${workspace.buyingGroup.id}`}>Open scenario workspace <ArrowRight size={13} /></a>
+        </footer>
       </section>
+    </section>
+  );
+}
 
-      {competitorMoves.length ? (
-        <section className="atlas-buyer-market-read compact">
+type StrategyInputStatus = 'used' | 'recommended' | 'excluded' | 'needs_review';
+type BuyerStrategyWorkspaceTab = 'position' | 'stress' | 'evidence' | 'pushback' | 'output';
+type ScenarioWorkspaceLevel = 'portfolio' | 'buying_group' | 'market' | 'category' | 'sku' | 'custom';
+type PredictiveWorkspaceModuleId = 'recommendations' | 'lab' | 'patterns' | 'signals' | 'guardrails' | 'evidence' | 'debrief' | 'saved';
+type ScenarioSkuRow = {
+  id: string;
+  margin: number;
+  priceMove: number;
+  sensitivity: string;
+  sku: string;
+  volumeRisk: number;
+};
+type ScenarioCustomLeverRow = {
+  id: string;
+  impact: string;
+  name: string;
+  status: string;
+  value: string;
+  weight: number;
+};
+type ScenarioDebriefEntry = {
+  attachments: string;
+  behavior: string;
+  buyingGroupId?: string;
+  buyerCounter: string;
+  concessions: string;
+  createdAt: string;
+  evidenceStrengthAfter?: number;
+  finalLanded: string;
+  id: string;
+  nextCycle: string;
+  note: string;
+  plannedEvidenceStrength?: number;
+  plannedGuardrailRisk?: string;
+  plannedLikelihood?: number;
+  plannedValueProtected?: number;
+  predictionAfter?: string;
+  predictionBefore?: string;
+  predictionImpact: string;
+  scenarioId?: string;
+  selectedScenarioLabel?: string;
+};
+type SavedScenarioMemoryEntry = {
+  actualOutcome?: string;
+  atlasScore: number;
+  evidenceStrength: number;
+  guardrailRisk: string;
+  id: string;
+  label: string;
+  likelihood: number;
+  predictionImpact: string;
+  savedAt: string;
+  supersededByDebriefId?: string;
+  valueProtected: number;
+};
+type PredictiveWorkspaceSavedView = {
+  createdAt: string;
+  hiddenModules: PredictiveWorkspaceModuleId[];
+  id: string;
+  label: string;
+  pinnedModules: PredictiveWorkspaceModuleId[];
+  selectedLevel: ScenarioWorkspaceLevel;
+  selectedScenarioId: string;
+};
+
+const scenarioWorkspaceModules: Array<{ id: PredictiveWorkspaceModuleId; label: string }> = [
+  { id: 'recommendations', label: 'Recommended scenarios' },
+  { id: 'lab', label: 'Predictive scenario lab' },
+  { id: 'patterns', label: 'Historical pattern insights' },
+  { id: 'signals', label: 'Market and external signals' },
+  { id: 'guardrails', label: 'Finance guardrails' },
+  { id: 'evidence', label: 'Evidence and source trail' },
+  { id: 'debrief', label: 'Debrief memory' },
+  { id: 'saved', label: 'Saved scenario outputs' }
+];
+
+const SCENARIO_DEBRIEF_STORAGE_KEY = 'atlas-scenario-debriefs';
+
+function readScenarioDebriefMemory(buyingGroupId?: string): ScenarioDebriefEntry[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const parsed = JSON.parse(window.localStorage.getItem(SCENARIO_DEBRIEF_STORAGE_KEY) ?? '[]');
+    const entries = Array.isArray(parsed) ? parsed as ScenarioDebriefEntry[] : [];
+    return buyingGroupId ? entries.filter((entry) => entry.buyingGroupId === buyingGroupId) : entries;
+  } catch {
+    return [];
+  }
+}
+
+function writeScenarioDebriefMemory(entry: ScenarioDebriefEntry) {
+  if (typeof window === 'undefined') return;
+  const entries = readScenarioDebriefMemory();
+  const nextEntries = [entry, ...entries.filter((item) => item.id !== entry.id)].slice(0, 80);
+  window.localStorage.setItem(SCENARIO_DEBRIEF_STORAGE_KEY, JSON.stringify(nextEntries));
+  window.dispatchEvent(new Event('storage'));
+}
+
+function parseProfilePercent(value?: string) {
+  const parsed = Number.parseFloat(value ?? '');
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function buildInlineStrategyTest(
+  workspace: BuyingGroupWorkspacePacket,
+  profileRead: BuyerProfileRead,
+  strategyPlan: ReturnType<typeof buildNegotiationPlanPacket>,
+  overrides?: {
+    fallbackPercent: number;
+    ingoingAskPercent: number;
+    redLinePercent: number;
+    targetPercent: number;
+  }
+) {
+  const exposure = workspace.buyingGroup.financialExposure;
+  const buyerAsk = parseProfilePercent(profileRead.currentState.latestBuyerAsk);
+  const pepsicoPosition = overrides?.ingoingAskPercent ?? strategyPlan?.ingoingAskPercent ?? parseProfilePercent(profileRead.currentState.pepsicoPosition);
+  const target = overrides?.targetPercent ?? strategyPlan?.targetPercent ?? parseProfilePercent(profileRead.currentState.target);
+  const fallback = overrides?.fallbackPercent ?? strategyPlan?.fallbackPercent ?? Math.max(0, target - 0.4);
+  const redLine = overrides?.redLinePercent ?? strategyPlan?.redLinePercent ?? parseProfilePercent(profileRead.currentState.redLine);
+  const askGap = Math.max(0, buyerAsk - pepsicoPosition);
+  const realizationGap = Math.max(0, exposure.targetPriceRealization - exposure.expectedPriceRealization);
+  const evidenceBonus = Math.min(8, Math.round((workspace.documents.length + workspace.timelineEvents.length) / 2));
+  const likelihood = Math.max(34, Math.min(86, Math.round(78 - askGap * 7 - riskRank(workspace.buyingGroup.riskLevel) * 5 + evidenceBonus)));
+  const scenarioInputs = scenarioInputsForBuyingGroup(workspace.buyingGroup);
+  const scenarioOutputs = calculateScenarioOutputs({
+    ...scenarioInputs,
+    priceIncreasePercent: pepsicoPosition,
+    expectedRealizationPercent: target,
+    concessionAmount: Math.round(exposure.tradeSpendExposure * 0.14),
+    buyerAcceptanceProbability: likelihood
+  }, exposure.revenueUnderNegotiation);
+  const guardrailRisk = fallback <= redLine + 0.1
+    ? 'High'
+    : fallback <= redLine + 0.35
+      ? 'Watch'
+      : 'Inside corridor';
+  const primarySignal = workspace.signals[0];
+  const primaryHistory = workspace.timelineEvents[0];
+  const recommendedEdits = [
+    fallback < redLine + 0.25
+      ? `Raise fallback to ${(redLine + 0.3).toFixed(1)}% before modeling concessions; current fallback is too close to the red line.`
+      : `Keep fallback at ${fallback.toFixed(1)}% and only trade support for volume or execution commitments.`,
+    primaryHistory
+      ? `Use ${primaryHistory.title.toLowerCase()} before leading with concessions.`
+      : 'Add prior-year concession evidence before leading with this ask.',
+    primarySignal
+      ? `Use ${primarySignal.affectedMarkets[0] ?? 'market'} signal only when the buyer challenges affordability or volume.`
+      : 'Do not introduce external pressure unless the buyer challenges the category value story.'
+  ];
+
+  return {
+    askGap,
+    buyerAsk,
+    expectedBuyerResponse: likelihood < 55
+      ? 'Buyer likely pushes for trade support before accepting the price corridor.'
+      : 'Buyer may challenge the evidence, but the strategy can stay inside the corridor when the source trail is ready.',
+    guardrailRisk,
+    leveragePoints: [
+      `${euros(exposure.marginAtRisk)} margin at risk`,
+      `${pct(realizationGap)} realization gap`,
+      primarySignal ? `${primarySignal.affectedMarkets[0] ?? 'Market'} signal pressure` : 'history-led concession risk'
+    ],
+    likelihood,
+    pepsicoPosition,
+    recommendedEdits,
+    scenarioOutputs
+  };
+}
+
+function StrategyStatusPill({ status }: { status: StrategyInputStatus }) {
+  const label = status === 'used'
+    ? 'Used in scenario'
+    : status === 'excluded'
+      ? 'Excluded'
+      : status === 'needs_review'
+        ? 'Needs review'
+        : 'ATLAS recommended';
+  return <span className={`atlas-strategy-status-pill status-${status}`}>{label}</span>;
+}
+
+function StrategyPricingCorridor({
+  buyerAsk,
+  fallback,
+  ingoingAsk,
+  redLine,
+  target
+}: {
+  buyerAsk: number;
+  fallback: number;
+  ingoingAsk: number;
+  redLine: number;
+  target: number;
+}) {
+  const values = [buyerAsk, ingoingAsk, target, fallback, redLine].filter(Number.isFinite);
+  const min = Math.max(0, Math.min(...values) - 0.4);
+  const max = Math.max(...values) + 0.5;
+  const position = (value: number) => `${Math.max(0, Math.min(100, ((value - min) / (max - min)) * 100))}%`;
+  const markers = [
+    { label: 'Buyer ask', value: buyerAsk, tone: 'buyer' },
+    { label: 'PepsiCo ask', value: ingoingAsk, tone: 'ask' },
+    { label: 'Target', value: target, tone: 'target' },
+    { label: 'Fallback', value: fallback, tone: 'fallback' },
+    { label: 'Red line', value: redLine, tone: 'red' }
+  ];
+
+  return (
+    <article className="atlas-strategy-corridor-card">
+      <header>
+        <span>Pricing corridor</span>
+        <strong>{ingoingAsk.toFixed(1)}% ask sits {Math.abs(ingoingAsk - target).toFixed(1)} pts from target.</strong>
+      </header>
+      <div className="atlas-strategy-corridor-track" aria-label="Pricing corridor from buyer ask to red line">
+        {markers.map((marker) => (
+          <span className={`atlas-strategy-corridor-marker tone-${marker.tone}`} key={marker.label} style={{ left: position(marker.value) }}>
+            <i />
+            <em>{marker.label}</em>
+            <b>{marker.value.toFixed(1)}%</b>
+          </span>
+        ))}
+      </div>
+    </article>
+  );
+}
+
+function StrategyInputInbox({
+  savedViews,
+  statuses,
+  workspace
+}: {
+  savedViews: StoredGeneratedView[];
+  statuses: Record<string, StrategyInputStatus>;
+  workspace: BuyingGroupWorkspacePacket;
+}) {
+  const sourceGap = workspace.readiness.reasons[0]
+    ?? (workspace.readiness.staleSourceCount ? `${workspace.readiness.staleSourceCount} stale sources` : null)
+    ?? (workspace.readiness.missingDocCount ? `${workspace.readiness.missingDocCount} missing documents` : null);
+  const items = [
+    {
+      id: 'market-gap',
+      label: 'Market gap',
+      metric: workspace.markets[0] ? `${workspace.markets[0].name} pressure` : 'Market pressure',
+      note: `${euros(workspace.buyingGroup.financialExposure.marginAtRisk)} margin risk affects the price corridor.`,
+      status: statuses['market-gap'] ?? 'recommended'
+    },
+    {
+      id: 'saved-scenario',
+      label: 'Saved scenario',
+      metric: workspace.scenarioModels[0]?.name ?? 'No saved scenario yet',
+      note: workspace.scenarioModels[0]?.outputs.recommendation ?? 'Model the current ask before changing fallback.',
+      status: statuses['saved-scenario'] ?? (workspace.scenarioModels[0] ? 'used' : 'needs_review')
+    },
+    {
+      id: 'history',
+      label: 'Negotiation history',
+      metric: workspace.timelineEvents[0]?.title ?? 'No history event',
+      note: workspace.timelineEvents[0]?.summary ?? 'Add prior-year debrief before trusting this scenario.',
+      status: statuses.history ?? (workspace.timelineEvents[0] ? 'used' : 'needs_review')
+    },
+    {
+      id: 'external-signal',
+      label: 'External signal',
+      metric: workspace.signals[0]?.title ?? 'No active signal',
+      note: workspace.signals[0]?.negotiationImplication ?? 'Only use external signals when they change the buyer response.',
+      status: statuses['external-signal'] ?? (workspace.signals[0] ? 'recommended' : 'excluded')
+    },
+    {
+      id: 'generated-report',
+      label: 'Scenario output',
+      metric: savedViews[0]?.title ?? 'No saved output',
+      note: savedViews[0] ? 'Available as scenario evidence and buyer memory.' : 'Create only if it will support the ask or pushback response.',
+      status: statuses['generated-report'] ?? (savedViews[0] ? 'recommended' : 'excluded')
+    },
+    {
+      id: 'source-gap',
+      label: 'Source gap',
+      metric: sourceGap ?? 'No open source gap',
+      note: sourceGap ? 'Resolve or mark as not relevant before using this scenario.' : 'Current scenario has enough source coverage for draft review.',
+      status: statuses['source-gap'] ?? (sourceGap ? 'needs_review' : 'used')
+    }
+  ];
+
+  return (
+    <section className="atlas-strategy-input-inbox" aria-label="Scenario input inbox">
+      <header>
+        <span>Scenario input inbox</span>
+        <h3>Everything here feeds the buyer scenario, or gets explicitly excluded.</h3>
+      </header>
+      <div>
+        {items.map((item) => (
+          <article key={item.id}>
+            <span>{item.label}</span>
+            <strong>{item.metric}</strong>
+            <p>{item.note}</p>
+            <StrategyStatusPill status={item.status} />
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function BuyerPredictiveScenarioWorkspace({
+  profileRead,
+  savedViews,
+  scenarioAlerts = [],
+  workspace
+}: {
+  profileRead: BuyerProfileRead;
+  savedViews: StoredGeneratedView[];
+  scenarioAlerts?: AtlasActiveAlert[];
+  workspace: BuyingGroupWorkspacePacket;
+}) {
+  const defaultInputs = useMemo(() => scenarioInputsForBuyingGroup(workspace.buyingGroup), [workspace.buyingGroup]);
+  const [inputs, setInputs] = useState<ScenarioInputs>(defaultInputs);
+  const [selectedLevel, setSelectedLevel] = useState<ScenarioWorkspaceLevel>('buying_group');
+  const [selectedScenarioId, setSelectedScenarioId] = useState('');
+  const [hiddenModules, setHiddenModules] = useState<PredictiveWorkspaceModuleId[]>(['recommendations', 'signals', 'guardrails', 'saved']);
+  const [pinnedModules, setPinnedModules] = useState<PredictiveWorkspaceModuleId[]>(['lab', 'patterns', 'evidence', 'debrief']);
+  const [irrelevantModules, setIrrelevantModules] = useState<PredictiveWorkspaceModuleId[]>([]);
+  const [customizerOpen, setCustomizerOpen] = useState(false);
+  const [activeSavedViewId, setActiveSavedViewId] = useState('');
+  const [workspaceSavedViews, setWorkspaceSavedViews] = useState<PredictiveWorkspaceSavedView[]>([]);
+  const [dismissedInsights, setDismissedInsights] = useState<string[]>([]);
+  const [savedScenarioIds, setSavedScenarioIds] = useState<string[]>(workspace.scenarioModels.map((scenario) => scenario.id));
+  const [savedScenarioMemory, setSavedScenarioMemory] = useState<SavedScenarioMemoryEntry[]>([]);
+  const [evidenceStatuses, setEvidenceStatuses] = useState<Record<string, StrategyInputStatus>>({});
+  const [strategyStatus, setStrategyStatus] = useState('');
+  const [workspaceStatus, setWorkspaceStatus] = useState('');
+  const [debriefStatus, setDebriefStatus] = useState('');
+  const [quickDebriefOpen, setQuickDebriefOpen] = useState(false);
+  const [debriefText, setDebriefText] = useState('');
+  const [debriefBuyerCounter, setDebriefBuyerCounter] = useState('');
+  const [debriefFinalLanded, setDebriefFinalLanded] = useState('');
+  const [debriefConcessions, setDebriefConcessions] = useState('');
+  const [debriefBehavior, setDebriefBehavior] = useState('Price challenged with affordability pressure');
+  const [debriefNextCycle, setDebriefNextCycle] = useState('');
+  const [debriefAttachments, setDebriefAttachments] = useState('');
+  const [debriefEntries, setDebriefEntries] = useState<ScenarioDebriefEntry[]>([]);
+  const [skuRows, setSkuRows] = useState<ScenarioSkuRow[]>([
+    { id: 'sku-family-share', sku: 'Core multipack family', priceMove: defaultInputs.priceIncreasePercent, volumeRisk: Math.abs(defaultInputs.volumeChangePercent), margin: 31.4, sensitivity: 'Medium' },
+    { id: 'sku-promo-pack', sku: 'Promo pack architecture', priceMove: Math.max(0.5, defaultInputs.priceIncreasePercent - 0.4), volumeRisk: Math.abs(defaultInputs.volumeChangePercent) + 0.6, margin: 27.8, sensitivity: 'High' }
+  ]);
+  const [customLevers, setCustomLevers] = useState<ScenarioCustomLeverRow[]>([
+    { id: 'terms', name: 'Payment terms flexibility', value: '30 days', impact: 'Protects cash exposure', status: 'Assumption', weight: 4 },
+    { id: 'service', name: 'Service commitment', value: 'Priority replenishment', impact: 'Improves buyer acceptance', status: 'User-added', weight: 3 }
+  ]);
+  const exposure = workspace.buyingGroup.financialExposure;
+  const latestHistory = workspace.timelineEvents[0];
+  const topSignal = workspace.signals[0];
+  const financeSource = workspace.documents.find((document) => /finance|nrm|guardrail|pricing/i.test(document.title))?.source ?? profileRead.source;
+  const historySource = latestHistory?.source ?? workspace.buyingGroup.source;
+  const signalSource = topSignal?.source ?? workspace.markets[0]?.source ?? workspace.buyingGroup.source;
+  const latestDebrief = debriefEntries[0];
+
+  useEffect(() => {
+    setInputs(defaultInputs);
+  }, [defaultInputs]);
+
+  useEffect(() => {
+    setDebriefEntries(readScenarioDebriefMemory(workspace.buyingGroup.id));
+  }, [workspace.buyingGroup.id]);
+
+  function updateInput<K extends keyof ScenarioInputs>(key: K, value: ScenarioInputs[K]) {
+    setInputs((current) => ({ ...current, [key]: value }));
+    setSelectedScenarioId('custom');
+  }
+
+  function inputsForLevel(level: ScenarioWorkspaceLevel): ScenarioInputs {
+    if (level === 'market') {
+      return scenarioInputsForMarket(workspace.markets[0]);
+    }
+    if (level === 'category') {
+      return {
+        ...defaultInputs,
+        concessionAmount: Math.round(defaultInputs.concessionAmount * 1.08),
+        costInflationPercent: Math.min(7, defaultInputs.costInflationPercent + 0.8),
+        expectedRealizationPercent: Math.max(0.5, defaultInputs.expectedRealizationPercent - 0.2),
+        tradeSpendChange: Math.round(defaultInputs.tradeSpendChange * 1.18),
+        volumeChangePercent: defaultInputs.volumeChangePercent - 0.4
+      };
+    }
+    if (level === 'sku') {
+      const averagePriceMove = skuRows.reduce((sum, row) => sum + row.priceMove, 0) / Math.max(1, skuRows.length);
+      const averageVolumeRisk = skuRows.reduce((sum, row) => sum + row.volumeRisk, 0) / Math.max(1, skuRows.length);
+      const highSensitivityRows = skuRows.filter((row) => row.sensitivity.toLowerCase().includes('high')).length;
+      return {
+        ...defaultInputs,
+        buyerAcceptanceProbability: Math.max(25, defaultInputs.buyerAcceptanceProbability - highSensitivityRows * 4),
+        expectedRealizationPercent: Math.max(0.5, averagePriceMove - 0.35),
+        priceIncreasePercent: averagePriceMove,
+        volumeChangePercent: -Math.abs(averageVolumeRisk)
+      };
+    }
+    if (level === 'custom') {
+      const leverWeight = customLevers.reduce((sum, lever) => sum + lever.weight, 0);
+      return {
+        ...inputs,
+        buyerAcceptanceProbability: Math.max(20, Math.min(95, inputs.buyerAcceptanceProbability + Math.round(leverWeight / 3))),
+        concessionAmount: Math.max(0, Math.round(inputs.concessionAmount + leverWeight * 18000)),
+        tradeSpendChange: Math.max(0, Math.round(inputs.tradeSpendChange + leverWeight * 22000))
+      };
+    }
+    return defaultInputs;
+  }
+
+  function selectScenarioLevel(level: ScenarioWorkspaceLevel) {
+    setSelectedLevel(level);
+    setInputs(inputsForLevel(level));
+    setSelectedScenarioId(level === 'buying_group' ? 'recommended' : 'custom');
+  }
+
+  function scenarioCandidate(id: string, label: string, description: string, baseInputs: ScenarioInputs, why: string, source: SourceMeta) {
+    const outputs = calculateScenarioOutputs(baseInputs, exposure.revenueUnderNegotiation);
+    const likelihood = Math.max(1, Math.min(99, Math.round(baseInputs.buyerAcceptanceProbability)));
+    const guardrailRisk = baseInputs.expectedRealizationPercent < profileRead.exposure.expectedPriceRealization
+      ? 'Breach risk'
+      : baseInputs.expectedRealizationPercent < profileRead.exposure.targetPriceRealization - 0.4
+        ? 'Watch'
+        : 'Inside guardrail';
+    const relationshipRisk = baseInputs.priceIncreasePercent > defaultInputs.priceIncreasePercent + 0.5 || baseInputs.volumeChangePercent < defaultInputs.volumeChangePercent - 0.8
+      ? 'High'
+      : baseInputs.priceIncreasePercent < defaultInputs.priceIncreasePercent - 0.4
+        ? 'Low'
+        : 'Medium';
+    const debriefMemoryBoost = debriefEntries.length * 6;
+    const evidenceStrength = Math.min(96, 58 + workspace.timelineEvents.length * 5 + workspace.documents.length * 4 + debriefMemoryBoost);
+    const guardrailScore = guardrailRisk === 'Inside guardrail' ? 18 : guardrailRisk === 'Watch' ? 6 : -16;
+    const relationshipScore = relationshipRisk === 'Low' ? 12 : relationshipRisk === 'Medium' ? 4 : -12;
+    const normalizedValue = Math.max(0, Math.min(100, outputs.riskAdjustedValue / Math.max(1, exposure.marginAtRisk) * 100));
+    const baseAtlasScore = Math.round(likelihood * 0.32 + normalizedValue * 0.26 + evidenceStrength * 0.22 + guardrailScore + relationshipScore);
+    const confidence = source.confidence;
+    const likelyCounter = Math.max(0.4, baseInputs.priceIncreasePercent - (relationshipRisk === 'High' ? 0.8 : relationshipRisk === 'Medium' ? 0.5 : 0.3));
+    const debriefCounter = latestDebrief?.buyerCounter ? parseProfilePercent(latestDebrief.buyerCounter) : 0;
+    const debriefLanded = latestDebrief?.finalLanded ? parseProfilePercent(latestDebrief.finalLanded) : 0;
+    const landedAlignment = latestDebrief && debriefLanded
+      ? Math.max(-6, Math.round(8 - Math.abs(baseInputs.expectedRealizationPercent - debriefLanded) * 8))
+      : 0;
+    const counterAlignment = latestDebrief && debriefCounter
+      ? Math.max(-4, Math.round(5 - Math.abs(likelyCounter - debriefCounter) * 6))
+      : 0;
+    const behaviorPenalty = latestDebrief && id === 'aggressive' && /affordability|delayed|countered|support|escalated/i.test(latestDebrief.behavior)
+      ? -8
+      : 0;
+    const behaviorBoost = latestDebrief && id === 'buyer-counter'
+      ? 6
+      : latestDebrief && id === 'conservative' && /affordability|support|countered/i.test(latestDebrief.behavior)
+        ? 4
+        : 0;
+    const memoryAdjustment = latestDebrief
+      ? Math.max(-12, Math.min(14, landedAlignment + counterAlignment + behaviorBoost + behaviorPenalty))
+      : 0;
+    const atlasScore = Math.max(1, Math.min(100, baseAtlasScore + memoryAdjustment));
+    const buyerResponse = latestDebrief
+      ? `Updated from debrief: likely to counter near ${latestDebrief.buyerCounter || `${likelyCounter.toFixed(1)}%`} and repeat "${latestDebrief.behavior}".`
+      : likelihood >= 72
+        ? `Likely to challenge the evidence, then land near ${likelyCounter.toFixed(1)}%.`
+        : likelihood >= 55
+          ? `Likely to counter near ${likelyCounter.toFixed(1)}% and ask for trade support.`
+          : `Likely to resist the ask and use affordability or volume risk as leverage.`;
+    const expectedObjection = latestDebrief?.behavior
+      ? latestDebrief.behavior
+      : relationshipRisk === 'High'
+      ? 'Price move is too high for current shopper and volume conditions.'
+      : guardrailRisk === 'Breach risk'
+        ? 'PepsiCo fallback may be too weak to defend internally.'
+        : 'Buyer will ask why this move is needed now.';
+    const recommendedResponse = latestDebrief?.nextCycle
+      ? latestDebrief.nextCycle
+      : guardrailRisk === 'Breach risk'
+      ? 'Raise the landed realization before using this scenario.'
+      : evidenceStrength < 75
+        ? 'Attach prior-year outcome and Finance guardrail evidence before taking this into the room.'
+        : 'Lead with margin impact, then use buyer history if the buyer pushes for concessions.';
+    const memoryReason = latestDebrief
+      ? `${memoryAdjustment >= 0 ? '+' : ''}${memoryAdjustment} memory adjustment from latest debrief.`
+      : 'No debrief adjustment yet.';
+    const rankReason = `${atlasScore}/100 score from landing likelihood, value protected, guardrail fit, evidence strength, relationship risk, and buyer memory. ${memoryReason}`;
+
+    return {
+      atlasScore,
+      buyerResponse,
+      confidence,
+      description,
+      evidenceStrength,
+      expectedObjection,
+      guardrailRisk,
+      id,
+      label,
+      likelihood,
+      memoryAdjustment,
+      memoryReason,
+      outputs,
+      rankReason,
+      recommendedResponse,
+      relationshipRisk,
+      source,
+      valueProtected: outputs.riskAdjustedValue,
+      why
+    };
+  }
+
+  const activeScenarioInputs = useMemo(() => inputsForLevel(selectedLevel), [customLevers, defaultInputs, inputs, selectedLevel, skuRows, workspace.markets]);
+  const generatedScenarios = useMemo(() => {
+    const recommended = scenarioCandidate(
+      'recommended',
+      'ATLAS recommended',
+      'Balanced ask that protects the target corridor while leaving room for a controlled counter.',
+      defaultInputs,
+      `Uses ${workspace.buyingGroup.name} history, ${workspace.markets[0]?.name ?? 'market'} pressure, and Finance guardrails as the default case.`,
+      financeSource
+    );
+    const conservativeInputs: ScenarioInputs = {
+      ...defaultInputs,
+      buyerAcceptanceProbability: Math.min(92, defaultInputs.buyerAcceptanceProbability + 12),
+      concessionAmount: Math.round(defaultInputs.concessionAmount * 1.12),
+      expectedRealizationPercent: Math.max(0.5, defaultInputs.expectedRealizationPercent - 0.3),
+      priceIncreasePercent: Math.max(0.8, defaultInputs.priceIncreasePercent - 0.4),
+      tradeSpendChange: Math.round(defaultInputs.tradeSpendChange * 1.08),
+      volumeChangePercent: Math.min(1.5, defaultInputs.volumeChangePercent + 0.7)
+    };
+    const aggressiveInputs: ScenarioInputs = {
+      ...defaultInputs,
+      buyerAcceptanceProbability: Math.max(30, defaultInputs.buyerAcceptanceProbability - 14),
+      concessionAmount: Math.round(defaultInputs.concessionAmount * 0.78),
+      expectedRealizationPercent: defaultInputs.expectedRealizationPercent + 0.4,
+      priceIncreasePercent: defaultInputs.priceIncreasePercent + 0.7,
+      tradeSpendChange: Math.round(defaultInputs.tradeSpendChange * 0.82),
+      volumeChangePercent: defaultInputs.volumeChangePercent - 0.9
+    };
+    const buyerCounterInputs: ScenarioInputs = {
+      ...defaultInputs,
+      buyerAcceptanceProbability: Math.max(35, defaultInputs.buyerAcceptanceProbability - 8),
+      concessionAmount: Math.round(defaultInputs.concessionAmount * 1.35),
+      expectedRealizationPercent: Math.max(0.5, defaultInputs.expectedRealizationPercent - 0.6),
+      priceIncreasePercent: Math.max(0.8, defaultInputs.priceIncreasePercent - 0.7),
+      tradeSpendChange: Math.round(defaultInputs.tradeSpendChange * 1.25),
+      volumeChangePercent: defaultInputs.volumeChangePercent - 0.2
+    };
+
+    return [
+      recommended,
+      scenarioCandidate('conservative', 'Conservative', 'Higher landing odds, lower protected value, more trade support required.', conservativeInputs, 'Use if the buyer prioritizes affordability or category volume risk.', profileRead.source),
+      scenarioCandidate('aggressive', 'Aggressive', 'Stronger value protection with higher buyer pushback and relationship risk.', aggressiveInputs, 'Use only if Finance needs stronger recovery and evidence is ready.', financeSource),
+      scenarioCandidate('buyer-counter', 'Likely buyer counter', 'Simulates the first counter ATLAS expects from prior behavior and market pressure.', buyerCounterInputs, latestHistory ? `Based on ${latestHistory.title.toLowerCase()} and prior concession memory.` : 'Based on historical buyer response patterns.', historySource),
+      scenarioCandidate('custom', 'My adjusted scenario', 'Manual case based on the current levers in the scenario lab.', activeScenarioInputs, 'Updates as the CNO changes assumptions, scenario level, SKU rows, and custom levers.', workspace.buyingGroup.source)
+    ];
+  }, [activeScenarioInputs, debriefEntries, defaultInputs, exposure.revenueUnderNegotiation, financeSource, historySource, latestDebrief, latestHistory, profileRead.source, workspace.buyingGroup.name, workspace.buyingGroup.source, workspace.markets]);
+
+  const rankedScenarios = useMemo(() => [...generatedScenarios].sort((a, b) => b.atlasScore - a.atlasScore), [generatedScenarios]);
+  const topAtlasScenario = rankedScenarios[0] ?? generatedScenarios[0];
+  const selectedScenario = generatedScenarios.find((scenario) => scenario.id === selectedScenarioId) ?? generatedScenarios[0];
+  const recommendedScenario = generatedScenarios.find((scenario) => scenario.id === 'recommended') ?? generatedScenarios[0];
+  const cockpitComparisonScenarios = ['recommended', 'custom', 'buyer-counter']
+    .map((scenarioId) => generatedScenarios.find((scenario) => scenario.id === scenarioId))
+    .filter((scenario): scenario is NonNullable<typeof scenario> => Boolean(scenario));
+  const comparisonRoleLabel: Record<string, string> = {
+    'buyer-counter': 'Expected buyer move',
+    custom: 'Your current test',
+    recommended: 'Default starting point'
+  };
+  const predictionBasisRows = [
+    {
+      impact: latestDebrief
+        ? `Moves buyer response toward ${latestDebrief.buyerCounter || 'the captured counter'} and uses "${latestDebrief.behavior}".`
+        : selectedScenario.id === 'buyer-counter'
+          ? 'Anchors the expected counter and likely objection.'
+          : 'Sets the buyer behavior pattern ATLAS expects in the room.',
+      label: 'Buyer memory',
+      source: historySource,
+      value: latestDebrief ? `Debrief: landed ${latestDebrief.finalLanded || 'outcome captured'}` : latestHistory?.title ?? 'No recent debrief'
+    },
+    {
+      impact: selectedScenario.relationshipRisk === 'High'
+        ? 'Raises relationship risk and lowers landing confidence.'
+        : selectedScenario.likelihood >= recommendedScenario.likelihood
+          ? 'Supports the current landing odds.'
+          : 'Creates pressure ATLAS expects the buyer to use.',
+      label: 'Market signal',
+      source: signalSource,
+      value: topSignal?.title ?? workspace.markets[0]?.name ?? 'No active signal'
+    },
+    {
+      impact: selectedScenario.guardrailRisk === 'Breach risk'
+        ? 'Flags this move as below the finance guardrail.'
+        : selectedScenario.guardrailRisk === 'Watch'
+          ? 'Keeps the move under watch against target realization.'
+          : 'Keeps the move inside the target corridor.',
+      label: 'Finance guardrail',
+      source: financeSource,
+      value: `${pct(exposure.targetPriceRealization)} target realization`
+    }
+  ];
+  const scenarioDeltaRows = [
+    {
+      label: 'Likelihood to land',
+      value: `${selectedScenario.likelihood - recommendedScenario.likelihood >= 0 ? '+' : ''}${selectedScenario.likelihood - recommendedScenario.likelihood} pts`,
+      story: selectedScenario.likelihood >= recommendedScenario.likelihood ? 'More likely than the default recommendation.' : 'Lower landing odds than the default recommendation.'
+    },
+    {
+      label: 'Risk-adjusted value',
+      value: euros(selectedScenario.valueProtected - recommendedScenario.valueProtected),
+      story: selectedScenario.valueProtected >= recommendedScenario.valueProtected ? 'Protects more value than the default.' : 'Trades value for acceptance or flexibility.'
+    },
+    {
+      label: 'Trade spend',
+      value: euros(selectedScenario.outputs.tradeSpendImpact - recommendedScenario.outputs.tradeSpendImpact),
+      story: selectedScenario.outputs.tradeSpendImpact > recommendedScenario.outputs.tradeSpendImpact ? 'Requires more trade support.' : 'Uses less trade support than the default.'
+    },
+    {
+      label: 'Volume impact',
+      value: euros(selectedScenario.outputs.volumeImpact - recommendedScenario.outputs.volumeImpact),
+      story: selectedScenario.outputs.volumeImpact >= recommendedScenario.outputs.volumeImpact ? 'Reduces downside volume pressure.' : 'Creates more volume risk.'
+    }
+  ];
+  const levelContextRows = selectedLevel === 'market'
+    ? [
+      ['Market context', workspace.markets[0]?.name ?? 'Selected market'],
+      ['Pressure modeled', inputs.competitorPressureLevel],
+      ['Source', sourceDisplayName(signalSource)]
+    ]
+    : selectedLevel === 'category'
+      ? [
+        ['Category pressure', `${activeScenarioInputs.costInflationPercent.toFixed(1)}% cost inflation`],
+        ['Mix impact', `${activeScenarioInputs.volumeChangePercent.toFixed(1)}% modeled movement`],
+        ['Trade response', euros(activeScenarioInputs.tradeSpendChange)]
+      ]
+      : selectedLevel === 'sku'
+        ? [
+          ['SKU rows', `${skuRows.length}`],
+          ['Avg price move', `${activeScenarioInputs.priceIncreasePercent.toFixed(1)}%`],
+          ['Avg volume risk', `${Math.abs(activeScenarioInputs.volumeChangePercent).toFixed(1)}%`]
+        ]
+        : selectedLevel === 'custom'
+          ? [
+            ['Custom levers', `${customLevers.length}`],
+            ['Total weight', `${customLevers.reduce((sum, lever) => sum + lever.weight, 0)}`],
+            ['Status', 'User-modeled assumption']
+          ]
+          : [
+            ['Buyer context', workspace.buyingGroup.name],
+            ['Default ask', `${defaultInputs.priceIncreasePercent.toFixed(1)}%`],
+            ['History source', sourceDisplayName(historySource)]
+          ];
+  const scenarioReportPrompt = `Create a scenario evidence output for ${workspace.buyingGroup.name}: ${selectedScenario.label}. Include assumptions, predicted buyer response, source trail, and recommended next move.`;
+  const visibleModules = scenarioWorkspaceModules
+    .filter((module) => !hiddenModules.includes(module.id))
+    .sort((a, b) => Number(pinnedModules.includes(b.id)) - Number(pinnedModules.includes(a.id)));
+  const levels: Array<{ id: ScenarioWorkspaceLevel; label: string }> = [
+    { id: 'buying_group', label: 'Buying group' },
+    { id: 'market', label: 'Market' },
+    { id: 'category', label: 'Category' },
+    { id: 'sku', label: 'SKU drill-in' },
+    { id: 'custom', label: 'Custom lever' }
+  ];
+  const labControls: Array<{ key: keyof ScenarioInputs; label: string; max: number; min: number; step: number; suffix: string }> = [
+    { key: 'priceIncreasePercent', label: 'Proposed price move', min: 0, max: 6, step: 0.1, suffix: '%' },
+    { key: 'expectedRealizationPercent', label: 'Expected landed realization', min: 0, max: 5, step: 0.1, suffix: '%' },
+    { key: 'volumeChangePercent', label: 'Modeled volume movement', min: -8, max: 4, step: 0.1, suffix: '%' },
+    { key: 'tradeSpendChange', label: 'Trade spend change', min: 0, max: Math.max(2_500_000, Math.ceil(defaultInputs.tradeSpendChange * 1.5)), step: 25000, suffix: 'EUR' },
+    { key: 'concessionAmount', label: 'Concession envelope', min: 0, max: Math.max(2_000_000, Math.ceil(defaultInputs.concessionAmount * 1.5)), step: 25000, suffix: 'EUR' },
+    { key: 'buyerAcceptanceProbability', label: 'Buyer acceptance probability', min: 20, max: 95, step: 1, suffix: '%' }
+  ];
+  const formatLabControlValue = (suffix: string, value: number) => suffix === 'EUR'
+    ? euros(value)
+    : `${value.toFixed(suffix === '%' ? 1 : 0)}${suffix}`;
+  const cockpitQuickControls = labControls.filter(({ key }) => (
+    key === 'priceIncreasePercent'
+    || key === 'expectedRealizationPercent'
+    || key === 'buyerAcceptanceProbability'
+    || key === 'tradeSpendChange'
+  ));
+  const labControlGroups = [
+    {
+      controls: labControls.slice(0, 2),
+      subtitle: 'What PepsiCo asks for and what is expected to land.',
+      title: 'Price and landing'
+    },
+    {
+      controls: labControls.slice(2),
+      subtitle: 'The assumptions that change buyer response and P&L impact.',
+      title: 'Commercial assumptions'
+    }
+  ];
+  const historicalInsights = [
+    latestDebrief ? {
+      changes: latestDebrief.predictionImpact,
+      id: latestDebrief.id,
+      source: historySource,
+      story: `Latest debrief says buyer countered at ${latestDebrief.buyerCounter || 'an updated counter'} and landed at ${latestDebrief.finalLanded || 'a new outcome'}.`
+    } : null,
+    {
+      changes: 'Build a counter case before using concessions.',
+      id: 'counter-gap',
+      source: historySource,
+      story: `${workspace.buyingGroup.name} usually counters about 0.5 pts below the first PepsiCo offer.`
+    },
+    {
+      changes: 'Expect a longer cycle if evidence is not shown early.',
+      id: 'round-count',
+      source: historySource,
+      story: 'Prior rounds show buyer movement typically happens after 3 to 4 exchanges.'
+    },
+    {
+      changes: 'Keep affordability evidence ready, but do not lead with it.',
+      id: 'signal-use',
+      source: signalSource,
+      story: topSignal ? `${topSignal.title} may be used by the buyer to challenge the price move.` : 'External pressure should only be used when it changes buyer response.'
+    }
+  ].filter((insight): insight is { changes: string; id: string; source: SourceMeta; story: string } => Boolean(insight))
+    .filter((insight) => !dismissedInsights.includes(insight.id));
+  const evidenceRows = [
+    {
+      claim: 'Proposed price move',
+      id: 'price-move-evidence',
+      proof: `${inputs.priceIncreasePercent.toFixed(1)}% ask`,
+      source: financeSource,
+      use: 'Supports starting position',
+      whatItChanges: 'Raises or lowers the opening ask and guardrail risk.'
+    },
+    {
+      claim: 'Expected buyer counter',
+      id: 'buyer-counter-evidence',
+      proof: generatedScenarios.find((scenario) => scenario.id === 'buyer-counter')?.outputs.priceRealizationImpact ? pct(Math.max(0.4, inputs.expectedRealizationPercent - 0.6)) : 'Counter case',
+      source: historySource,
+      use: 'Prepares response path',
+      whatItChanges: 'Anchors the buyer-counter scenario and likely objection.'
+    },
+    {
+      claim: 'Margin protection',
+      id: 'margin-protection-evidence',
+      proof: euros(selectedScenario.outputs.marginImpact),
+      source: profileRead.source,
+      use: 'Shows financial consequence',
+      whatItChanges: 'Changes value protected, GM impact, and recommended next move.'
+    },
+    {
+      claim: 'Market pressure',
+      id: 'market-pressure-evidence',
+      proof: topSignal?.title ?? workspace.markets[0]?.name ?? 'Current market',
+      source: signalSource,
+      use: 'Explains why scenario matters now',
+      whatItChanges: 'Changes when to introduce external evidence in the room.'
+    }
+  ];
+  const includedEvidenceRows = evidenceRows.filter((row) => evidenceStatuses[row.id] !== 'excluded');
+  const reviewEvidenceRows = evidenceRows.filter((row) => evidenceStatuses[row.id] === 'needs_review');
+  const excludedEvidenceRows = evidenceRows.filter((row) => evidenceStatuses[row.id] === 'excluded');
+  const workspaceScenarioReportParams = new URLSearchParams({
+    atlasScore: String(selectedScenario.atlasScore),
+    buyerResponse: selectedScenario.buyerResponse,
+    customLeverCount: String(customLevers.length),
+    editable: '1',
+    evidenceStrength: String(selectedScenario.evidenceStrength),
+    gmImpact: String(selectedScenario.outputs.marginImpact),
+    guardrailRisk: selectedScenario.guardrailRisk,
+    likelihood: String(selectedScenario.likelihood),
+    mode: 'draft',
+    nrImpact: String(selectedScenario.outputs.revenueImpact),
+    prompt: scenarioReportPrompt,
+    recommendedEdit: selectedScenario.recommendedResponse,
+    relationshipRisk: selectedScenario.relationshipRisk,
+    reportType: 'scenario_evidence',
+    riskAdjustedValue: String(selectedScenario.valueProtected),
+    scenarioLevel: selectedLevel,
+    scenarioName: selectedScenario.label,
+    skuCount: String(skuRows.length),
+    topRecommendedMemoryAdjustment: String(topAtlasScenario.memoryAdjustment),
+    topRecommendedReason: topAtlasScenario.rankReason,
+    topRecommendedScenario: topAtlasScenario.label,
+    topRecommendedScore: String(topAtlasScenario.atlasScore),
+    tradeImpact: String(selectedScenario.outputs.tradeSpendImpact),
+    volumeImpact: String(selectedScenario.outputs.volumeImpact)
+  });
+  workspaceScenarioReportParams.set('selectedEvidence', includedEvidenceRows.map((row) => `${row.claim}: ${row.proof}`).join(' | '));
+  if (reviewEvidenceRows.length) {
+    workspaceScenarioReportParams.set('reviewEvidence', reviewEvidenceRows.map((row) => `${row.claim}: ${row.whatItChanges}`).join(' | '));
+  }
+  if (excludedEvidenceRows.length) {
+    workspaceScenarioReportParams.set('excludedEvidence', excludedEvidenceRows.map((row) => row.claim).join(' | '));
+  }
+  workspaceScenarioReportParams.set('buyingGroupId', workspace.buyingGroup.id);
+  if (workspace.markets[0]?.id) workspaceScenarioReportParams.set('marketId', workspace.markets[0].id);
+  if (latestDebrief) {
+    workspaceScenarioReportParams.set('debriefMemory', `${latestDebrief.predictionImpact} Counter ${latestDebrief.buyerCounter || 'not entered'}, landed ${latestDebrief.finalLanded || 'not entered'}.`);
+  }
+  const workspaceScenarioReportHref = `/generated-views?${workspaceScenarioReportParams.toString()}`;
+  const selectedScenarioSaved = savedScenarioIds.includes(selectedScenario.id);
+  const latestSavedScenario = savedScenarioMemory[0];
+  const selectedSavedScenario = savedScenarioMemory.find((entry) => entry.id === selectedScenario.id);
+  const selectedScenarioLoopState = latestDebrief
+    ? 'Debrief is updating this buyer prediction'
+    : selectedScenarioSaved
+      ? 'Scenario saved; debrief after the next round'
+      : 'Save this scenario before using it as memory';
+  const defaultCounterAnchor = `${Math.max(0.4, defaultInputs.priceIncreasePercent - 0.5).toFixed(1)}%`;
+  const debriefPredictionRows = [
+    {
+      after: latestDebrief?.buyerCounter || defaultCounterAnchor,
+      before: defaultCounterAnchor,
+      label: 'Counter anchor',
+      story: latestDebrief ? 'Updated from the latest debrief.' : 'Estimated from buyer history until a debrief is captured.'
+    },
+    {
+      after: latestDebrief?.behavior || selectedScenario.expectedObjection,
+      before: selectedScenario.expectedObjection,
+      label: 'Likely behavior',
+      story: latestDebrief ? 'Buyer behavior now drives the counter scenario.' : 'ATLAS is using historical pattern memory.'
+    },
+    {
+      after: `${selectedScenario.evidenceStrength}%`,
+      before: `${Math.max(0, selectedScenario.evidenceStrength - (latestDebrief ? 6 : 0))}%`,
+      label: 'Evidence strength',
+      story: latestDebrief ? 'Debrief memory increases confidence in the prediction.' : 'Attach outcome memory to strengthen confidence.'
+    },
+    {
+      after: latestDebrief?.nextCycle || selectedScenario.recommendedResponse,
+      before: selectedScenario.recommendedResponse,
+      label: 'Next test',
+      story: latestDebrief ? 'Next-cycle learning is now the recommended test.' : 'Use the top recommended scenario before the next round.'
+    }
+  ];
+  const debriefPlanActualRows = latestDebrief ? [
+    {
+      actual: latestDebrief.finalLanded || latestDebrief.buyerCounter || latestDebrief.behavior,
+      label: 'Outcome',
+      planned: latestDebrief.selectedScenarioLabel || selectedScenario.label,
+      story: 'The saved scenario is now grounded in the actual negotiation result.'
+    },
+    {
+      actual: latestDebrief.buyerCounter || 'No counter captured',
+      label: 'Buyer counter',
+      planned: latestDebrief.predictionBefore || selectedScenario.buyerResponse,
+      story: 'Future counter predictions use the captured buyer behavior.'
+    },
+    {
+      actual: latestDebrief.finalLanded || latestDebrief.concessions || 'Outcome captured',
+      label: 'Value protected',
+      planned: euros(latestDebrief.plannedValueProtected ?? selectedScenario.valueProtected),
+      story: `${latestDebrief.plannedLikelihood ?? selectedScenario.likelihood}% planned likelihood · ${latestDebrief.plannedGuardrailRisk ?? selectedScenario.guardrailRisk} guardrail read.`
+    }
+  ] : [];
+
+  function toggleModule(id: PredictiveWorkspaceModuleId) {
+    setHiddenModules((current) => current.includes(id) ? current.filter((moduleId) => moduleId !== id) : [...current, id]);
+  }
+
+  function togglePin(id: PredictiveWorkspaceModuleId) {
+    setPinnedModules((current) => current.includes(id) ? current.filter((moduleId) => moduleId !== id) : [...current, id]);
+  }
+
+  function restoreModule(id: PredictiveWorkspaceModuleId) {
+    setHiddenModules((current) => current.filter((moduleId) => moduleId !== id));
+    setIrrelevantModules((current) => current.filter((moduleId) => moduleId !== id));
+    setWorkspaceStatus(`${scenarioWorkspaceModules.find((module) => module.id === id)?.label ?? 'Module'} restored.`);
+  }
+
+  function markModuleIrrelevant(id: PredictiveWorkspaceModuleId) {
+    setIrrelevantModules((current) => current.includes(id) ? current : [...current, id]);
+    setHiddenModules((current) => current.includes(id) ? current : [...current, id]);
+    setPinnedModules((current) => current.filter((moduleId) => moduleId !== id));
+    setWorkspaceStatus(`${scenarioWorkspaceModules.find((module) => module.id === id)?.label ?? 'Module'} marked irrelevant for this workspace.`);
+  }
+
+  function setEvidenceStatus(id: string, status: StrategyInputStatus) {
+    setEvidenceStatuses((current) => ({ ...current, [id]: status }));
+    const label = evidenceRows.find((row) => row.id === id)?.claim ?? 'Evidence';
+    setWorkspaceStatus(`${label} marked ${status.replaceAll('_', ' ')} for this scenario.`);
+  }
+
+  function saveWorkspaceView(label?: string) {
+    const savedView: PredictiveWorkspaceSavedView = {
+      createdAt: new Date().toISOString(),
+      hiddenModules,
+      id: `workspace-view-${Date.now()}`,
+      label: label ?? `${workspace.buyingGroup.name} scenario view ${workspaceSavedViews.length + 1}`,
+      pinnedModules,
+      selectedLevel,
+      selectedScenarioId
+    };
+    setWorkspaceSavedViews((current) => [savedView, ...current]);
+    setActiveSavedViewId(savedView.id);
+    setWorkspaceStatus(`${savedView.label} saved for this session.`);
+  }
+
+  function applyWorkspaceView(view: PredictiveWorkspaceSavedView) {
+    setHiddenModules(view.hiddenModules);
+    setPinnedModules(view.pinnedModules);
+    setSelectedLevel(view.selectedLevel);
+    setSelectedScenarioId(view.selectedScenarioId);
+    setActiveSavedViewId(view.id);
+    setWorkspaceStatus(`${view.label} loaded.`);
+  }
+
+  function applyWorkspacePreset(preset: 'scenario' | 'evidence' | 'debrief') {
+    if (preset === 'scenario') {
+      setPinnedModules(['lab', 'patterns', 'evidence', 'debrief']);
+      setHiddenModules(['recommendations', 'signals', 'guardrails', 'saved']);
+      setSelectedLevel('buying_group');
+      setWorkspaceStatus('Scenario modeling workspace loaded.');
+    } else if (preset === 'evidence') {
+      setPinnedModules(['evidence', 'guardrails', 'signals']);
+      setHiddenModules(['debrief']);
+      setSelectedLevel('category');
+      setWorkspaceStatus('Evidence review workspace loaded.');
+    } else {
+      setPinnedModules(['debrief', 'patterns', 'saved']);
+      setHiddenModules(['guardrails']);
+      setSelectedLevel('buying_group');
+      setWorkspaceStatus('Debrief review workspace loaded.');
+    }
+    setActiveSavedViewId('');
+  }
+
+  function focusWorkspaceModule(id: PredictiveWorkspaceModuleId, message: string) {
+    setHiddenModules((current) => current.filter((moduleId) => moduleId !== id));
+    setPinnedModules((current) => current.includes(id) ? current : [...current, id]);
+    setWorkspaceStatus(message);
+  }
+
+  function saveScenario(id: string) {
+    const scenario = generatedScenarios.find((item) => item.id === id);
+    setSavedScenarioIds((current) => current.includes(id) ? current : [...current, id]);
+    if (scenario) {
+      const memoryEntry: SavedScenarioMemoryEntry = {
+        atlasScore: scenario.atlasScore,
+        evidenceStrength: scenario.evidenceStrength,
+        guardrailRisk: scenario.guardrailRisk,
+        id: scenario.id,
+        label: scenario.label,
+        likelihood: scenario.likelihood,
+        predictionImpact: `${scenario.label} now anchors future prediction at ${scenario.likelihood}% likelihood with ${scenario.guardrailRisk.toLowerCase()} guardrail risk.`,
+        savedAt: new Date().toISOString(),
+        valueProtected: scenario.valueProtected
+      };
+      setSavedScenarioMemory((current) => [memoryEntry, ...current.filter((entry) => entry.id !== id)]);
+    }
+    setHiddenModules((current) => current.filter((moduleId) => moduleId !== 'saved'));
+    setPinnedModules((current) => current.includes('saved') ? current : [...current, 'saved']);
+    setStrategyStatus(`${scenario?.label ?? 'Scenario'} saved to buyer memory.`);
+  }
+
+  function useScenarioInStrategy(id: string) {
+    setSelectedScenarioId(id);
+    setStrategyStatus(`${generatedScenarios.find((scenario) => scenario.id === id)?.label ?? 'Scenario'} is now the active buyer scenario case.`);
+  }
+
+  function addSkuRow() {
+    setSkuRows((current) => [
+      ...current,
+      { id: `sku-${current.length + 1}`, sku: 'User-added SKU / pack', priceMove: inputs.priceIncreasePercent, volumeRisk: Math.abs(inputs.volumeChangePercent), margin: 29.5, sensitivity: 'Needs review' }
+    ]);
+    setSelectedLevel('sku');
+    setSelectedScenarioId('custom');
+  }
+
+  function updateSkuRow<K extends keyof ScenarioSkuRow>(id: string, key: K, value: ScenarioSkuRow[K]) {
+    setSkuRows((current) => current.map((row) => row.id === id ? { ...row, [key]: value } : row));
+    setSelectedScenarioId('custom');
+  }
+
+  function removeSkuRow(id: string) {
+    setSkuRows((current) => current.filter((row) => row.id !== id));
+    setSelectedScenarioId('custom');
+  }
+
+  function addCustomLever() {
+    setCustomLevers((current) => [
+      ...current,
+      { id: `lever-${current.length + 1}`, name: 'User-added lever', value: 'New assumption', impact: 'Needs scenario testing', status: 'User-added', weight: 2 }
+    ]);
+    setSelectedLevel('custom');
+    setSelectedScenarioId('custom');
+  }
+
+  function updateCustomLever<K extends keyof ScenarioCustomLeverRow>(id: string, key: K, value: ScenarioCustomLeverRow[K]) {
+    setCustomLevers((current) => current.map((row) => row.id === id ? { ...row, [key]: value } : row));
+    setSelectedScenarioId('custom');
+  }
+
+  function removeCustomLever(id: string) {
+    setCustomLevers((current) => current.filter((row) => row.id !== id));
+    setSelectedScenarioId('custom');
+  }
+
+  function saveDebrief() {
+    const hasDebrief = debriefText.trim() || debriefBuyerCounter.trim() || debriefFinalLanded.trim() || debriefConcessions.trim() || debriefNextCycle.trim();
+    if (!hasDebrief) {
+      setDebriefStatus('Add a note, outcome, counter, or next-cycle implication before saving the debrief.');
+      return;
+    }
+    const plannedMemory = savedScenarioMemory.find((item) => item.id === selectedScenario.id);
+    const predictionImpact = debriefNextCycle.trim()
+      ? `Prediction updated: next cycle should account for "${debriefNextCycle.trim()}".`
+      : debriefBuyerCounter.trim()
+        ? `Prediction updated: buyer-counter scenario now anchors around ${debriefBuyerCounter.trim()}.`
+        : 'Prediction updated: buyer behavior memory now informs future scenario recommendations.';
+    const entry: ScenarioDebriefEntry = {
+      attachments: debriefAttachments.trim(),
+      behavior: debriefBehavior,
+      buyingGroupId: workspace.buyingGroup.id,
+      buyerCounter: debriefBuyerCounter.trim(),
+      concessions: debriefConcessions.trim(),
+      createdAt: new Date().toISOString(),
+      evidenceStrengthAfter: selectedScenario.evidenceStrength,
+      finalLanded: debriefFinalLanded.trim(),
+      id: `debrief-${Date.now()}`,
+      nextCycle: debriefNextCycle.trim(),
+      note: debriefText.trim(),
+      plannedEvidenceStrength: plannedMemory?.evidenceStrength ?? selectedScenario.evidenceStrength,
+      plannedGuardrailRisk: plannedMemory?.guardrailRisk ?? selectedScenario.guardrailRisk,
+      plannedLikelihood: plannedMemory?.likelihood ?? selectedScenario.likelihood,
+      plannedValueProtected: plannedMemory?.valueProtected ?? selectedScenario.valueProtected,
+      predictionAfter: predictionImpact,
+      predictionBefore: selectedScenario.buyerResponse,
+      scenarioId: selectedScenario.id,
+      selectedScenarioLabel: selectedScenario.label,
+      predictionImpact
+    };
+    writeScenarioDebriefMemory(entry);
+    setDebriefEntries((current) => [entry, ...current]);
+    setSavedScenarioMemory((current) => current.map((memory) => memory.id === selectedScenario.id ? {
+      ...memory,
+      actualOutcome: debriefFinalLanded.trim() || debriefBuyerCounter.trim() || debriefBehavior,
+      predictionImpact: `${memory.label} superseded by debrief: ${predictionImpact}`,
+      supersededByDebriefId: entry.id
+    } : memory));
+    setDebriefStatus(`Debrief saved. ${predictionImpact}`);
+    setWorkspaceStatus('Buyer memory updated for this session.');
+    setHiddenModules((current) => current.filter((moduleId) => moduleId !== 'debrief' && moduleId !== 'saved'));
+    setPinnedModules((current) => {
+      const nextModules: PredictiveWorkspaceModuleId[] = [...current, 'debrief', 'saved'];
+      return [...new Set(nextModules)];
+    });
+    setDebriefText('');
+    setDebriefBuyerCounter('');
+    setDebriefFinalLanded('');
+    setDebriefConcessions('');
+    setDebriefNextCycle('');
+    setDebriefAttachments('');
+    setQuickDebriefOpen(false);
+  }
+
+  const renderModuleHeader = (module: { id: PredictiveWorkspaceModuleId; label: string }, summary: string) => (
+    <header className="atlas-predictive-module-header">
+      <div>
+        <h3>{module.label}</h3>
+        <p>{summary}</p>
+      </div>
+      <details className="atlas-module-options">
+        <summary>Options</summary>
+        <div>
+          <button type="button" onClick={() => togglePin(module.id)}>{pinnedModules.includes(module.id) ? 'Unpin' : 'Pin'}</button>
+          <button type="button" onClick={() => toggleModule(module.id)}>Hide</button>
+          <button type="button" onClick={() => markModuleIrrelevant(module.id)}>Not relevant</button>
+        </div>
+      </details>
+    </header>
+  );
+
+  return (
+    <section className="atlas-predictive-workspace" aria-label={`${workspace.buyingGroup.name} predictive scenario workspace`}>
+      <header className="atlas-predictive-hero">
+        <span>Predictive scenario workspace</span>
+        <h2>Model what could happen with {workspace.buyingGroup.name} before deciding the move.</h2>
+        <p>Test likely buyer response, add debrief memory, and save the scenario evidence that should travel with the next move.</p>
+        <div className="atlas-predictive-hero-metrics">
+          <article><span>Margin at risk</span><strong>{euros(exposure.marginAtRisk)}</strong></article>
+          <article><span>Latest buyer ask</span><strong>{profileRead.currentState.latestBuyerAsk}</strong></article>
+          <article><span>PepsiCo position</span><strong>{profileRead.currentState.pepsicoPosition}</strong></article>
+          <article><span>Predicted counter</span><strong>{Math.max(0.4, defaultInputs.priceIncreasePercent - 0.5).toFixed(1)}%</strong></article>
+        </div>
+      </header>
+
+      {scenarioAlerts.length ? (
+        <section className="atlas-workspace-scenario-inputs" aria-label="Scenario inputs changing this buyer read">
           <header>
-            <div>
-              <h3>Buyer leverage to expect</h3>
-            </div>
+            <span>Scenario inputs</span>
+            <strong>What changed and why it may move the buyer response.</strong>
           </header>
-          <div className="atlas-buyer-signal-list compact">
-            {competitorMoves.map((move) => (
-              <article key={move.id}>
-                <div>
-                  <span>{move.competitor}</span>
-                  <h4>{move.title}</h4>
-                  <p>{move.possibleBuyerLeverage}</p>
-                </div>
-                <div className="atlas-buyer-signal-impact">
-                  <strong>{euros(move.estimatedMarginImpact ?? 0)}</strong>
-                  <span>margin implication</span>
-                </div>
-                <SourceTrustMini source={move.source} />
-                <a href={publicSignalHref(move.title, move.source)} rel="noreferrer" target="_blank">Open public source <ArrowRight size={13} /></a>
+          <div>
+            {scenarioAlerts.slice(0, 4).map((alert) => (
+              <article className={`tone-${alert.tone}`} key={alert.id}>
+                <span>{alert.trigger}</span>
+                <strong>{alert.title}</strong>
+                <p>{alert.possibleEffect}</p>
+                <footer>
+                  <em>{alert.value}</em>
+                  <small>{sourceTypeLabel(alert.source)} · {alert.source.confidence}</small>
+                </footer>
               </article>
             ))}
           </div>
         </section>
       ) : null}
+
+      <section className="atlas-scenario-cockpit" aria-label="Active scenario cockpit">
+        <header>
+          <span>Scenario cockpit</span>
+          <h3>{selectedScenario.label}</h3>
+          <p>{selectedScenario.buyerResponse}</p>
+        </header>
+        <div className="atlas-scenario-cockpit-grid">
+          <article className="primary">
+            <span>Current test result</span>
+            <strong>{selectedScenario.likelihood}% likely · {selectedScenario.guardrailRisk}</strong>
+            <p>{selectedScenario.recommendedResponse}</p>
+          </article>
+          <article>
+            <span>Possible financial effect</span>
+            <strong>{euros(selectedScenario.outputs.revenueImpact)} NR / {euros(selectedScenario.outputs.marginImpact)} GM</strong>
+            <p>{euros(selectedScenario.outputs.tradeSpendImpact)} trade · {euros(selectedScenario.outputs.volumeImpact)} volume</p>
+          </article>
+          <article>
+            <span>Model depth</span>
+            <strong>{selectedLevel.replaceAll('_', ' ')}</strong>
+            <p>{selectedLevel === 'sku' ? `${skuRows.length} SKU rows` : selectedLevel === 'custom' ? `${customLevers.length} custom levers` : `${workspace.markets[0]?.name ?? 'buyer'} context`}</p>
+          </article>
+          <article>
+            <span>Closed loop</span>
+            <strong>{selectedScenarioLoopState}</strong>
+            <p>{latestDebrief ? `${latestDebrief.predictionImpact} Top next test: ${topAtlasScenario.label}.` : selectedSavedScenario ? selectedSavedScenario.predictionImpact : `${savedScenarioIds.length} saved scenarios · ${workspaceSavedViews.length} saved workspace views`}</p>
+          </article>
+        </div>
+        <section className="atlas-history-prediction-strip" aria-label="Historical intelligence shaping this prediction">
+          <article>
+            <span>Likely counter</span>
+            <strong>{latestDebrief?.buyerCounter || `${Math.max(0.4, inputs.priceIncreasePercent - 0.5).toFixed(1)}%`}</strong>
+            <p>{latestDebrief ? 'From latest debrief memory' : 'Modeled from buyer history and relationship risk'}</p>
+          </article>
+          <article>
+            <span>Expected pushback</span>
+            <strong>{selectedScenario.expectedObjection}</strong>
+            <p>{selectedScenario.relationshipRisk} relationship risk · {selectedScenario.guardrailRisk}</p>
+          </article>
+          <article>
+            <span>Memory effect</span>
+            <strong>{latestDebrief ? selectedScenario.memoryReason : 'No debrief adjustment yet'}</strong>
+            <p>{latestDebrief ? latestDebrief.behavior : 'Add a debrief after the room to improve the next prediction.'}</p>
+          </article>
+        </section>
+        <section className="atlas-scenario-quick-test" aria-label="Quick scenario test">
+          <header>
+            <div>
+              <span>Test without leaving this screen</span>
+              <strong>Adjust the move and watch the buyer prediction change.</strong>
+            </div>
+            <div className="atlas-scenario-quick-actions" aria-label="Scenario loop actions">
+              <button type="button" onClick={() => saveScenario(selectedScenario.id)}>{selectedScenarioSaved ? 'Saved' : 'Save scenario'}</button>
+              <button type="button" onClick={() => setQuickDebriefOpen((open) => !open)}>{quickDebriefOpen ? 'Close debrief' : 'Add debrief'}</button>
+              {latestDebrief && topAtlasScenario.id !== selectedScenario.id ? (
+                <button type="button" onClick={() => setSelectedScenarioId(topAtlasScenario.id)}>Use top next test</button>
+              ) : null}
+            </div>
+          </header>
+          {quickDebriefOpen ? (
+            <section className="atlas-scenario-inline-debrief" aria-label="Quick debrief capture">
+              <header>
+                <span>Close the loop</span>
+                <strong>Capture what happened so future buyer predictions improve.</strong>
+              </header>
+              <div>
+                <label>
+                  <span>Buyer counter</span>
+                  <input value={debriefBuyerCounter} onChange={(event) => setDebriefBuyerCounter(event.currentTarget.value)} placeholder="ex: 2.1%" />
+                </label>
+                <label>
+                  <span>Final landed</span>
+                  <input value={debriefFinalLanded} onChange={(event) => setDebriefFinalLanded(event.currentTarget.value)} placeholder="ex: 2.6%" />
+                </label>
+                <label>
+                  <span>Buyer behavior</span>
+                  <select value={debriefBehavior} onChange={(event) => setDebriefBehavior(event.currentTarget.value)}>
+                    <option>Price challenged with affordability pressure</option>
+                    <option>Countered below prior-year landing point</option>
+                    <option>Delayed decision to create leverage</option>
+                    <option>Accepted evidence but asked for trade support</option>
+                    <option>Escalated to senior commercial review</option>
+                  </select>
+                </label>
+                <label>
+                  <span>Next-cycle implication</span>
+                  <input value={debriefNextCycle} onChange={(event) => setDebriefNextCycle(event.currentTarget.value)} placeholder="ex: lead with prior outcome evidence" />
+                </label>
+              </div>
+              <textarea value={debriefText} onChange={(event) => setDebriefText(event.currentTarget.value)} placeholder="Short note: what changed, what evidence worked, what should ATLAS remember?" />
+              <footer>
+                <button type="button" onClick={() => setDebriefStatus('Voice note ready. Add the spoken summary as text for this POC.')}><Mic size={14} /> Voice note</button>
+                <button type="button" onClick={saveDebrief}>Save debrief</button>
+              </footer>
+            </section>
+          ) : null}
+          <div className="atlas-scenario-quick-decision-row">
+            <div className="atlas-scenario-decision-compare" aria-label="Scenario decision comparison">
+              {cockpitComparisonScenarios.map((scenario) => (
+                <button
+                  className={`${selectedScenarioId === scenario.id ? 'active' : ''} guardrail-${scenario.guardrailRisk.toLowerCase().replaceAll(' ', '-')}`}
+                  key={scenario.id}
+                  onClick={() => setSelectedScenarioId(scenario.id)}
+                  type="button"
+                >
+                  <span>{comparisonRoleLabel[scenario.id] ?? scenario.label}</span>
+                  <strong>{scenario.label}</strong>
+                  <dl>
+                    <div><dt>Land</dt><dd>{scenario.likelihood}%</dd></div>
+                    <div><dt>NR</dt><dd>{euros(scenario.outputs.revenueImpact)}</dd></div>
+                    <div><dt>GM</dt><dd>{euros(scenario.outputs.marginImpact)}</dd></div>
+                    <div><dt>Risk</dt><dd>{scenario.guardrailRisk}</dd></div>
+                  </dl>
+                  {latestDebrief ? <small className={scenario.memoryAdjustment >= 0 ? 'memory-up' : 'memory-down'}>{scenario.memoryReason}</small> : null}
+                  <p>{scenario.recommendedResponse}</p>
+                </button>
+              ))}
+            </div>
+            <section className="atlas-scenario-prediction-basis-mini" aria-label="Why ATLAS predicts this">
+              <header>
+                <span>Why ATLAS predicts this</span>
+                <strong>{selectedScenario.rankReason}</strong>
+              </header>
+              <div>
+                {latestDebrief ? (
+                  <article>
+                    <span>Debrief learning</span>
+                    <strong>{selectedScenario.memoryReason}</strong>
+                    <em>{latestDebrief.finalLanded || latestDebrief.buyerCounter || latestDebrief.behavior}</em>
+                  </article>
+                ) : null}
+                {predictionBasisRows.map((row) => (
+                  <article key={row.label}>
+                    <span>{row.label}</span>
+                    <strong>{row.impact}</strong>
+                    <p>{row.value}</p>
+                    <em>{sourceTypeLabel(row.source)} · {row.source.confidence}</em>
+                  </article>
+                ))}
+              </div>
+            </section>
+            <aside className="atlas-scenario-inline-levers" aria-label="Adjust current scenario">
+              <header>
+                <span>Adjust current test</span>
+                <strong>Change the inputs that move the buyer prediction.</strong>
+              </header>
+              <div className="atlas-scenario-quick-grid">
+                {cockpitQuickControls.map(({ key, label, max, min, step, suffix }) => {
+                  const currentValue = Number(inputs[key]);
+                  const defaultValue = Number(defaultInputs[key]);
+                  const delta = currentValue - defaultValue;
+                  const deltaLabel = suffix === 'EUR'
+                    ? euros(delta)
+                    : `${delta >= 0 ? '+' : ''}${delta.toFixed(1)} pts`;
+                  return (
+                    <label key={key}>
+                      <div>
+                        <span>{label}</span>
+                        <strong>{formatLabControlValue(suffix, currentValue)}</strong>
+                      </div>
+                      <input
+                        max={max}
+                        min={min}
+                        onChange={(event) => updateInput(key, Number(event.currentTarget.value) as ScenarioInputs[typeof key])}
+                        step={step}
+                        type="range"
+                        value={currentValue}
+                      />
+                      <small>{delta === 0 ? 'At default' : `${deltaLabel} from default`}</small>
+                    </label>
+                  );
+                })}
+              </div>
+              <div className="atlas-scenario-change-read" aria-label="What changed from the default case">
+                {scenarioDeltaRows.slice(0, 3).map((row) => (
+                  <span key={row.label}>
+                    <small>{row.label}</small>
+                    <strong>{row.value}</strong>
+                  </span>
+                ))}
+              </div>
+            </aside>
+          </div>
+          {(selectedScenarioSaved || strategyStatus || debriefStatus) ? (
+            <p className="atlas-scenario-inline-status">
+              {debriefStatus || strategyStatus || `${selectedScenario.label} is saved to buyer memory.`}
+            </p>
+          ) : null}
+        </section>
+        <div className="atlas-scenario-cockpit-actions">
+          <button type="button" onClick={() => focusWorkspaceModule('patterns', 'Historical buyer patterns moved up for review.')}>Review buyer memory</button>
+          <button type="button" onClick={() => useScenarioInStrategy(selectedScenario.id)}>Set as working scenario</button>
+          <a href={workspaceScenarioReportHref} rel="noreferrer" target="_blank"><Download size={14} /> Export evidence</a>
+        </div>
+        <section className="atlas-scenario-loop-capture atlas-scenario-loop-summary" aria-label="Closed-loop memory summary">
+          {latestDebrief ? (
+            <>
+              <div className="atlas-debrief-plan-actual" aria-label="Planned scenario versus actual outcome">
+                {debriefPlanActualRows.map((row) => (
+                  <article key={row.label}>
+                    <span>{row.label}</span>
+                    <div>
+                      <strong>{row.planned}</strong>
+                      <ArrowRight size={14} aria-hidden="true" />
+                      <strong>{row.actual}</strong>
+                    </div>
+                    <p>{row.story}</p>
+                  </article>
+                ))}
+              </div>
+              <div className="atlas-scenario-memory-impact" aria-label="Prediction memory impact">
+                {debriefPredictionRows.map((row) => (
+                  <article key={row.label}>
+                    <span>{row.label}</span>
+                    <strong>{row.after}</strong>
+                    <p>{row.story}</p>
+                  </article>
+                ))}
+              </div>
+            </>
+          ) : latestSavedScenario ? (
+            <div className="atlas-scenario-memory-impact" aria-label="Saved scenario memory impact">
+              <article>
+                <span>Saved scenario</span>
+                <strong>{latestSavedScenario.label}</strong>
+                <p>{latestSavedScenario.predictionImpact}</p>
+              </article>
+              <article>
+                <span>Future prediction</span>
+                <strong>{latestSavedScenario.likelihood}% likelihood</strong>
+                <p>ATLAS will use this case as buyer memory until a debrief replaces it with the actual outcome.</p>
+              </article>
+              <article>
+                <span>Evidence state</span>
+                <strong>{latestSavedScenario.evidenceStrength}% strength</strong>
+                <p>Saved {formatAtlasDate(latestSavedScenario.savedAt, { includeTime: true })} · {euros(latestSavedScenario.valueProtected)} value protected.</p>
+              </article>
+            </div>
+          ) : (
+            <p className="atlas-scenario-loop-hint">No debrief saved yet. Use the inline debrief in the scenario test to update the counter anchor, likely behavior, evidence strength, and next test.</p>
+          )}
+        </section>
+      </section>
+
+      <section className="atlas-predictive-toolbar" aria-label="Workspace controls">
+        <div>
+          <strong>Workspace view</strong>
+          <span>{visibleModules.length} visible · {pinnedModules.length} pinned · {irrelevantModules.length} irrelevant</span>
+        </div>
+        <div>
+          {hiddenModules.length ? (
+            <button type="button" onClick={() => setHiddenModules([])}>Show hidden</button>
+          ) : null}
+          <button type="button" onClick={() => setCustomizerOpen((open) => !open)}>{customizerOpen ? 'Close customize' : 'Customize'}</button>
+          <button type="button" onClick={() => saveWorkspaceView()}>Save view</button>
+        </div>
+        {workspaceStatus ? <p>{workspaceStatus}</p> : null}
+      </section>
+
+      {customizerOpen ? (
+        <section className="atlas-workspace-customizer" aria-label="Customize workspace modules">
+          <div className="atlas-workspace-presets">
+            <span>Starter views</span>
+            <button type="button" onClick={() => applyWorkspacePreset('scenario')}>Scenario modeling</button>
+            <button type="button" onClick={() => applyWorkspacePreset('evidence')}>Evidence review</button>
+            <button type="button" onClick={() => applyWorkspacePreset('debrief')}>Debrief review</button>
+          </div>
+          <div className="atlas-workspace-module-list">
+            {scenarioWorkspaceModules.map((module) => {
+              const isHidden = hiddenModules.includes(module.id);
+              const isPinned = pinnedModules.includes(module.id);
+              const isIrrelevant = irrelevantModules.includes(module.id);
+              return (
+                <article key={module.id}>
+                  <div>
+                    <strong>{module.label}</strong>
+                    <span>{isIrrelevant ? 'Marked irrelevant' : isHidden ? 'Hidden' : isPinned ? 'Pinned' : 'Visible'}</span>
+                  </div>
+                  <div>
+                    <button type="button" onClick={() => togglePin(module.id)}>{isPinned ? 'Unpin' : 'Pin'}</button>
+                    <button type="button" onClick={() => isHidden ? restoreModule(module.id) : toggleModule(module.id)}>{isHidden ? 'Show' : 'Hide'}</button>
+                    <button type="button" onClick={() => markModuleIrrelevant(module.id)}>Irrelevant</button>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+          <div className="atlas-workspace-saved-views">
+            <span>Saved workspace views</span>
+            {workspaceSavedViews.length ? workspaceSavedViews.map((view) => (
+              <button className={activeSavedViewId === view.id ? 'active' : ''} key={view.id} type="button" onClick={() => applyWorkspaceView(view)}>
+                {view.label}
+                <small>{formatAtlasDate(view.createdAt, { includeTime: true })}</small>
+              </button>
+            )) : <p>No saved views yet. Save the current layout to reuse it in this session.</p>}
+          </div>
+        </section>
+      ) : null}
+
+      {hiddenModules.length || irrelevantModules.length ? (
+        <section className="atlas-workspace-hidden-summary" aria-label="Hidden workspace modules">
+          <span>Hidden from this view</span>
+          <div>
+            {[...new Set([...hiddenModules, ...irrelevantModules])].map((moduleId) => (
+              <button key={moduleId} type="button" onClick={() => restoreModule(moduleId)}>
+                {scenarioWorkspaceModules.find((module) => module.id === moduleId)?.label ?? moduleId}
+              </button>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      {visibleModules.map((module) => (
+        <section className={`atlas-predictive-module module-${module.id}`} key={module.id}>
+          {module.id === 'recommendations' ? (
+            <>
+              {renderModuleHeader(module, 'Use this only when you need alternative cases beyond the three shown in the cockpit.')}
+              <div className="atlas-scenario-recommendation-grid">
+                {rankedScenarios.filter((scenario) => !cockpitComparisonScenarios.some((cockpitScenario) => cockpitScenario.id === scenario.id)).map((scenario, index) => (
+                  <article className={selectedScenarioId === scenario.id ? 'selected' : ''} key={scenario.id}>
+                    <div>
+                      <span>Alternative {index + 1} · {sourceTypeLabel(scenario.source)}</span>
+                      <strong>{scenario.description}</strong>
+                      <p>{scenario.why}</p>
+                      <small>{scenario.memoryReason}</small>
+                    </div>
+                    <dl>
+                      <div><dt>ATLAS score</dt><dd>{scenario.atlasScore}/100</dd></div>
+                      <div><dt>Likelihood</dt><dd>{scenario.likelihood}%</dd></div>
+                      <div><dt>Value protected</dt><dd>{euros(scenario.valueProtected)}</dd></div>
+                      <div><dt>Guardrail</dt><dd>{scenario.guardrailRisk}</dd></div>
+                    </dl>
+                    <footer>
+                      <button type="button" onClick={() => setSelectedScenarioId(scenario.id)}>View</button>
+                      <button type="button" onClick={() => saveScenario(scenario.id)}>Save</button>
+                      <button type="button" onClick={() => useScenarioInStrategy(scenario.id)}>Use as active case</button>
+                    </footer>
+                  </article>
+                  ))}
+              </div>
+              <details className="atlas-scenario-comparison-disclosure">
+                <summary>Compare all generated scenarios</summary>
+                <div className="atlas-scenario-comparison-table" aria-label="Scenario comparison">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Scenario</th>
+                        <th>ATLAS score</th>
+                        <th>Likelihood</th>
+                        <th>Memory</th>
+                        <th>Predicted response</th>
+                        <th>NR impact</th>
+                        <th>GM impact</th>
+                        <th>Trade spend</th>
+                        <th>Volume impact</th>
+                        <th>Guardrail</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {rankedScenarios.map((scenario) => (
+                        <tr className={selectedScenarioId === scenario.id ? 'selected' : ''} key={scenario.id} onClick={() => setSelectedScenarioId(scenario.id)}>
+                          <td>{scenario.label}</td>
+                          <td>{scenario.atlasScore}/100</td>
+                          <td>{scenario.likelihood}%</td>
+                          <td>{scenario.memoryAdjustment >= 0 ? '+' : ''}{scenario.memoryAdjustment}</td>
+                          <td>{scenario.buyerResponse}</td>
+                          <td>{euros(scenario.outputs.revenueImpact)}</td>
+                          <td>{euros(scenario.outputs.marginImpact)}</td>
+                          <td>{euros(scenario.outputs.tradeSpendImpact)}</td>
+                          <td>{euros(scenario.outputs.volumeImpact)}</td>
+                          <td>{scenario.guardrailRisk}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </details>
+              {strategyStatus ? <p className="atlas-predictive-status">{strategyStatus}</p> : null}
+            </>
+          ) : null}
+
+          {module.id === 'lab' ? (
+            <>
+              {renderModuleHeader(module, 'Build scenarios manually or drill into market, category, SKU, and custom levers when the decision needs more detail.')}
+              <div className="atlas-scenario-level-tabs" aria-label="Scenario level">
+                {levels.map((level) => (
+                  <button className={selectedLevel === level.id ? 'active' : ''} key={level.id} onClick={() => selectScenarioLevel(level.id)} type="button">{level.label}</button>
+                ))}
+              </div>
+              <div className="atlas-scenario-context-strip">
+                {levelContextRows.map(([label, value]) => (
+                  <article key={label}>
+                    <span>{label}</span>
+                    <strong>{value}</strong>
+                  </article>
+                ))}
+              </div>
+              <div className="atlas-scenario-lab-layout">
+                <div className="atlas-scenario-controls-shell">
+                  {labControlGroups.map((group) => (
+                    <section className="atlas-scenario-control-group" key={group.title}>
+                      <header>
+                        <span>{group.title}</span>
+                        <p>{group.subtitle}</p>
+                      </header>
+                      <div className="atlas-scenario-control-grid">
+                        {group.controls.map(({ key, label, max, min, step, suffix }) => {
+                          const currentValue = Number(inputs[key]);
+                          const defaultValue = Number(defaultInputs[key]);
+                          return (
+                            <label key={key}>
+                              <div className="atlas-scenario-control-topline">
+                                <span>{label}</span>
+                                <strong>{formatLabControlValue(suffix, currentValue)}</strong>
+                              </div>
+                              <input type="range" min={min} max={max} step={step} value={currentValue} onChange={(event) => updateInput(key, Number(event.currentTarget.value) as ScenarioInputs[typeof key])} />
+                              <small>Default {formatLabControlValue(suffix, defaultValue)} · Range {formatLabControlValue(suffix, min)} to {formatLabControlValue(suffix, max)}</small>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    </section>
+                  ))}
+                  <section className="atlas-scenario-control-group compact">
+                    <header>
+                      <span>Buyer environment</span>
+                      <p>Pressure level adjusts how hard ATLAS expects the buyer to push back.</p>
+                    </header>
+                    <label>
+                      <div className="atlas-scenario-control-topline">
+                        <span>Competitor pressure</span>
+                        <strong>{inputs.competitorPressureLevel}</strong>
+                      </div>
+                      <select value={inputs.competitorPressureLevel} onChange={(event) => updateInput('competitorPressureLevel', event.currentTarget.value as ScenarioInputs['competitorPressureLevel'])}>
+                        <option value="low">Low</option>
+                        <option value="medium">Medium</option>
+                        <option value="high">High</option>
+                      </select>
+                    </label>
+                  </section>
+                </div>
+                <article className="atlas-scenario-active-read">
+                  <div className="atlas-scenario-outcome-head">
+                    <span>Outcome preview</span>
+                    <h3>{selectedScenario.label}</h3>
+                    <p>{selectedScenario.recommendedResponse}</p>
+                  </div>
+                  <dl>
+                    <div><dt>NR impact</dt><dd>{euros(selectedScenario.outputs.revenueImpact)}</dd></div>
+                    <div><dt>GM impact</dt><dd>{euros(selectedScenario.outputs.marginImpact)}</dd></div>
+                    <div><dt>Trade spend</dt><dd>{euros(selectedScenario.outputs.tradeSpendImpact)}</dd></div>
+                    <div><dt>Volume impact</dt><dd>{euros(selectedScenario.outputs.volumeImpact)}</dd></div>
+                    <div><dt>Buyer response</dt><dd>{selectedScenario.likelihood}% likely</dd></div>
+                    <div><dt>Evidence strength</dt><dd>{selectedScenario.evidenceStrength}%</dd></div>
+                  </dl>
+                  <div className="atlas-active-buyer-prediction">
+                    <article>
+                      <span>Expected buyer move</span>
+                      <strong>{selectedScenario.buyerResponse}</strong>
+                    </article>
+                    <article>
+                      <span>Likely objection</span>
+                      <strong>{selectedScenario.expectedObjection}</strong>
+                    </article>
+                    <article>
+                      <span>ATLAS recommended edit</span>
+                      <strong>{selectedScenario.recommendedResponse}</strong>
+                    </article>
+                  </div>
+                  <p>{selectedScenario.why}</p>
+                  <div className="atlas-scenario-change-logic">
+                    {scenarioDeltaRows.map((row) => (
+                      <article key={row.label}>
+                        <span>{row.label}</span>
+                        <strong>{row.value}</strong>
+                        <p>{row.story}</p>
+                      </article>
+                    ))}
+                  </div>
+                  <a href={workspaceScenarioReportHref} rel="noreferrer" target="_blank"><Download size={14} /> Export scenario evidence</a>
+                </article>
+              </div>
+              {selectedLevel === 'sku' ? (
+                <section className="atlas-scenario-detail-table">
+                  <header><h4>Optional SKU / pack drill-in</h4><button type="button" onClick={addSkuRow}>Add SKU</button></header>
+                  <table>
+                    <thead><tr><th>SKU / pack</th><th>Price move</th><th>Volume risk</th><th>GM rate</th><th>Buyer sensitivity</th><th>Action</th></tr></thead>
+                    <tbody>
+                      {skuRows.map((row) => (
+                        <tr key={row.id}>
+                          <td><input value={row.sku} onChange={(event) => updateSkuRow(row.id, 'sku', event.currentTarget.value)} /></td>
+                          <td><input type="number" step="0.1" value={row.priceMove} onChange={(event) => updateSkuRow(row.id, 'priceMove', Number(event.currentTarget.value))} />%</td>
+                          <td><input type="number" step="0.1" value={row.volumeRisk} onChange={(event) => updateSkuRow(row.id, 'volumeRisk', Number(event.currentTarget.value))} />%</td>
+                          <td><input type="number" step="0.1" value={row.margin} onChange={(event) => updateSkuRow(row.id, 'margin', Number(event.currentTarget.value))} />%</td>
+                          <td>
+                            <select value={row.sensitivity} onChange={(event) => updateSkuRow(row.id, 'sensitivity', event.currentTarget.value)}>
+                              <option>Low</option>
+                              <option>Medium</option>
+                              <option>High</option>
+                              <option>Needs review</option>
+                            </select>
+                          </td>
+                          <td><button type="button" onClick={() => removeSkuRow(row.id)}>Remove</button></td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </section>
+              ) : null}
+              {selectedLevel === 'custom' ? (
+                <section className="atlas-scenario-detail-table">
+                  <header><h4>Custom levers</h4><button type="button" onClick={addCustomLever}>Add lever</button></header>
+                  <table>
+                    <thead><tr><th>Lever</th><th>Value</th><th>Impact</th><th>Weight</th><th>Status</th><th>Action</th></tr></thead>
+                    <tbody>
+                      {customLevers.map((row) => (
+                        <tr key={row.id}>
+                          <td><input value={row.name} onChange={(event) => updateCustomLever(row.id, 'name', event.currentTarget.value)} /></td>
+                          <td><input value={row.value} onChange={(event) => updateCustomLever(row.id, 'value', event.currentTarget.value)} /></td>
+                          <td><input value={row.impact} onChange={(event) => updateCustomLever(row.id, 'impact', event.currentTarget.value)} /></td>
+                          <td><input type="number" min="0" max="10" value={row.weight} onChange={(event) => updateCustomLever(row.id, 'weight', Number(event.currentTarget.value))} /></td>
+                          <td>
+                            <select value={row.status} onChange={(event) => updateCustomLever(row.id, 'status', event.currentTarget.value)}>
+                              <option>Assumption</option>
+                              <option>User-added</option>
+                              <option>Needs review</option>
+                              <option>Validated</option>
+                            </select>
+                          </td>
+                          <td><button type="button" onClick={() => removeCustomLever(row.id)}>Remove</button></td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </section>
+              ) : null}
+            </>
+          ) : null}
+
+          {module.id === 'patterns' ? (
+            <>
+              {renderModuleHeader(module, 'Historical memory predicts how this buyer may respond and what should change in the scenario.')}
+              <div className="atlas-history-pattern-grid">
+                {historicalInsights.map((insight) => (
+                  <article key={insight.id}>
+                    <button aria-label={`Dismiss ${insight.id}`} onClick={() => setDismissedInsights((current) => [...current, insight.id])} type="button"><X size={12} /></button>
+                    <strong>{insight.story}</strong>
+                    <p>{insight.changes}</p>
+                    <SourceTrustMini source={insight.source} />
+                  </article>
+                ))}
+              </div>
+            </>
+          ) : null}
+
+          {module.id === 'signals' ? (
+            <>
+              {renderModuleHeader(module, 'Only signals that change buyer response, price corridor, or evidence should be used in scenario planning.')}
+              <div className="atlas-signal-rows">
+                {(workspace.signals.length ? workspace.signals : packet.signals.slice(0, 2)).slice(0, 3).map((signal) => (
+                  <article key={signal.id}>
+                    <span>{signal.signalType}</span>
+                    <strong>{signal.title}</strong>
+                    <p>{signal.negotiationImplication}</p>
+                    <SourceTrustMini source={signal.source} />
+                  </article>
+                ))}
+              </div>
+            </>
+          ) : null}
+
+          {module.id === 'guardrails' ? (
+            <>
+              {renderModuleHeader(module, 'Finance/NRM appears as a validation layer, not a separate workflow for this POC.')}
+              <div className="atlas-guardrail-grid">
+                <article><span>Target realization</span><strong>{pct(exposure.targetPriceRealization)}</strong><p>Guardrail from Finance model</p></article>
+                <article><span>Expected realization</span><strong>{pct(inputs.expectedRealizationPercent)}</strong><p>{inputs.expectedRealizationPercent < exposure.expectedPriceRealization ? 'Needs Finance review' : 'Inside current model'}</p></article>
+                <article><span>Trade envelope</span><strong>{euros(inputs.tradeSpendChange)}</strong><p>Reviewed as scenario assumption</p></article>
+                <article><span>Red-line proxy</span><strong>{pct(Math.max(0.4, exposure.expectedPriceRealization - 0.4))}</strong><p>Do-not-cross threshold for this model</p></article>
+              </div>
+              <SourceTrustMini source={financeSource} />
+            </>
+          ) : null}
+
+          {module.id === 'evidence' ? (
+            <>
+              {renderModuleHeader(module, 'Evidence is attached to a specific number, buyer objection, or scenario assumption.')}
+              <div className="atlas-scenario-evidence-cards" aria-label="Scenario evidence decisions">
+                {evidenceRows.map((row) => {
+                  const status = evidenceStatuses[row.id] ?? 'recommended';
+                  return (
+                    <article className={`status-${status}`} key={row.id}>
+                      <header>
+                        <span>{row.claim}</span>
+                        <StrategyStatusPill status={status} />
+                      </header>
+                      <strong>{row.proof}</strong>
+                      <p>{row.use}</p>
+                      <em>{row.whatItChanges}</em>
+                      <footer>
+                        <SourceTrustMini source={row.source} />
+                        <div>
+                          <button type="button" onClick={() => setEvidenceStatus(row.id, 'used')}>Include</button>
+                          <button type="button" onClick={() => setEvidenceStatus(row.id, 'needs_review')}>Review</button>
+                          <button type="button" onClick={() => setEvidenceStatus(row.id, 'excluded')}>Exclude</button>
+                        </div>
+                      </footer>
+                    </article>
+                  );
+                })}
+              </div>
+              <p className="atlas-evidence-export-read">
+                Export includes {includedEvidenceRows.length} evidence items
+                {reviewEvidenceRows.length ? ` · ${reviewEvidenceRows.length} need review` : ''}
+                {excludedEvidenceRows.length ? ` · ${excludedEvidenceRows.length} excluded` : ''}.
+              </p>
+            </>
+          ) : null}
+
+          {module.id === 'debrief' ? (
+            <>
+              {renderModuleHeader(module, 'Debriefs close the loop so future scenario predictions learn from what happened in the room.')}
+              <div className="atlas-debrief-capture">
+                {latestDebrief ? (
+                  <section className="atlas-prediction-updated-card" aria-label="Prediction updated">
+                    <span>Prediction updated</span>
+                    <strong>{latestDebrief.predictionImpact}</strong>
+                    <p>Latest landed outcome: {latestDebrief.finalLanded || 'not entered'} · Buyer counter: {latestDebrief.buyerCounter || 'not entered'} · Scenario: {latestDebrief.selectedScenarioLabel || selectedScenario.label}</p>
+                  </section>
+                ) : null}
+                {latestDebrief ? (
+                  <section className="atlas-debrief-plan-actual" aria-label="Planned scenario versus actual outcome">
+                    {debriefPlanActualRows.map((row) => (
+                      <article key={row.label}>
+                        <span>{row.label}</span>
+                        <div>
+                          <strong>{row.planned}</strong>
+                          <ArrowRight size={14} aria-hidden="true" />
+                          <strong>{row.actual}</strong>
+                        </div>
+                        <p>{row.story}</p>
+                      </article>
+                    ))}
+                  </section>
+                ) : null}
+                <section className="atlas-debrief-impact-preview" aria-label="What the debrief updates">
+                  <span>What this updates</span>
+                  <div>
+                    {debriefPredictionRows.map((row) => (
+                      <article key={row.label}>
+                        <strong>{row.label}</strong>
+                        <p>{row.story}</p>
+                      </article>
+                    ))}
+                  </div>
+                </section>
+                <div className="atlas-debrief-field-grid">
+                  <label>
+                    <span>Buyer counter</span>
+                    <input value={debriefBuyerCounter} onChange={(event) => setDebriefBuyerCounter(event.currentTarget.value)} placeholder="ex: 2.1%" />
+                  </label>
+                  <label>
+                    <span>Final landed outcome</span>
+                    <input value={debriefFinalLanded} onChange={(event) => setDebriefFinalLanded(event.currentTarget.value)} placeholder="ex: 2.6%" />
+                  </label>
+                  <label>
+                    <span>Concessions given</span>
+                    <input value={debriefConcessions} onChange={(event) => setDebriefConcessions(event.currentTarget.value)} placeholder="ex: promo support held back" />
+                  </label>
+                  <label>
+                    <span>Buyer behavior</span>
+                    <select value={debriefBehavior} onChange={(event) => setDebriefBehavior(event.currentTarget.value)}>
+                      <option>Price challenged with affordability pressure</option>
+                      <option>Countered below prior-year landing point</option>
+                      <option>Delayed decision to create leverage</option>
+                      <option>Accepted evidence but asked for trade support</option>
+                      <option>Escalated to senior commercial review</option>
+                    </select>
+                  </label>
+                  <label>
+                    <span>Next-cycle implication</span>
+                    <input value={debriefNextCycle} onChange={(event) => setDebriefNextCycle(event.currentTarget.value)} placeholder="ex: lead with prior outcome evidence" />
+                  </label>
+                  <label>
+                    <span>Attachments</span>
+                    <input value={debriefAttachments} onChange={(event) => setDebriefAttachments(event.currentTarget.value)} placeholder="ex: signed CMA, room notes" />
+                  </label>
+                </div>
+                <textarea value={debriefText} onChange={(event) => setDebriefText(event.currentTarget.value)} placeholder="Type what happened, buyer counter, final landed number, concessions, behavior, and next-cycle implications." />
+                <div>
+                  <button type="button" onClick={() => setDebriefStatus('Voice note ready. Add the spoken summary as text for this POC.')}><Mic size={14} /> Voice note</button>
+                  <button type="button">Attach file</button>
+                  <button type="button" onClick={saveDebrief}>Save debrief</button>
+                </div>
+                {debriefStatus ? <p>{debriefStatus}</p> : null}
+                {debriefEntries.length ? (
+                  <section className="atlas-debrief-memory-list" aria-label="Saved debrief memory">
+                    <h4>Debrief memory added this session</h4>
+                    {debriefEntries.map((entry) => (
+                      <article key={entry.id}>
+                        <time>{formatAtlasDate(entry.createdAt, { includeTime: true, includeYear: true })}</time>
+                        <strong>{entry.behavior}</strong>
+                        <p>{entry.predictionImpact}</p>
+                        <dl>
+                          <div><dt>Scenario</dt><dd>{entry.selectedScenarioLabel || 'Active case'}</dd></div>
+                          <div><dt>Counter</dt><dd>{entry.buyerCounter || 'Not entered'}</dd></div>
+                          <div><dt>Landed</dt><dd>{entry.finalLanded || 'Not entered'}</dd></div>
+                          <div><dt>Concessions</dt><dd>{entry.concessions || 'None entered'}</dd></div>
+                        </dl>
+                      </article>
+                    ))}
+                  </section>
+                ) : null}
+              </div>
+            </>
+          ) : null}
+
+          {module.id === 'saved' ? (
+            <>
+              {renderModuleHeader(module, 'Saved scenarios, exported outputs, and debriefs become memory for the next scenario cycle.')}
+              <div className="atlas-saved-scenario-list">
+                {generatedScenarios.filter((scenario) => savedScenarioIds.includes(scenario.id)).map((scenario) => {
+                  const memory = savedScenarioMemory.find((entry) => entry.id === scenario.id);
+                  return (
+                  <article className={memory ? 'has-memory' : ''} key={scenario.id}>
+                    <span>Saved scenario</span>
+                    <strong>{scenario.label}</strong>
+                    <p>{memory?.predictionImpact ?? scenario.description}</p>
+                    {memory ? (
+                      <dl>
+                        <div><dt>Likelihood</dt><dd>{memory.likelihood}%</dd></div>
+                        <div><dt>Value</dt><dd>{euros(memory.valueProtected)}</dd></div>
+                        <div><dt>Evidence</dt><dd>{memory.evidenceStrength}%</dd></div>
+                      </dl>
+                    ) : null}
+                    <button type="button" onClick={() => useScenarioInStrategy(scenario.id)}>Use as active case</button>
+                  </article>
+                  );
+                })}
+                {savedViews.slice(0, 3).map((view) => (
+                  <article key={view.id}>
+                    <span>Scenario output</span>
+                    <strong>{view.title}</strong>
+                    <p>Saved to buyer memory and available as scenario evidence when relevant.</p>
+                  </article>
+                ))}
+                {debriefEntries.map((entry) => (
+                  <article key={entry.id}>
+                    <span>Debrief memory</span>
+                    <strong>{entry.behavior}</strong>
+                    <p>{entry.predictionImpact}</p>
+                    <button type="button" onClick={() => setSelectedScenarioId('buyer-counter')}>Re-test buyer counter</button>
+                  </article>
+                ))}
+              </div>
+            </>
+          ) : null}
+        </section>
+      ))}
+    </section>
+  );
+}
+
+function BuyerProfileStrategyWorkspace({
+  profileRead,
+  savedViews,
+  strategyPlan,
+  workspace
+}: {
+  profileRead: BuyerProfileRead;
+  savedViews: StoredGeneratedView[];
+  strategyPlan: ReturnType<typeof buildNegotiationPlanPacket>;
+  workspace: BuyingGroupWorkspacePacket;
+}) {
+  const initialIngoingAsk = strategyPlan?.ingoingAskPercent ?? parseProfilePercent(profileRead.currentState.pepsicoPosition);
+  const initialTarget = strategyPlan?.targetPercent ?? parseProfilePercent(profileRead.currentState.target);
+  const initialFallback = strategyPlan?.fallbackPercent ?? Math.max(0, initialTarget - 0.4);
+  const initialRedLine = strategyPlan?.redLinePercent ?? parseProfilePercent(profileRead.currentState.redLine);
+  const defaultNetPricePerCase = Number((
+    12.75
+    + (profileRead.exposure.expectedPriceRealization * 0.42)
+    + (profileRead.exposure.revenueUnderNegotiation / 100000000)
+  ).toFixed(2));
+  const defaultAnnualCaseVolume = Math.max(100000, Math.round(profileRead.exposure.revenueUnderNegotiation / defaultNetPricePerCase));
+  const defaultGrossMarginRate = 31;
+  const defaultVolumeRiskPercent = -Number(Math.min(6, Math.max(1.2, (profileRead.exposure.volumeExposure / profileRead.exposure.revenueUnderNegotiation) * 100)).toFixed(1));
+  const defaultApprovedNumbers = {
+    annualCaseVolume: defaultAnnualCaseVolume,
+    currentNetPricePerCase: defaultNetPricePerCase,
+    fallbackPercent: initialFallback,
+    grossMarginRate: defaultGrossMarginRate,
+    ingoingAskPercent: initialIngoingAsk,
+    redLinePercent: initialRedLine,
+    targetPercent: initialTarget,
+    tradeSpendEnvelope: Math.round(profileRead.exposure.tradeSpendExposure * 0.16),
+    volumeRiskPercent: defaultVolumeRiskPercent
+  };
+  const [activeWorkspaceTab, setActiveWorkspaceTab] = useState<BuyerStrategyWorkspaceTab>('position');
+  const [activeEvidenceId, setActiveEvidenceId] = useState('pepsico-position');
+  const [numberSourceOpen, setNumberSourceOpen] = useState(false);
+  const [numberSaveState, setNumberSaveState] = useState('');
+  const [approvedNumbers, setApprovedNumbers] = useState(() => defaultApprovedNumbers);
+  const [inputStatuses, setInputStatuses] = useState<Record<string, StrategyInputStatus>>({});
+  const testRead = useMemo(() => buildInlineStrategyTest(workspace, profileRead, strategyPlan, approvedNumbers), [approvedNumbers, profileRead, strategyPlan, workspace]);
+  const defaultTestRead = useMemo(
+    () => buildInlineStrategyTest(workspace, profileRead, strategyPlan, defaultApprovedNumbers),
+    [initialFallback, initialIngoingAsk, initialRedLine, initialTarget, profileRead, strategyPlan, workspace]
+  );
+  const target = approvedNumbers.targetPercent;
+  const fallback = approvedNumbers.fallbackPercent;
+  const redLine = approvedNumbers.redLinePercent;
+  const ingoingAsk = approvedNumbers.ingoingAskPercent;
+  const currentNetPricePerCase = approvedNumbers.currentNetPricePerCase;
+  const proposedNetPricePerCase = priceAfterIncrease(currentNetPricePerCase, ingoingAsk);
+  const targetNetPricePerCase = priceAfterIncrease(currentNetPricePerCase, target);
+  const projectedNrImpact = Math.round(approvedNumbers.annualCaseVolume * (proposedNetPricePerCase - currentNetPricePerCase));
+  const projectedGmImpact = Math.round(projectedNrImpact * (approvedNumbers.grossMarginRate / 100));
+  const projectedVolumeRisk = Math.round(approvedNumbers.annualCaseVolume * currentNetPricePerCase * (approvedNumbers.volumeRiskPercent / 100));
+  const defaultProposedNetPricePerCase = priceAfterIncrease(defaultApprovedNumbers.currentNetPricePerCase, defaultApprovedNumbers.ingoingAskPercent);
+  const defaultTargetNetPricePerCase = priceAfterIncrease(defaultApprovedNumbers.currentNetPricePerCase, defaultApprovedNumbers.targetPercent);
+  const defaultProjectedNrImpact = Math.round(defaultApprovedNumbers.annualCaseVolume * (defaultProposedNetPricePerCase - defaultApprovedNumbers.currentNetPricePerCase));
+  const defaultProjectedGmImpact = Math.round(defaultProjectedNrImpact * (defaultApprovedNumbers.grossMarginRate / 100));
+  const defaultProjectedVolumeRisk = Math.round(defaultApprovedNumbers.annualCaseVolume * defaultApprovedNumbers.currentNetPricePerCase * (defaultApprovedNumbers.volumeRiskPercent / 100));
+  const impactPreviewItems = [
+    {
+      defaultValue: defaultApprovedNumbers.currentNetPricePerCase,
+      label: 'Current net price',
+      value: currentNetPricePerCase,
+      valueLabel: netPricePerCase(currentNetPricePerCase)
+    },
+    {
+      defaultValue: defaultProposedNetPricePerCase,
+      label: 'Proposed net price',
+      value: proposedNetPricePerCase,
+      valueLabel: netPricePerCase(proposedNetPricePerCase)
+    },
+    {
+      defaultValue: defaultTargetNetPricePerCase,
+      label: 'Target landed price',
+      value: targetNetPricePerCase,
+      valueLabel: netPricePerCase(targetNetPricePerCase)
+    },
+    {
+      defaultValue: defaultProjectedNrImpact,
+      label: 'NR impact',
+      value: projectedNrImpact,
+      valueLabel: euros(projectedNrImpact)
+    },
+    {
+      defaultValue: defaultProjectedGmImpact,
+      label: 'GM impact',
+      value: projectedGmImpact,
+      valueLabel: euros(projectedGmImpact)
+    },
+    {
+      defaultValue: defaultProjectedVolumeRisk,
+      label: 'Volume risk',
+      value: projectedVolumeRisk,
+      valueLabel: euros(projectedVolumeRisk)
+    },
+    {
+      defaultValue: defaultApprovedNumbers.tradeSpendEnvelope,
+      label: 'Trade spend envelope',
+      value: approvedNumbers.tradeSpendEnvelope,
+      valueLabel: euros(approvedNumbers.tradeSpendEnvelope)
+    }
+  ];
+  const primarySource = workspace.documents.find((document) => document.status === 'approved')?.source
+    ?? workspace.documents[0]?.source
+    ?? workspace.buyingGroup.source;
+  const numberEvidenceItems = [
+    {
+      id: 'buyer-ask',
+      label: 'Buyer ask',
+      metric: profileRead.currentState.latestBuyerAsk,
+      supports: 'Explains the gap the buyer is trying to anchor before PepsiCo counters.',
+      calculation: `Buyer ask is ${testRead.askGap.toFixed(1)} pts above PepsiCo proposed ask; ATLAS treats that gap as the opening pressure to test.`,
+      proofType: 'Buyer behavior',
+      priorOutcome: workspace.timelineEvents[0]?.title ?? 'No prior-year ask outcome loaded',
+      source: workspace.timelineEvents[0]?.source ?? primarySource
+    },
+    {
+      id: 'pepsico-position',
+      label: 'PepsiCo proposed ask',
+      metric: `${ingoingAsk.toFixed(1)}% · ${netPricePerCase(proposedNetPricePerCase)}`,
+      supports: 'Sets the opening position and translates the percent ask into the price CNO is taking into the room.',
+      calculation: `${netPricePerCase(currentNetPricePerCase)} current net price moves to ${netPricePerCase(proposedNetPricePerCase)}, creating ${euros(projectedNrImpact)} projected NR impact.`,
+      proofType: 'Finance model',
+      priorOutcome: workspace.documents[0]?.title ?? 'Finance pricing model',
+      source: primarySource
+    },
+    {
+      id: 'target',
+      label: 'Target landed price',
+      metric: `${target.toFixed(1)}% · ${netPricePerCase(targetNetPricePerCase)}`,
+      supports: 'Defines the outcome ATLAS expects the team to defend after negotiation movement.',
+      calculation: `${target.toFixed(1)}% landed increase protects about ${euros(grossMarginImpact(target))} GM before trade support.`,
+      proofType: 'Approved target',
+      priorOutcome: workspace.documents[0]?.title ?? 'Approved finance target',
+      source: workspace.documents[0]?.source ?? primarySource
+    },
+    {
+      id: 'guardrail',
+      label: 'Fallback / red line',
+      metric: `${fallback.toFixed(1)}% / ${redLine.toFixed(1)}%`,
+      supports: 'Defines where concessions can move and where the CNO should stop.',
+      calculation: `${fallback.toFixed(1)}% is ${Math.max(0, fallback - redLine).toFixed(1)} pts above the red line; current guardrail read is ${testRead.guardrailRisk}.`,
+      proofType: 'Guardrail',
+      priorOutcome: workspace.documents[1]?.title ?? 'Finance/NRM guardrail memory',
+      source: workspace.documents[1]?.source ?? primarySource
+    },
+    {
+      id: 'margin-impact',
+      label: 'Margin impact',
+      metric: euros(profileRead.exposure.marginAtRisk),
+      supports: 'Shows why the corridor should not be traded away without a give/get commitment.',
+      calculation: `${euros(projectedGmImpact)} projected GM impact versus ${euros(profileRead.exposure.marginAtRisk)} buyer-level margin at risk.`,
+      proofType: 'P&L exposure',
+      priorOutcome: workspace.buyingGroup.name,
+      source: workspace.buyingGroup.source
+    },
+    {
+      id: 'volume-risk',
+      label: 'Volume risk',
+      metric: `${approvedNumbers.volumeRiskPercent.toFixed(1)}% · ${euros(projectedVolumeRisk)}`,
+      supports: 'Shows the downside ATLAS is testing against the buyer response.',
+      calculation: `${approvedNumbers.annualCaseVolume.toLocaleString()} cases at ${netPricePerCase(currentNetPricePerCase)} with ${approvedNumbers.volumeRiskPercent.toFixed(1)}% modeled volume movement.`,
+      proofType: 'Buyer response model',
+      priorOutcome: workspace.scenarioModels[0]?.name ?? 'Scenario memory',
+      source: workspace.scenarioModels[0]?.sourceIds?.[0] ? primarySource : workspace.buyingGroup.source
+    }
+  ];
+  const activeEvidence = numberEvidenceItems.find((item) => item.id === activeEvidenceId) ?? numberEvidenceItems[0];
+  const pushbackItems = [
+    {
+      objection: 'Buyer says the ask is above market tolerance.',
+      response: `Hold ${ingoingAsk.toFixed(1)}% and show the corridor before discussing support.`,
+      proof: 'Pricing corridor + prior-year landed outcome',
+      why: `${testRead.askGap.toFixed(1)} pts ask gap gives the buyer a reason to challenge the first counter.`,
+      boundary: `Do not move below ${fallback.toFixed(1)}% without a volume or execution commitment.`
+    },
+    {
+      objection: 'Buyer asks for trade spend before accepting the counter.',
+      response: `Keep support conditional; do not move below ${fallback.toFixed(1)}% without a commitment.`,
+      proof: 'Trade spend impact bridge',
+      why: `${euros(approvedNumbers.tradeSpendEnvelope)} support envelope is available, but it should protect ${netPricePerCase(priceAfterIncrease(currentNetPricePerCase, fallback))} fallback pricing.`,
+      boundary: `Escalate if requested support exceeds ${euros(approvedNumbers.tradeSpendEnvelope)}.`
+    },
+    {
+      objection: 'Buyer challenges category value or affordability.',
+      response: 'Use external signal only as backup, then bring the conversation back to value and execution.',
+      proof: workspace.signals[0]?.title ?? 'Market signal summary',
+      why: workspace.signals[0]?.negotiationImplication ?? 'External signals are useful only when they change the buyer response.',
+      boundary: 'Do not lead with market pressure unless the buyer raises affordability or volume.'
+    }
+  ];
+  const financeInputRows: Array<{
+    basis: string;
+    context: (value: number) => string;
+    group: 'price' | 'assumption';
+    key: keyof typeof approvedNumbers;
+    label: string;
+    source: SourceMeta;
+    sourceSummary: string;
+    suffix: '%' | 'EUR' | 'EUR / case' | 'cases';
+  }> = [
+    {
+      basis: 'Increase vs current customer net price',
+      context: (value) => `${netPricePerCase(currentNetPricePerCase)} to ${netPricePerCase(priceAfterIncrease(currentNetPricePerCase, value))}; ${euros(netRevenueImpact(value))} estimated NR impact.`,
+      group: 'price',
+      key: 'ingoingAskPercent',
+      label: 'PepsiCo proposed net price increase',
+      source: primarySource,
+      sourceSummary: 'Editable working ask for PepsiCo. The default is seeded from ATLAS recommendation logic using target, prior-year landed outcome, current buyer ask, and buyer-response model.',
+      suffix: '%'
+    },
+    {
+      basis: 'Expected landed increase after negotiation',
+      context: (value) => `${netPricePerCase(priceAfterIncrease(currentNetPricePerCase, value))} expected landed net price; protects ${euros(grossMarginImpact(value))} gross margin.`,
+      group: 'price',
+      key: 'targetPercent',
+      label: 'Target landed net price increase',
+      source: workspace.documents[0]?.source ?? primarySource,
+      sourceSummary: 'Pulled from approved finance target and adjusted against buyer-level margin exposure.',
+      suffix: '%'
+    },
+    {
+      basis: 'Concession floor before red line',
+      context: (value) => `${netPricePerCase(priceAfterIncrease(currentNetPricePerCase, value))} fallback net price; ${euros(netRevenueImpact(value))} NR before conditional support.`,
+      group: 'price',
+      key: 'fallbackPercent',
+      label: 'Fallback landed increase',
+      source: workspace.documents[1]?.source ?? primarySource,
+      sourceSummary: 'Built from Finance/NRM guardrail memory and the concession floor used in the latest scenario plan.',
+      suffix: '%'
+    },
+    {
+      basis: 'Do-not-cross price realization guardrail',
+      context: (value) => `${netPricePerCase(priceAfterIncrease(currentNetPricePerCase, value))} minimum net price; below this ATLAS flags margin guardrail breach.`,
+      group: 'price',
+      key: 'redLinePercent',
+      label: 'Red line',
+      source: workspace.documents[1]?.source ?? primarySource,
+      sourceSummary: 'Uses guardrail logic from approved finance memory and flags where margin risk becomes unacceptable.',
+      suffix: '%'
+    },
+    {
+      basis: 'Current buyer net price base',
+      context: (value) => `${netPricePerCase(value)} used as the base for price-move impact calculations.`,
+      group: 'assumption',
+      key: 'currentNetPricePerCase',
+      label: 'Current net price',
+      source: primarySource,
+      sourceSummary: 'Estimated buyer net price per case used to translate percent moves into actual pricing.',
+      suffix: 'EUR / case'
+    },
+    {
+      basis: 'Annual cases under negotiation',
+      context: (value) => `${value.toLocaleString()} annual cases used to translate price moves into NR impact.`,
+      group: 'assumption',
+      key: 'annualCaseVolume',
+      label: 'Annual case volume',
+      source: workspace.buyingGroup.source,
+      sourceSummary: 'Estimated annual case volume tied to this buying group negotiation scope.',
+      suffix: 'cases'
+    },
+    {
+      basis: 'Gross margin conversion rate',
+      context: (value) => `${value.toFixed(1)}% gross margin rate applied to estimated net revenue impact.`,
+      group: 'assumption',
+      key: 'grossMarginRate',
+      label: 'Gross margin rate',
+      source: workspace.documents[0]?.source ?? primarySource,
+      sourceSummary: 'Finance-modeled gross margin rate used for strategy impact preview.',
+      suffix: '%'
+    },
+    {
+      basis: 'Expected volume downside',
+      context: (value) => `${value.toFixed(1)}% volume risk creates ${euros(Math.round(approvedNumbers.annualCaseVolume * currentNetPricePerCase * (value / 100)))} downside exposure.`,
+      group: 'assumption',
+      key: 'volumeRiskPercent',
+      label: 'Volume risk',
+      source: workspace.scenarioModels[0]?.sourceIds?.[0] ? primarySource : workspace.buyingGroup.source,
+      sourceSummary: 'Modeled buyer response risk from prior outcomes, market pressure, and current ask gap.',
+      suffix: '%'
+    },
+    {
+      basis: 'Conditional support budget',
+      context: (value) => `${euros(value)} available against ${euros(profileRead.exposure.tradeSpendExposure)} trade spend exposure.`,
+      group: 'assumption',
+      key: 'tradeSpendEnvelope',
+      label: 'Trade spend envelope',
+      source: workspace.buyingGroup.source,
+      sourceSummary: 'Estimated from buyer trade spend exposure and current market pressure for this buying group.',
+      suffix: 'EUR'
+    }
+  ];
+  const priceMoveRows = financeInputRows.filter((row) => row.group === 'price');
+  const pricingAssumptionRows = financeInputRows.filter((row) => row.group === 'assumption');
+  const guidedTabs: Array<{ id: BuyerStrategyWorkspaceTab; label: string; read: string }> = [
+    { id: 'position', label: 'Set position', read: 'Build the pricing position' },
+    { id: 'stress', label: 'Stress test', read: 'Compare A/B/C outcomes' },
+    { id: 'evidence', label: 'Evidence', read: 'Choose support for the scenario' },
+    { id: 'pushback', label: 'Pushback', read: 'Prepare buyer response' },
+    { id: 'output', label: 'Output', read: 'Export selected evidence' }
+  ];
+  const buyerCounterNumbers = {
+    ...approvedNumbers,
+    fallbackPercent: Math.max(redLine, fallback - 0.25),
+    ingoingAskPercent: Math.max(redLine, ingoingAsk - 0.35),
+    targetPercent: Math.max(redLine, target - 0.3),
+    tradeSpendEnvelope: Math.round(approvedNumbers.tradeSpendEnvelope * 1.18),
+    volumeRiskPercent: Number((approvedNumbers.volumeRiskPercent - 0.8).toFixed(1))
+  };
+  const scenarioCards = [
+    {
+      id: 'default',
+      label: 'A',
+      name: 'ATLAS recommended',
+      read: 'Default strategy based on approved finance inputs, buyer history, and current market pressure.',
+      test: defaultTestRead,
+      numbers: defaultApprovedNumbers
+    },
+    {
+      id: 'adjusted',
+      label: 'B',
+      name: 'CNO adjusted',
+      read: 'Current working strategy using the inputs edited on this page.',
+      test: testRead,
+      numbers: approvedNumbers
+    },
+    {
+      id: 'counter',
+      label: 'C',
+      name: 'Likely buyer counter',
+      read: 'Downside case if the buyer forces more support or lower landed realization.',
+      test: buildInlineStrategyTest(workspace, profileRead, strategyPlan, {
+        fallbackPercent: buyerCounterNumbers.fallbackPercent,
+        ingoingAskPercent: buyerCounterNumbers.ingoingAskPercent,
+        redLinePercent: buyerCounterNumbers.redLinePercent,
+        targetPercent: buyerCounterNumbers.targetPercent
+      }),
+      numbers: buyerCounterNumbers
+    }
+  ];
+  const usedEvidenceCount = Object.values(inputStatuses).filter((status) => status === 'used').length || 3;
+  const outputEvidenceItems = numberEvidenceItems.filter((item) => (inputStatuses[item.id] ?? 'recommended') !== 'excluded').slice(0, Math.max(3, usedEvidenceCount));
+
+  function setStatus(id: string, status: StrategyInputStatus) {
+    setInputStatuses((current) => ({ ...current, [id]: status }));
+  }
+
+  function updateApprovedNumber(key: keyof typeof approvedNumbers, value: number) {
+    setApprovedNumbers((current) => ({ ...current, [key]: Number.isFinite(value) ? value : current[key] }));
+    setNumberSaveState('');
+  }
+
+  function resetApprovedNumbers() {
+    setApprovedNumbers(defaultApprovedNumbers);
+    setNumberSaveState('Reset to default values');
+  }
+
+  function saveApprovedNumbers() {
+    setNumberSaveState('Inputs saved for this strategy draft');
+  }
+
+  function formatNumberInputValue(row: { suffix: '%' | 'EUR' | 'EUR / case' | 'cases' }, value: number) {
+    if (row.suffix === '%') return `${value.toFixed(1)}%`;
+    if (row.suffix === 'EUR / case') return netPricePerCase(value);
+    if (row.suffix === 'cases') return value.toLocaleString();
+    return euros(value);
+  }
+
+  function inputStepForSuffix(suffix: '%' | 'EUR' | 'EUR / case' | 'cases') {
+    if (suffix === '%') return 0.1;
+    if (suffix === 'EUR / case') return 0.05;
+    if (suffix === 'cases') return 10000;
+    return 10000;
+  }
+
+  function netPricePerCase(value: number) {
+    return `EUR ${value.toFixed(2)} / case`;
+  }
+
+  function priceAfterIncrease(basePrice: number, increasePercent: number) {
+    return Number((basePrice * (1 + increasePercent / 100)).toFixed(2));
+  }
+
+  function netRevenueImpact(increasePercent: number) {
+    return Math.round(profileRead.exposure.revenueUnderNegotiation * (increasePercent / 100));
+  }
+
+  function grossMarginImpact(increasePercent: number) {
+    return Math.round(netRevenueImpact(increasePercent) * 0.31);
+  }
+
+  function numberDeltaPercent(value: number, baseline: number) {
+    if (!baseline) return 0;
+    return ((value - baseline) / baseline) * 100;
+  }
+
+  function deltaTone(delta: number) {
+    if (Math.abs(delta) < 0.05) return 'neutral';
+    return delta > 0 ? 'positive' : 'negative';
+  }
+
+  function deltaLabel(delta: number) {
+    if (Math.abs(delta) < 0.05) return '0% from default';
+    return `${delta > 0 ? '+' : ''}${delta.toFixed(1)}% from default`;
+  }
+
+  function compactDeltaLabel(delta: number) {
+    if (Math.abs(delta) < 0.05) return '0%';
+    return `${delta > 0 ? '+' : ''}${delta.toFixed(1)}%`;
+  }
+
+  function impactDeltaPercent(value: number, baseline: number) {
+    if (!baseline) return 0;
+    return ((value - baseline) / Math.abs(baseline)) * 100;
+  }
+
+  return (
+    <section className="atlas-buyer-strategy-workspace" aria-label={`${workspace.buyingGroup.name} embedded strategy workspace`}>
+      <section className="atlas-buyer-strategy-guided-layout">
+        <aside className="atlas-buyer-strategy-side-tabs" aria-label="Buying group strategy views">
+          {guidedTabs.map((tab) => (
+            <button
+              className={activeWorkspaceTab === tab.id ? 'active' : ''}
+              key={tab.id}
+              onClick={() => setActiveWorkspaceTab(tab.id)}
+              type="button"
+            >
+              <strong>{tab.label}</strong>
+              <span>{tab.read}</span>
+            </button>
+          ))}
+        </aside>
+
+        <div className="atlas-buyer-strategy-tab-panel">
+          {activeWorkspaceTab === 'position' ? (
+            <section className="atlas-set-numbers-card">
+              <section className="atlas-ai-starting-point-panel">
+                <header>
+                  <span>AI recommendation</span>
+                  <h3>
+                    Start from the recommended pricing position, then adjust the approved finance inputs and watch the strategy test update.
+                  </h3>
+                </header>
+                <dl>
+                  <button className={activeEvidenceId === 'buyer-ask' ? 'active' : ''} type="button" onClick={() => setActiveEvidenceId('buyer-ask')}>
+                    <dt>Buyer ask</dt><dd>{profileRead.currentState.latestBuyerAsk}</dd>
+                  </button>
+                  <button className={activeEvidenceId === 'pepsico-position' ? 'active' : ''} type="button" onClick={() => setActiveEvidenceId('pepsico-position')}>
+                    <dt>PepsiCo ask</dt><dd>{defaultApprovedNumbers.ingoingAskPercent.toFixed(1)}% · {netPricePerCase(defaultProposedNetPricePerCase)}</dd>
+                  </button>
+                  <button className={activeEvidenceId === 'target' ? 'active' : ''} type="button" onClick={() => setActiveEvidenceId('target')}>
+                    <dt>Target landed</dt><dd>{defaultApprovedNumbers.targetPercent.toFixed(1)}% · {netPricePerCase(defaultTargetNetPricePerCase)}</dd>
+                  </button>
+                  <button className={activeEvidenceId === 'guardrail' ? 'active' : ''} type="button" onClick={() => setActiveEvidenceId('guardrail')}>
+                    <dt>Fallback / red line</dt><dd>{defaultApprovedNumbers.fallbackPercent.toFixed(1)}% / {defaultApprovedNumbers.redLinePercent.toFixed(1)}%</dd>
+                  </button>
+                </dl>
+              </section>
+              <section className="atlas-finance-number-builder">
+                <header className="atlas-set-pricing-header">
+                  <span>Set Pricing</span>
+                </header>
+                <aside className="atlas-pricing-impact-preview">
+                  <header>
+                    <span>What these inputs do</span>
+                    <h4>Impact preview</h4>
+                  </header>
+                  <dl>
+                    {impactPreviewItems.map((item) => {
+                      const delta = impactDeltaPercent(item.value, item.defaultValue);
+                      return (
+                        <div key={item.label}>
+                          <dt>{item.label}</dt>
+                          <dd>
+                            <strong>{item.valueLabel}</strong>
+                            <b className={`atlas-number-delta-pill tone-${deltaTone(delta)}`}>{compactDeltaLabel(delta)}</b>
+                          </dd>
+                        </div>
+                      );
+                    })}
+                  </dl>
+                </aside>
+                <section className="atlas-live-strategy-read" aria-label="Live strategy test while setting pricing">
+                  <header>
+                    <span>Live strategy test</span>
+                    <h3>{testRead.likelihood}% likely to land · {testRead.guardrailRisk}</h3>
+                    <p>{testRead.expectedBuyerResponse}</p>
+                  </header>
+                  <dl>
+                    <div><dt>NR impact</dt><dd>{euros(projectedNrImpact)}</dd></div>
+                    <div><dt>GM impact</dt><dd>{euros(projectedGmImpact)}</dd></div>
+                    <div><dt>Trade spend</dt><dd>{euros(approvedNumbers.tradeSpendEnvelope)}</dd></div>
+                    <div><dt>Volume risk</dt><dd>{euros(projectedVolumeRisk)}</dd></div>
+                  </dl>
+                  <div className="atlas-live-strategy-edits">
+                    {testRead.recommendedEdits.map((edit) => <p key={edit}>{edit}</p>)}
+                  </div>
+                </section>
+                <div className="atlas-pricing-builder-layout">
+                  <section className="atlas-pricing-worksheet">
+                    <header>
+                      <h4>Editable pricing worksheet</h4>
+                      <span>Change approved inputs, then compare the updated impact above.</span>
+                    </header>
+                    <div className="atlas-pricing-worksheet-rows">
+                      <div className="atlas-pricing-worksheet-group atlas-pricing-worksheet-group-with-actions">
+                        <span>Price move</span>
+                        <div className="atlas-pricing-worksheet-actions">
+                          {numberSaveState ? <small>{numberSaveState}</small> : null}
+                          <button type="button" onClick={saveApprovedNumbers}>Save inputs</button>
+                          <button type="button" onClick={resetApprovedNumbers}>Reset to default</button>
+                        </div>
+                      </div>
+                      {priceMoveRows.map((row) => {
+                        const value = approvedNumbers[row.key];
+                        const defaultValue = defaultApprovedNumbers[row.key];
+                        const delta = numberDeltaPercent(value, defaultValue);
+                        return (
+                          <label className="atlas-pricing-worksheet-row" key={row.key}>
+                            <span>
+                              <strong>{row.label}</strong>
+                              <small>{row.basis}</small>
+                            </span>
+                            <div className="atlas-pricing-input-control">
+                              <input
+                                min={0}
+                                onChange={(event) => updateApprovedNumber(row.key, Number.parseFloat(event.target.value))}
+                                step={inputStepForSuffix(row.suffix)}
+                                type="number"
+                                value={value}
+                              />
+                              <em>{row.suffix}</em>
+                            </div>
+                            <b className={`atlas-number-delta-pill tone-${deltaTone(delta)}`}>{deltaLabel(delta)}</b>
+                            <button className="atlas-row-evidence-link" type="button" onClick={() => setActiveEvidenceId(row.key === 'targetPercent' ? 'target' : row.key === 'fallbackPercent' || row.key === 'redLinePercent' ? 'guardrail' : 'pepsico-position')}>
+                              Evidence
+                            </button>
+                          </label>
+                        );
+                      })}
+                      <div className="atlas-pricing-worksheet-group">Pricing assumptions</div>
+                      {pricingAssumptionRows.map((row) => {
+                        const value = approvedNumbers[row.key];
+                        const defaultValue = defaultApprovedNumbers[row.key];
+                        const delta = numberDeltaPercent(value, defaultValue);
+                        return (
+                          <label className="atlas-pricing-worksheet-row" key={row.key}>
+                            <span>
+                              <strong>{row.label}</strong>
+                              <small>{row.basis}</small>
+                            </span>
+                            <div className="atlas-pricing-input-control">
+                              <input
+                                min={row.key === 'volumeRiskPercent' ? -20 : 0}
+                                onChange={(event) => updateApprovedNumber(row.key, Number.parseFloat(event.target.value))}
+                                step={inputStepForSuffix(row.suffix)}
+                                type="number"
+                                value={value}
+                              />
+                              <em>{row.suffix}</em>
+                            </div>
+                            <b className={`atlas-number-delta-pill tone-${deltaTone(delta)}`}>{deltaLabel(delta)}</b>
+                            <button className="atlas-row-evidence-link" type="button" onClick={() => setActiveEvidenceId(row.key === 'volumeRiskPercent' ? 'volume-risk' : row.key === 'tradeSpendEnvelope' ? 'margin-impact' : 'pepsico-position')}>
+                              Evidence
+                            </button>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </section>
+                </div>
+                <div className="atlas-number-source-row">
+                  <SourceTrustMini source={primarySource} />
+                  <button className="atlas-number-source-link" type="button" onClick={() => setNumberSourceOpen(true)}>
+                    Dig deeper: where did the numbers come from?
+                  </button>
+                </div>
+              </section>
+              <section className="atlas-number-evidence-tray" aria-label="Evidence tied to selected pricing number">
+                <header>
+                  <span>{activeEvidence.proofType}</span>
+                  <h3>{activeEvidence.label}: {activeEvidence.metric}</h3>
+                  <p>{activeEvidence.supports}</p>
+                </header>
+                <div>
+                  <article>
+                    <span>Calculation logic</span>
+                    <strong>{activeEvidence.calculation}</strong>
+                  </article>
+                  <article>
+                    <span>Prior outcome / memory</span>
+                    <strong>{activeEvidence.priorOutcome}</strong>
+                  </article>
+                  <article>
+                    <span>Source validation</span>
+                    <strong>{sourceDisplayName(activeEvidence.source)}</strong>
+                    <SourceTrustMini source={activeEvidence.source} />
+                  </article>
+                </div>
+                <footer>
+                  <StrategyStatusPill status={inputStatuses[activeEvidence.id] ?? 'recommended'} />
+                  <button type="button" onClick={() => setStatus(activeEvidence.id, 'used')}>Use in scenario</button>
+                  <button type="button" onClick={() => setStatus(activeEvidence.id, 'needs_review')}>Needs review</button>
+                  <button type="button" onClick={() => setStatus(activeEvidence.id, 'excluded')}>Exclude</button>
+                </footer>
+              </section>
+              {numberSourceOpen ? (
+                <div className="atlas-source-drawer-backdrop" role="presentation" onClick={() => setNumberSourceOpen(false)}>
+                  <aside className="atlas-source-drawer atlas-number-source-drawer" aria-label="Number source detail" role="dialog" aria-modal="true" onClick={(event) => event.stopPropagation()}>
+                    <header>
+                      <div>
+                        <span>Number source summary</span>
+                        <h2>Where the strategy inputs came from</h2>
+                      </div>
+                      <button type="button" aria-label="Close number source detail" onClick={() => setNumberSourceOpen(false)}><X size={17} /></button>
+                    </header>
+                    <section className="atlas-number-source-summary">
+                      <p>
+                        ATLAS prefilled these values from approved finance inputs, buyer history, current market pressure, and modeled concession guardrails. Any change you make is treated as a CNO working assumption until saved and reviewed.
+                      </p>
+                    </section>
+                    <div className="atlas-number-source-list">
+                      {financeInputRows.map((row) => {
+                        const value = approvedNumbers[row.key];
+                        const defaultValue = defaultApprovedNumbers[row.key];
+                        const delta = numberDeltaPercent(value, defaultValue);
+                        return (
+                          <article key={row.key}>
+                            <div>
+                              <span>{row.label}</span>
+                              <strong>{formatNumberInputValue(row, value)}</strong>
+                            </div>
+                            <p>{row.sourceSummary}</p>
+                            <dl>
+                              <div><dt>Default</dt><dd>{formatNumberInputValue(row, defaultValue)}</dd></div>
+                              <div><dt>Change</dt><dd>{deltaLabel(delta)}</dd></div>
+                              <div><dt>Commercial read</dt><dd>{row.context(value)}</dd></div>
+                              <div><dt>Source</dt><dd>{sourceDisplayName(row.source)}</dd></div>
+                              <div><dt>Confidence</dt><dd>{row.source.confidence}</dd></div>
+                            </dl>
+                          </article>
+                        );
+                      })}
+                    </div>
+                  </aside>
+                </div>
+              ) : null}
+              <StrategyPricingCorridor buyerAsk={testRead.buyerAsk} fallback={fallback} ingoingAsk={ingoingAsk} redLine={redLine} target={target} />
+              <section className="atlas-buyer-likely-response-panel">
+                <header>
+                  <span>Buyer likely response</span>
+                  <h3>{testRead.expectedBuyerResponse}</h3>
+                </header>
+                <div>
+                  <article>
+                    <span>Past behavior</span>
+                    <strong>{workspace.timelineEvents[0]?.title ?? 'No prior-year event loaded'}</strong>
+                    <p>{workspace.timelineEvents[0]?.summary ?? 'Add prior-year negotiation memory before locking this strategy.'}</p>
+                  </article>
+                  <article>
+                    <span>Market signal</span>
+                    <strong>{workspace.signals[0]?.title ?? 'No external signal attached'}</strong>
+                    <p>{workspace.signals[0]?.negotiationImplication ?? 'Do not introduce external signals unless they change the buyer response.'}</p>
+                  </article>
+                  <article>
+                    <span>ATLAS read</span>
+                    <strong>{testRead.likelihood}% likelihood to land</strong>
+                    <p>Buyer leverage is shaped by {testRead.leveragePoints.join(', ')}.</p>
+                  </article>
+                </div>
+              </section>
+            </section>
+          ) : null}
+
+          {activeWorkspaceTab === 'stress' ? (
+            <section className="atlas-buyer-scenario-module" aria-label="Inline strategy scenarios">
+              <header>
+                <span>Stress test</span>
+                <h3>Compare the recommended plan, your adjusted plan, and likely buyer counter.</h3>
+                <p>Use this to see whether the current position still protects margin, lands inside guardrails, and gives the CNO a defensible response path.</p>
+              </header>
+              <div className="atlas-buyer-scenario-cards">
+                {scenarioCards.map((scenario) => (
+                  <article key={scenario.id}>
+                    <span>{scenario.label} · {scenario.name}</span>
+                    <strong>{scenario.test.likelihood}% likely · {scenario.test.guardrailRisk}</strong>
+                    <p>{scenario.read}</p>
+                    <dl>
+                      <div><dt>Ask</dt><dd>{scenario.numbers.ingoingAskPercent.toFixed(1)}%</dd></div>
+                      <div><dt>Target</dt><dd>{scenario.numbers.targetPercent.toFixed(1)}%</dd></div>
+                      <div><dt>Fallback</dt><dd>{scenario.numbers.fallbackPercent.toFixed(1)}%</dd></div>
+                      <div><dt>NR</dt><dd>{euros(scenario.test.scenarioOutputs.revenueImpact)}</dd></div>
+                      <div><dt>GM</dt><dd>{euros(scenario.test.scenarioOutputs.marginImpact)}</dd></div>
+                      <div><dt>Trade</dt><dd>{euros(scenario.test.scenarioOutputs.tradeSpendImpact)}</dd></div>
+                    </dl>
+                    <p>{scenario.test.recommendedEdits[0]}</p>
+                    <SourceTrustMini source={scenario.id === 'counter' ? workspace.signals[0]?.source ?? primarySource : primarySource} />
+                  </article>
+                ))}
+              </div>
+              <section className="atlas-strategy-test-card atlas-buyer-inline-test-card">
+                <span>Current tested read</span>
+                <strong>{testRead.likelihood}% likelihood to land</strong>
+                <p>{testRead.expectedBuyerResponse}</p>
+                <dl>
+                  <div><dt>Guardrail</dt><dd>{testRead.guardrailRisk}</dd></div>
+                  <div><dt>Margin</dt><dd>{euros(testRead.scenarioOutputs.marginImpact)}</dd></div>
+                  <div><dt>Trade</dt><dd>{euros(testRead.scenarioOutputs.tradeSpendImpact)}</dd></div>
+                </dl>
+              </section>
+              <section className="atlas-strategy-recommendation-panel">
+                <header>
+                  <span>ATLAS recommended edits</span>
+                  <h3>Change only what improves likelihood without breaking the corridor.</h3>
+                </header>
+                <div>
+                  {testRead.recommendedEdits.map((edit) => <p key={edit}>{edit}</p>)}
+                </div>
+              </section>
+            </section>
+          ) : null}
+
+          {activeWorkspaceTab === 'evidence' ? (
+            <>
+              <StrategyInputInbox savedViews={savedViews} statuses={inputStatuses} workspace={workspace} />
+              <section className="atlas-buyer-embedded-evidence-grid" aria-label="Evidence tied to strategy numbers">
+                <header>
+                  <span>Evidence</span>
+                  <h3>Choose evidence that explains the pricing position, not generic supporting documents.</h3>
+                </header>
+                <div>
+                  {numberEvidenceItems.map((item) => {
+                    const status = inputStatuses[item.id] ?? 'recommended';
+                    return (
+                      <article key={item.id}>
+                        <div>
+                          <span>{item.proofType}</span>
+                          <strong>{item.label}: {item.metric}</strong>
+                        </div>
+                        <p>{item.supports}</p>
+                        <p>{item.calculation}</p>
+                        <SourceTrustMini source={item.source} />
+                        <StrategyStatusPill status={status} />
+                        <footer>
+                          <button onClick={() => setStatus(item.id, 'used')} type="button">Include</button>
+                          <button onClick={() => setStatus(item.id, 'needs_review')} type="button">Review</button>
+                          <button onClick={() => setStatus(item.id, 'excluded')} type="button">Exclude</button>
+                        </footer>
+                      </article>
+                    );
+                  })}
+                </div>
+              </section>
+            </>
+          ) : null}
+
+          {activeWorkspaceTab === 'pushback' ? (
+            <section className="atlas-buyer-pushback-grid" aria-label="Buyer pushback preparation">
+              <header>
+                <span>Prepare pushback</span>
+              <h3>What the buyer may say, what to answer, and what evidence to show.</h3>
+              </header>
+              <div>
+                {pushbackItems.map((item) => (
+                  <article key={item.objection}>
+                    <span>Expected objection</span>
+                    <strong>{item.objection}</strong>
+                    <p>{item.why}</p>
+                    <p>{item.response}</p>
+                    <em>{item.proof}</em>
+                    <small>{item.boundary}</small>
+                  </article>
+                ))}
+              </div>
+            </section>
+          ) : null}
+
+          {activeWorkspaceTab === 'output' ? (
+            <section className="atlas-room-plan-preview atlas-strategy-deck-preview">
+              <div>
+                <span>Scenario output</span>
+                <h3>Export the selected scenario evidence.</h3>
+                <p>This output uses the current pricing inputs, tested scenario read, selected evidence, buyer pushback responses, and concession stop point.</p>
+                <dl>
+                  <div><dt>PepsiCo ask</dt><dd>{ingoingAsk.toFixed(1)}% · {netPricePerCase(proposedNetPricePerCase)}</dd></div>
+                  <div><dt>Likelihood</dt><dd>{testRead.likelihood}% · {testRead.guardrailRisk}</dd></div>
+                  <div><dt>Margin risk</dt><dd>{euros(profileRead.exposure.marginAtRisk)}</dd></div>
+                  <div><dt>Evidence items</dt><dd>{outputEvidenceItems.length}</dd></div>
+                </dl>
+                <ul className="atlas-deck-proof-list">
+                  {outputEvidenceItems.map((item) => (
+                    <li key={item.id}>{item.label}: {item.metric}</li>
+                  ))}
+                </ul>
+              </div>
+              <button type="button" onClick={() => window.print()}><Download size={15} /> Export scenario output</button>
+            </section>
+          ) : null}
+        </div>
+      </section>
     </section>
   );
 }
@@ -4711,6 +8818,7 @@ function BuyingGroupGeneratedPanel({
   profileRead,
   prompt,
   profileUpdates,
+  scenarioAlerts,
   view,
   workspace
 }: {
@@ -4718,25 +8826,25 @@ function BuyingGroupGeneratedPanel({
   profileRead: BuyerProfileRead;
   prompt?: string;
   profileUpdates: BuyerProfileDocumentUpdate[];
+  scenarioAlerts: AtlasActiveAlert[];
   view: BuyingGroupGeneratedView;
   workspace: BuyingGroupWorkspacePacket;
 }) {
   const savedViews = useStoredGeneratedViews({ buyingGroupId: workspace.buyingGroup.id });
   return (
     <section className="atlas-generated-panel">
-      {view === 'snapshot' ? (
-        <BuyingGroupOverviewPanel profileRead={profileRead} workspace={workspace} />
-      ) : null}
-
       {view === 'financials' ? <BuyingGroupFinancialPanel profileRead={profileRead} workspace={workspace} /> : null}
 
       {view === 'memory' ? (
         <section className="atlas-generated-memory" id="group-timeline">
-          <BuyerProfileUpdatePanel buyingGroup={workspace.buyingGroup} onAddUpdate={onAddProfileUpdate} updates={profileUpdates} />
           <ConfirmedProfileImpactStrip updates={profileUpdates} />
           <section className="atlas-history-source-grid">
             <div>
-              <SectionTitle title="Negotiation timeline" />
+              <div className="atlas-history-section-head">
+                <SectionTitle title="Negotiation history" />
+                <BuyerProfileUpdatePanel buyingGroup={workspace.buyingGroup} onAddUpdate={onAddProfileUpdate} updates={profileUpdates} />
+              </div>
+              <DebriefMemoryComparison workspace={workspace} />
               {workspace.timelineEvents.length || workspace.documents.length || profileUpdates.length || savedViews.length ? (
                 <TimelineFeed documents={workspace.documents} events={workspace.timelineEvents} generatedViews={savedViews} updates={profileUpdates} />
               ) : <EmptyGeneratedState label="History" />}
@@ -4744,19 +8852,18 @@ function BuyingGroupGeneratedPanel({
             <div>
               <SectionTitle title="Stored documents" />
               <SupportingDocumentLedger buyingGroupId={workspace.buyingGroup.id} documents={workspace.documents} generatedViews={savedViews} updates={profileUpdates} />
-              <SavedGeneratedViewsShelf buyingGroupId={workspace.buyingGroup.id} />
             </div>
           </section>
         </section>
       ) : null}
 
-      {view === 'live' ? (
-        <article className="atlas-live-entry-panel">
-          <span>Prepare / Live</span>
-          <h3>Start the live agent with this buying-group memory loaded.</h3>
-          <p>ATLAS will generate data views during the room and save the final debrief back into this buyer profile.</p>
-          <a href={`/negotiation/carrefour-france-2026-pricing/live?group=${workspace.buyingGroup.id}&deck=${encodeURIComponent(`${workspace.buyingGroup.name} 2026 prep documents`)}`}>Start Live Negotiator <ArrowRight size={14} /></a>
-        </article>
+      {view === 'strategy' ? (
+        <BuyerPredictiveScenarioWorkspace
+          profileRead={profileRead}
+          savedViews={savedViews}
+          scenarioAlerts={scenarioAlerts}
+          workspace={workspace}
+        />
       ) : null}
 
       {view === 'custom' ? (
@@ -4767,10 +8874,11 @@ function BuyingGroupGeneratedPanel({
 }
 
 function normalizeGeneratedView(view?: string): BuyingGroupGeneratedView {
-  if (view === 'documents' || view === 'memory') return 'memory';
-  if (view === 'intelligence' || view === 'overview') return 'snapshot';
-  if (view === 'financials' || view === 'live' || view === 'custom') return view;
-  return 'snapshot';
+  if (view === 'documents' || view === 'memory' || view === 'history') return 'strategy';
+  if (view === 'snapshot' || view === 'intelligence' || view === 'overview') return 'strategy';
+  if (view === 'financials' || view === 'scenario' || view === 'scenarios' || view === 'live') return 'strategy';
+  if (view === 'strategy' || view === 'custom') return view;
+  return 'strategy';
 }
 
 function normalizePhase(phase?: string, fallback = 'monitor') {
@@ -4789,19 +8897,26 @@ function BuyingGroupWorkspaceTabs({
   onSelectView: (view: BuyingGroupGeneratedView) => void;
   workspace: BuyingGroupWorkspacePacket;
 }) {
-  const baseTabs: BuyingGroupGeneratedView[] = ['snapshot', 'financials', 'memory'];
-  const tabs = customPrompt ? [...baseTabs, 'custom' as BuyingGroupGeneratedView] : baseTabs;
+  const baseTabs: Array<{ description: string; label: string; view: BuyingGroupGeneratedView }> = [
+    { view: 'strategy', label: 'Scenario workspace', description: 'Model buyer response and choose a move' },
+    { view: 'memory', label: 'Scenario memory', description: 'Use outcomes, docs, and debrief patterns' },
+    { view: 'financials', label: 'Scenario inputs', description: 'Pressure-test price and concessions' }
+  ];
+  const tabs = customPrompt
+    ? [...baseTabs, { view: 'custom' as BuyingGroupGeneratedView, label: 'Custom scenario view', description: 'Open the requested buyer read' }]
+    : baseTabs;
 
   return (
-    <nav className="atlas-buyer-workspace-tabs" aria-label={`${workspace.buyingGroup.name} analysis views`}>
-      {tabs.map((view) => (
+    <nav className="atlas-buyer-workspace-tabs atlas-buyer-guided-tabs" aria-label={`${workspace.buyingGroup.name} guided workflow`}>
+      {tabs.map((tab) => (
         <button
-          className={activeView === view ? 'active' : ''}
-          key={view}
-          onClick={() => onSelectView(view)}
+          className={activeView === tab.view ? 'active' : ''}
+          key={tab.view}
+          onClick={() => onSelectView(tab.view)}
           type="button"
         >
-          {labelForBuyingGroupView(view)}
+          <strong>{tab.label}</strong>
+          <small>{tab.description}</small>
         </button>
       ))}
     </nav>
@@ -4815,6 +8930,7 @@ function BuyingGroupGenerativeWorkspace({
   onAddProfileUpdate,
   profileRead,
   profileUpdates,
+  scenarioAlerts,
   workspace
 }: {
   initialPhase?: string;
@@ -4823,6 +8939,7 @@ function BuyingGroupGenerativeWorkspace({
   onAddProfileUpdate: (update: BuyerProfileDocumentUpdate) => void;
   profileRead: BuyerProfileRead;
   profileUpdates: BuyerProfileDocumentUpdate[];
+  scenarioAlerts: AtlasActiveAlert[];
   workspace: BuyingGroupWorkspacePacket;
 }) {
   const defaultPhase = workspace.buyingGroup.negotiationStage === 'active' ? 'active' : workspace.buyingGroup.negotiationStage === 'prep' ? 'prep' : 'monitor';
@@ -4839,16 +8956,818 @@ function BuyingGroupGenerativeWorkspace({
 
   return (
     <section className="atlas-generative-buying-group">
-      <BuyingGroupWorkspaceTabs activeView={activeView} customPrompt={customPrompt} onSelectView={selectView} workspace={workspace} />
-
       <BuyingGroupGeneratedPanel
         onAddProfileUpdate={onAddProfileUpdate}
         profileRead={profileRead}
         profileUpdates={profileUpdates}
         prompt={customPrompt}
+        scenarioAlerts={scenarioAlerts}
         view={activeView}
         workspace={workspace}
       />
+    </section>
+  );
+}
+
+type BuyingGroupMiniView = 'profile' | 'current' | 'timeline';
+
+function buyerNegotiatorProfile(workspace: BuyingGroupWorkspacePacket) {
+  const { buyingGroup } = workspace;
+  const marketName = workspace.markets[0]?.name ?? 'Europe';
+  const topSignal = workspace.signals[0];
+  const competitor = workspace.competitorMoves[0];
+  const profileMap: Record<string, { name: string; role: string; style: string; cadence: string; watch: string }> = {
+    carrefour: {
+      cadence: 'Uses cross-market comparisons early, then waits for PepsiCo to define the value exchange.',
+      name: 'Claire Moreau',
+      role: 'Group Purchasing Director, Beverages',
+      style: 'Relationship-led but price disciplined',
+      watch: 'Will ask whether France, Belgium, Spain, and Italy are receiving the same corridor.'
+    },
+    edeka: {
+      cadence: 'Pushes late-cycle concessions and tests whether local operating pressure changes the floor.',
+      name: 'Markus Weber',
+      role: 'National Buyer, Impulse and Beverages',
+      style: 'Direct, margin-first, evidence skeptical',
+      watch: 'Will pressure affordability and ask for proof before accepting a phased landed increase.'
+    },
+    tesco: {
+      cadence: 'Uses shopper value language and competitor benchmarks before moving on price.',
+      name: 'Sophie Clarke',
+      role: 'Category Commercial Lead',
+      style: 'Analytical, value-focused, highly prepared',
+      watch: 'Will compare the ask against value-pack competitors and volume risk.'
+    },
+    rewe: {
+      cadence: 'Escalates when the ask is not tied to category growth or operational support.',
+      name: 'Anna Schneider',
+      role: 'Senior Category Buyer',
+      style: 'Collaborative but guardrail-aware',
+      watch: 'Will ask for execution support if the landed price stays above the expected corridor.'
+    }
+  };
+  const fallback = {
+    cadence: 'Usually counters below target first, then asks for trade support or phasing.',
+    name: `${buyingGroup.name} lead negotiator`,
+    role: `${marketName} commercial buyer`,
+    style: buyingGroup.riskLevel === 'critical' ? 'Pressure-oriented, price-led' : 'Commercial, evidence-led',
+    watch: topSignal?.title ?? competitor?.possibleBuyerLeverage ?? 'Watch for affordability, competitor comparison, and trade support requests.'
+  };
+  return profileMap[buyingGroup.id] ?? fallback;
+}
+
+function buyerBehaviorPatterns(workspace: BuyingGroupWorkspacePacket) {
+  const profile = buyerNegotiatorProfile(workspace);
+  const signal = workspace.signals[0];
+  const competitor = workspace.competitorMoves[0];
+  return [
+    {
+      action: 'Hold the opening ask until the buyer puts a specific counter on the table.',
+      detail: 'This gives the CNO a baseline for pacing the first exchange and avoids giving away value before the buyer has clarified the tradeoff they want.',
+      expectedResponse: 'Buyer is likely to reject the first position, then reframe around affordability, service support, or a phased landing.',
+      label: 'Typical opening move',
+      value: profile.cadence,
+      source: workspace.timelineEvents[0]?.source ?? workspace.buyingGroup.source
+    },
+    {
+      action: 'Keep price corridor, commodity evidence, and comparable market outcomes ready before responding.',
+      detail: 'This is the pushback pattern the CNO should expect the buying group to use when challenging the PepsiCo position.',
+      expectedResponse: 'Buyer will likely test whether PepsiCo can defend the ask with facts, not just a percentage increase.',
+      label: 'Common pushback',
+      value: signal
+        ? signal.negotiationImplication
+        : competitor
+          ? competitor.possibleBuyerLeverage
+          : 'Challenges the evidence first, then asks for support before accepting the landed number.',
+      source: signal?.source ?? competitor?.source ?? workspace.buyingGroup.source
+    },
+    {
+      action: 'Pair the price position with a clear value exchange, then keep concessions conditional.',
+      detail: 'This is the pattern that has produced stronger outcomes with this buying group and similar European retailers.',
+      expectedResponse: 'Buyer is more likely to stay engaged when the room story connects margin protection to execution, service, or category value.',
+      label: 'What works',
+      value: 'Use buyer history, finance guardrails, and a scenario-backed value exchange before offering concessions.',
+      source: workspace.documents[0]?.source ?? workspace.buyingGroup.source
+    }
+  ];
+}
+
+function buyerNextRoundFlags(workspace: BuyingGroupWorkspacePacket) {
+  const primarySignal = workspace.signals[0];
+  const competitor = workspace.competitorMoves[0];
+  const history = workspace.timelineEvents[0];
+  const baseSource = primarySignal?.source ?? competitor?.source ?? history?.source ?? workspace.buyingGroup.source;
+  const marketLabel = workspace.markets.map((market) => market.name).slice(0, 2).join(' / ') || 'current market';
+
+  return [
+    {
+      action: 'Anchor the room story in evidence before introducing any support package.',
+      change: primarySignal?.title ?? 'Affordability pressure is moving into the next round',
+      id: 'active-signal',
+      implication: primarySignal?.negotiationImplication ?? 'Buyer may challenge the price move before discussing volume, phasing, or service value.',
+      label: 'Market signal',
+      response: 'Expect the buyer to use the signal as a reason to slow acceptance or ask for extra trade support.',
+      source: primarySignal?.source ?? baseSource,
+      strategyUse: 'Lead with evidence before offering support.'
+    },
+    {
+      action: 'Bring comparable rounds and market guardrails so the buyer cannot isolate one market as the benchmark.',
+      change: competitor?.title ?? 'Cross-market comparison likely',
+      id: 'competitive-benchmark',
+      implication: competitor?.possibleBuyerLeverage ?? `Buyer may compare the ${marketLabel} corridor against other European outcomes.`,
+      label: 'Competitive read',
+      response: 'Expect pressure to match a lower landed outcome, especially if the buyer references adjacent markets.',
+      source: competitor?.source ?? baseSource,
+      strategyUse: 'Keep corridor rationale and comparable rounds ready.'
+    },
+    {
+      action: 'Use the saved scenario as the concession boundary before reacting to the first counter.',
+      change: history?.title ?? 'Prior negotiation memory is shaping the counter',
+      id: 'history-memory',
+      implication: history?.summary ?? 'Past rounds suggest the buyer will counter below target and wait for PepsiCo to define the tradeoff.',
+      label: 'Buyer memory',
+      response: 'Expect a below-target counter and delayed acceptance unless PepsiCo makes the tradeoff explicit.',
+      source: history?.source ?? baseSource,
+      strategyUse: 'Use scenario-backed walk-away logic before making a concession.'
+    }
+  ];
+}
+
+function BuyingGroupIntelligenceCard({
+  action,
+  detail,
+  eyebrow,
+  expectedResponse,
+  onOpenSource,
+  source,
+  title
+}: {
+  action: string;
+  detail: string;
+  eyebrow: string;
+  expectedResponse: string;
+  onOpenSource: (source: SourceMeta) => void;
+  source: SourceMeta;
+  title: string;
+}) {
+  return (
+    <section className="atlas-bg-intelligence-card">
+      <div className={`atlas-bg-card-header${eyebrow ? '' : ' atlas-bg-card-header-source-only'}`}>
+        {eyebrow ? <small>{eyebrow}</small> : null}
+        <BuyingGroupProfileSourceButton onOpen={onOpenSource} source={source} />
+      </div>
+      <h4>{title}</h4>
+      <p>{detail}</p>
+      <dl className="atlas-bg-intelligence-card-facts">
+        <div>
+          <dt>CNO move</dt>
+          <dd>{action}</dd>
+        </div>
+        <div>
+          <dt>Buyer read</dt>
+          <dd>{expectedResponse}</dd>
+        </div>
+      </dl>
+    </section>
+  );
+}
+
+function buyerScenarioRead(workspace: BuyingGroupWorkspacePacket) {
+  const baseInputs = scenarioInputsForBuyingGroup(workspace.buyingGroup);
+  const exposure = workspace.buyingGroup.financialExposure;
+  const baseSource = workspace.documents[0]?.source ?? workspace.buyingGroup.source;
+  const signalSource = workspace.signals[0]?.source ?? baseSource;
+  const historySource = workspace.timelineEvents[0]?.source ?? baseSource;
+  const scenarioRows = [
+    {
+      basis: 'Buyer history and approved finance guardrail',
+      id: 'recommended',
+      inputs: baseInputs,
+      name: 'Evidence-backed landed ask',
+      priority: 'Recommended',
+      response: 'Buyer is likely to challenge the evidence first, then counter for support.',
+      source: baseSource
+    },
+    {
+      basis: workspace.signals[0]?.title ?? 'Active market signal',
+      id: 'market-pressure',
+      inputs: {
+        ...baseInputs,
+        buyerAcceptanceProbability: Math.max(25, baseInputs.buyerAcceptanceProbability - 8),
+        expectedRealizationPercent: Math.max(0.5, baseInputs.expectedRealizationPercent - 0.25),
+        tradeSpendChange: Math.round(baseInputs.tradeSpendChange * 1.18),
+        volumeChangePercent: baseInputs.volumeChangePercent - 0.4
+      },
+      name: 'Market-pressure counter',
+      priority: 'Watch',
+      response: 'Buyer may use market pressure to ask for either price relief or execution support.',
+      source: signalSource
+    },
+    {
+      basis: workspace.timelineEvents[0]?.title ?? 'Prior negotiation memory',
+      id: 'history-counter',
+      inputs: {
+        ...baseInputs,
+        buyerAcceptanceProbability: Math.min(92, baseInputs.buyerAcceptanceProbability + 9),
+        concessionAmount: Math.round(baseInputs.concessionAmount * 1.2),
+        expectedRealizationPercent: Math.max(0.5, baseInputs.expectedRealizationPercent - 0.45),
+        priceIncreasePercent: Math.max(0.7, baseInputs.priceIncreasePercent - 0.35)
+      },
+      name: 'Likely buyer counter',
+      priority: 'Have on hand',
+      response: 'Buyer likely counters below target and asks PepsiCo to prove why support should be conditional.',
+      source: historySource
+    }
+  ];
+
+  return scenarioRows.map((scenario) => {
+    const outputs = calculateScenarioOutputs(scenario.inputs, exposure.revenueUnderNegotiation);
+    return {
+      ...scenario,
+      outputs,
+      likelihood: Math.round(scenario.inputs.buyerAcceptanceProbability),
+      recommendedAction: outputs.marginImpact < 0
+        ? 'Do not use unless Finance approves the tradeoff.'
+        : scenario.id === 'recommended'
+          ? 'Use as the primary room-ready scenario.'
+          : 'Keep available if the buyer pushes into this path.'
+    };
+  });
+}
+
+function BuyingGroupProfileSourceButton({
+  onOpen,
+  source
+}: {
+  onOpen: (source: SourceMeta) => void;
+  source: SourceMeta;
+}) {
+  return (
+    <button
+      className="atlas-bg-source-button"
+      title={`${sourceDisplayName(source)} / Confidence ${source.confidence}`}
+      type="button"
+      onClick={() => onOpen(source)}
+    >
+      Sources
+    </button>
+  );
+}
+
+function BuyingGroupProfileMiniView({
+  profileRead,
+  workspace
+}: {
+  profileRead: BuyerProfileRead;
+  workspace: BuyingGroupWorkspacePacket;
+}) {
+  const negotiator = buyerNegotiatorProfile(workspace);
+  const patterns = buyerBehaviorPatterns(workspace);
+  const flaggedInsights = buyerNextRoundFlags(workspace);
+  const latestMemory = workspace.timelineEvents[0];
+  const markets = workspace.markets.map((market) => market.name).join(' / ');
+  const [openSource, setOpenSource] = useState<SourceMeta | null>(null);
+
+  return (
+    <>
+      <section className="atlas-bg-mini-view atlas-bg-profile-view atlas-bg-profile-view-v2">
+        <div className="atlas-bg-profile-topline">
+          <article className="atlas-bg-profile-lead">
+            <span>Buyer profile</span>
+            <h2>{workspace.buyingGroup.name} usually responds through {negotiator.style.toLowerCase()} behavior.</h2>
+            <p>{negotiator.watch}</p>
+            <dl className="atlas-bg-profile-facts">
+              <div><dt>Markets</dt><dd>{markets}</dd></div>
+              <div><dt>Stage</dt><dd>{workspace.buyingGroup.negotiationStage}</dd></div>
+              <div><dt>Current risk</dt><dd>{workspace.buyingGroup.riskLevel}</dd></div>
+              <div><dt>Latest ask</dt><dd>{profileRead.currentState.latestBuyerAsk}</dd></div>
+            </dl>
+          </article>
+
+          <article className="atlas-bg-negotiator-card">
+            <div className="atlas-bg-card-header">
+              <span>Negotiator read</span>
+              <BuyingGroupProfileSourceButton onOpen={setOpenSource} source={latestMemory?.source ?? workspace.buyingGroup.source} />
+            </div>
+            <h3>{negotiator.name}</h3>
+            <p>{negotiator.role}</p>
+            <dl>
+              <div><dt>Style</dt><dd>{negotiator.style}</dd></div>
+              <div><dt>Expected cadence</dt><dd>{negotiator.cadence}</dd></div>
+            </dl>
+          </article>
+        </div>
+
+        <article className="atlas-bg-ai-flags">
+          <div className="atlas-bg-ai-flags-header">
+            <span>AI flagged for next negotiation</span>
+            <h3>External and historical signals this buyer may bring into the room</h3>
+          </div>
+          <div className="atlas-bg-ai-flag-list">
+            {flaggedInsights.map((insight) => (
+              <BuyingGroupIntelligenceCard
+                action={insight.action}
+                detail={`${insight.change}. ${insight.implication}`}
+                eyebrow={insight.label}
+                expectedResponse={insight.response}
+                key={insight.id}
+                onOpenSource={setOpenSource}
+                source={insight.source}
+                title={insight.strategyUse}
+              />
+            ))}
+          </div>
+        </article>
+
+        <div className="atlas-bg-behavior-grid">
+          {patterns.map((pattern) => (
+            <BuyingGroupIntelligenceCard
+              action={pattern.action}
+              detail={pattern.detail}
+              eyebrow={pattern.label}
+              expectedResponse={pattern.expectedResponse}
+              key={pattern.label}
+              onOpenSource={setOpenSource}
+              source={pattern.source}
+              title={pattern.value}
+            />
+          ))}
+        </div>
+      </section>
+      {openSource ? <SourceDetailDrawer onClose={() => setOpenSource(null)} source={openSource} /> : null}
+    </>
+  );
+}
+
+function BuyingGroupCurrentNegotiationMiniView({
+  profileRead,
+  workspace
+}: {
+  profileRead: BuyerProfileRead;
+  workspace: BuyingGroupWorkspacePacket;
+}) {
+  const exposure = profileRead.exposure;
+  const currentState = profileRead.currentState;
+  const scenarios = buyerScenarioRead(workspace);
+  const latestEvent = workspace.timelineEvents[0];
+  const primarySignal = workspace.signals[0];
+  const competitor = workspace.competitorMoves[0];
+  const targetGap = exposure.targetPriceRealization - exposure.expectedPriceRealization;
+  const buyerAskValue = Number.parseFloat(currentState.latestBuyerAsk);
+  const pepsicoPositionValue = Number.parseFloat(currentState.pepsicoPosition);
+  const askGap = Number.isFinite(buyerAskValue) && Number.isFinite(pepsicoPositionValue)
+    ? buyerAskValue - pepsicoPositionValue
+    : targetGap;
+  const guardrailStatus = targetGap > 0.7 ? 'Pressure above corridor' : 'Inside corridor';
+  const firstApproval = currentState.openApprovals[0] ?? 'No open approval blocking the current read';
+  const likelyObjection = primarySignal
+    ? primarySignal.negotiationImplication
+    : competitor
+      ? competitor.possibleBuyerLeverage
+      : 'Buyer is likely to challenge the price move before discussing volume, phasing, or service value.';
+  const numberCards = [
+    { label: 'Buyer ask', value: currentState.latestBuyerAsk, detail: 'Current buyer anchor' },
+    { label: 'PepsiCo position', value: currentState.pepsicoPosition, detail: `${askGap.toFixed(1)} pts below ask` },
+    { label: 'Target', value: currentState.target, detail: `${targetGap.toFixed(1)} pts from current read` },
+    { label: 'Red line', value: currentState.redLine, detail: 'Finance floor' },
+    { label: 'Margin at risk', value: euros(exposure.marginAtRisk), detail: `${euros(exposure.revenueUnderNegotiation)} revenue at stake` },
+    { label: 'Trade exposure', value: euros(exposure.tradeSpendExposure), detail: 'Support pressure' }
+  ];
+  const cycleCards = [
+    { label: 'Cycle state', value: buyerRoundLabel(workspace.buyingGroup), detail: currentState.negotiationRound },
+    { label: 'Last buyer move', value: currentState.latestBuyerAsk, detail: askGap > 0 ? `${askGap.toFixed(1)} pts above PepsiCo position` : 'No modeled gap to PepsiCo position' },
+    { label: 'Next milestone', value: currentState.nextMilestone, detail: firstApproval }
+  ];
+  const changeCards = [
+    {
+      detail: `ATLAS reads the current ask as ${askGap.toFixed(1)} pts away from PepsiCo's position and ${targetGap.toFixed(1)} pts away from target.`,
+      label: 'Buyer movement',
+      source: profileRead.source,
+      title: `Current ask is ${currentState.latestBuyerAsk}`
+    },
+    {
+      detail: primarySignal?.negotiationImplication ?? latestEvent?.summary ?? 'No new external signal is currently stronger than buyer history.',
+      label: primarySignal ? 'External signal' : 'Buyer memory',
+      source: primarySignal?.source ?? latestEvent?.source ?? workspace.buyingGroup.source,
+      title: primarySignal?.title ?? latestEvent?.title ?? 'History is the active context'
+    },
+    {
+      detail: competitor?.possibleBuyerLeverage ?? 'No competitor move is currently strong enough to change the primary price corridor.',
+      label: competitor ? 'Competitive pressure' : 'Source check',
+      source: competitor?.source ?? workspace.documents[0]?.source ?? workspace.buyingGroup.source,
+      title: competitor?.title ?? firstApproval
+    }
+  ];
+  const preparationCards = [
+    {
+      detail: likelyObjection,
+      label: 'Expected pushback',
+      source: primarySignal?.source ?? competitor?.source ?? workspace.buyingGroup.source,
+      title: 'Prepare for affordability, proof, or benchmark pressure.'
+    },
+    {
+      detail: latestEvent?.summary ?? 'Use the latest buyer memory and comparable rounds before changing the current position.',
+      label: 'Evidence to bring',
+      source: latestEvent?.source ?? workspace.documents[0]?.source ?? workspace.buyingGroup.source,
+      title: latestEvent?.title ?? 'Prior-year outcome and Finance guardrail'
+    },
+    {
+      detail: scenarios[0]
+        ? `${scenarios[0].likelihood}% likelihood to land with ${euros(scenarios[0].outputs.marginImpact)} GM impact.`
+        : 'Run a buyer-scoped scenario before changing the approved corridor.',
+      label: 'Scenario already run',
+      source: scenarios[0]?.source ?? workspace.buyingGroup.source,
+      title: scenarios[0]?.name ?? 'No scenario selected'
+    }
+  ];
+
+  return (
+    <section className="atlas-bg-mini-view atlas-bg-current-view atlas-bg-current-view-v2">
+      <section className="atlas-bg-cycle-read">
+        <header>
+          <span>Current cycle read</span>
+          <h2>{workspace.buyingGroup.name} is in {currentState.negotiationRound.toLowerCase()} with a {askGap.toFixed(1)} pt ask gap.</h2>
+          <p>Start here to see what changed in this cycle, what ATLAS thinks it means, and what needs to be ready before the next room.</p>
+        </header>
+        <div className="atlas-bg-current-read-grid">
+          {cycleCards.map((card) => (
+            <article key={card.label}>
+              <span>{card.label}</span>
+              <strong>{card.value}</strong>
+              <p>{card.detail}</p>
+            </article>
+          ))}
+        </div>
+        <div className="atlas-bg-cycle-change-grid">
+          {changeCards.map((card) => (
+            <article key={card.label}>
+              <span>{card.label}</span>
+              <h3>{card.title}</h3>
+              <p>{card.detail}</p>
+              <SourceTrustMini source={card.source} />
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="atlas-bg-current-numbers">
+        <header>
+          <span>Numbers and guardrails</span>
+          <h2>Use the current corridor before changing the negotiation position.</h2>
+          <p>These are the sourced baseline numbers CNOs need before selecting a scenario or trading support.</p>
+        </header>
+        <div className="atlas-bg-current-number-grid">
+          {numberCards.map((card) => (
+            <article key={card.label}>
+              <span>{card.label}</span>
+              <strong>{card.value}</strong>
+              <p>{card.detail}</p>
+            </article>
+          ))}
+        </div>
+        <aside className="atlas-bg-guardrail-note">
+          <span>Guardrail read</span>
+          <strong>{guardrailStatus}</strong>
+          <p>{firstApproval}</p>
+        </aside>
+        <SourceTrustMini source={profileRead.source} />
+      </section>
+
+      <section className="atlas-bg-prep-section">
+        <header>
+          <span>Prepare for the room</span>
+          <h2>What the CNO should have ready before responding</h2>
+          <p>ATLAS keeps this focused on pushback, evidence, and scenario work that changes the next move.</p>
+        </header>
+        <div className="atlas-bg-prep-grid">
+          {preparationCards.map((card) => (
+            <article key={card.label}>
+              <span>{card.label}</span>
+              <h3>{card.title}</h3>
+              <p>{card.detail}</p>
+              <SourceTrustMini source={card.source} />
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="atlas-bg-scenario-section">
+        <header>
+          <span>Predictive scenarios</span>
+          <h2>Scenarios to keep ready for this buying group</h2>
+          <p>Each scenario connects the current numbers to expected buyer response, financial impact, and the CNO move.</p>
+        </header>
+        <div className="atlas-bg-scenario-list">
+          {scenarios.map((scenario) => (
+            <article key={scenario.id}>
+              <div className="atlas-bg-scenario-summary">
+                <span>{scenario.priority}</span>
+                <h3>{scenario.name}</h3>
+                <p>Based on {scenario.basis}, ATLAS modeled {pct(scenario.inputs.priceIncreasePercent)} ask / {pct(scenario.inputs.expectedRealizationPercent)} expected realization.</p>
+              </div>
+              <dl>
+                <div><dt>Land</dt><dd>{scenario.likelihood}%</dd></div>
+                <div><dt>NR</dt><dd>{euros(scenario.outputs.revenueImpact)}</dd></div>
+                <div><dt>GM</dt><dd>{euros(scenario.outputs.marginImpact)}</dd></div>
+                <div><dt>Trade</dt><dd>{euros(scenario.outputs.tradeSpendImpact)}</dd></div>
+              </dl>
+              <div className="atlas-bg-scenario-read">
+                <section>
+                  <span>Buyer response</span>
+                  <p>{scenario.response}</p>
+                </section>
+                <section>
+                  <span>CNO action</span>
+                  <strong>{scenario.recommendedAction}</strong>
+                </section>
+              </div>
+              <footer>
+                <a href={`/scenario-lab?buyingGroup=${workspace.buyingGroup.id}&scenario=${scenario.id}`}>Open scenario <ArrowRight size={13} /></a>
+                <SourceTrustMini source={scenario.source} />
+              </footer>
+            </article>
+          ))}
+        </div>
+      </section>
+    </section>
+  );
+}
+
+function BuyingGroupTimelineMiniView({
+  profileUpdates,
+  workspace
+}: {
+  profileUpdates: BuyerProfileDocumentUpdate[];
+  workspace: BuyingGroupWorkspacePacket;
+}) {
+  const savedViews = useStoredGeneratedViews({ buyingGroupId: workspace.buyingGroup.id });
+  const negotiationEventTypes: TimelineEvent['eventType'][] = [
+    'competitor_move',
+    'negotiation_update',
+    'decision_made',
+    'debrief_created',
+    'validation_completed',
+    'financial_change'
+  ];
+  const negotiationEvents = workspace.timelineEvents.filter((event) => negotiationEventTypes.includes(event.eventType) && Number(event.timestamp.slice(0, 4)) >= 2025);
+  const supportingEvents = workspace.timelineEvents.filter((event) => !negotiationEvents.some((visibleEvent) => visibleEvent.id === event.id));
+  const hiddenInteractionCount =
+    supportingEvents.length + workspace.documents.length + savedViews.length + profileUpdates.length;
+  const timelineRows = negotiationEvents.map((event) => {
+    const financialImpact = compactFinancialImpact({
+      margin: event.financialImpact?.marginImpact,
+      revenue: event.financialImpact?.revenueImpact,
+      trade: event.financialImpact?.tradeSpendImpact
+    });
+    return {
+      date: event.timestamp,
+      detail: event.summary,
+      id: event.id,
+      impact: financialImpact,
+      label: timelineMemoryLabel(event.eventType),
+      predictionEffect: timelinePredictionEffect(event.eventType, event.title, financialImpact),
+      source: event.source,
+      sourceLine: `${sourceDisplayName(event.source)} · ${event.source.confidence} confidence · ${formatAtlasDate(event.source.sourceDate, { includeYear: true })}`,
+      title: event.title
+    };
+  })
+    .sort((a, b) => b.date.localeCompare(a.date));
+  const latestRow = timelineRows[0];
+  const currentYear = latestRow?.date.slice(0, 4) ?? '2026';
+  const timelineYears = timelineRows.reduce<Array<{ rows: typeof timelineRows; year: string }>>((years, row) => {
+    const year = row.date.slice(0, 4);
+    const existing = years.find((group) => group.year === year);
+    if (existing) {
+      existing.rows.push(row);
+    } else {
+      years.push({ rows: [row], year });
+    }
+    return years;
+  }, []);
+  const supportingActivity = [
+    {
+      count: supportingEvents.filter((event) => event.eventType === 'scenario_modeled').length + savedViews.filter((view) => /scenario|model/i.test(`${view.title} ${view.prompt}`)).length,
+      label: 'Scenario saves',
+      detail: 'Available in Scenario Lab and source detail.'
+    },
+    {
+      count: workspace.documents.length,
+      label: 'Documents',
+      detail: 'Used for source validation, not shown as negotiation milestones.'
+    },
+    {
+      count: profileUpdates.length + savedViews.filter((view) => !/scenario|model/i.test(`${view.title} ${view.prompt}`)).length,
+      label: 'Workspace activity',
+      detail: 'Profile edits and generated reads stay outside the main timeline.'
+    }
+  ].filter((item) => item.count > 0);
+
+  return (
+    <section className="atlas-bg-mini-view atlas-bg-timeline-view atlas-bg-timeline-view-v2">
+      <header className="atlas-bg-timeline-header">
+        <div>
+          <span>Negotiation memory</span>
+          <h2>{workspace.buyingGroup.name} negotiation timeline</h2>
+          <p>Only the moments that changed the negotiation read stay visible: buyer movement, finance guardrails, decisions, and debrief learning.</p>
+        </div>
+        <a href={`/intelligence?buyingGroup=${workspace.buyingGroup.id}&action=add-debrief`}>Add debrief</a>
+      </header>
+
+      {latestRow ? (
+        <section className="atlas-bg-timeline-current-read">
+          <div>
+            <span>Current read</span>
+            <strong>{latestRow.title}</strong>
+            <p>{latestRow.predictionEffect}</p>
+          </div>
+          <dl>
+            <div>
+              <dt>Latest update</dt>
+              <dd>{formatAtlasDate(latestRow.date, { includeYear: true })}</dd>
+            </div>
+            <div>
+              <dt>Modeled impact</dt>
+              <dd>{latestRow.impact}</dd>
+            </div>
+            <div>
+              <dt>Hidden activity</dt>
+              <dd>{hiddenInteractionCount} source items</dd>
+            </div>
+          </dl>
+        </section>
+      ) : null}
+
+      <section className="atlas-bg-timeline-ledger">
+        <header>
+          <span>Cycle timeline</span>
+          <h3>Negotiation events ATLAS uses for predictions</h3>
+        </header>
+        <div className="atlas-bg-timeline-list">
+          {timelineYears.map((yearGroup) => (
+            <details className="atlas-bg-timeline-year-group" key={yearGroup.year} open={yearGroup.year === currentYear}>
+              <summary>
+                <div>
+                  <span>{yearGroup.year}</span>
+                  <strong>{yearGroup.year === currentYear ? 'Current negotiation cycle' : 'Prior-cycle memory'}</strong>
+                </div>
+                <em>{yearGroup.rows.length} events</em>
+              </summary>
+              <div className="atlas-bg-timeline-year-events">
+                {yearGroup.rows.map((row, index) => (
+                  <article key={row.id} className={row.id === latestRow?.id ? 'is-latest' : undefined}>
+                    <time>{formatAtlasDate(row.date, { includeYear: true })}</time>
+                    <div className="atlas-bg-timeline-marker" aria-hidden="true">
+                      <span>{index + 1}</span>
+                    </div>
+                    <div className="atlas-bg-timeline-content">
+                      <div className="atlas-bg-timeline-row-kicker">
+                        <span>{row.label}</span>
+                        {row.id === latestRow?.id ? <em>Latest</em> : null}
+                      </div>
+                      <h3>{row.title}</h3>
+                      <p>{row.detail}</p>
+                      <dl>
+                        <div>
+                          <dt>Changed</dt>
+                          <dd>{row.impact}</dd>
+                        </div>
+                        <div>
+                          <dt>Prediction effect</dt>
+                          <dd>{row.predictionEffect}</dd>
+                        </div>
+                      </dl>
+                      <p className="atlas-bg-timeline-source-line">Source: {row.sourceLine}</p>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </details>
+          ))}
+        </div>
+      </section>
+
+      {supportingActivity.length ? (
+        <details className="atlas-bg-timeline-supporting">
+          <summary>
+            <span>View supporting activity</span>
+            <em>{hiddenInteractionCount} hidden</em>
+          </summary>
+          <div>
+            {supportingActivity.map((item) => (
+              <article key={item.label}>
+                <strong>{item.count}</strong>
+                <span>{item.label}</span>
+                <p>{item.detail}</p>
+              </article>
+            ))}
+          </div>
+        </details>
+      ) : null}
+    </section>
+  );
+}
+
+function timelineMemoryLabel(eventType: TimelineEvent['eventType']) {
+  switch (eventType) {
+    case 'decision_made':
+      return 'Major decision';
+    case 'debrief_created':
+      return 'Debrief';
+    case 'validation_completed':
+      return 'Validated input';
+    case 'scenario_modeled':
+      return 'Scenario modeled';
+    case 'financial_change':
+      return 'Finance guardrail';
+    case 'negotiation_update':
+      return 'Buyer movement';
+    case 'competitor_move':
+      return 'Competitive signal';
+    case 'signal_detected':
+      return 'External signal';
+    case 'document_added':
+    case 'document_retrieved':
+      return 'Source update';
+    default:
+      return String(eventType).replaceAll('_', ' ');
+  }
+}
+
+function timelinePredictionEffect(eventType: TimelineEvent['eventType'], title: string, impact: string) {
+  const lowerTitle = title.toLowerCase();
+  if (eventType === 'decision_made') return 'Locked decision becomes the current plan of record.';
+  if (eventType === 'debrief_created') return 'Debrief learning changes future buyer-response predictions.';
+  if (eventType === 'validation_completed') return 'Validated input can be used without extra source review.';
+  if (eventType === 'scenario_modeled') return 'Modeled output is available for scenario comparison and buyer planning.';
+  if (eventType === 'financial_change' || lowerTitle.includes('guardrail')) return `Finance corridor and exposure read updated: ${impact}.`;
+  if (eventType === 'negotiation_update') return 'Buyer posture and likely counter are recalculated from this movement.';
+  if (eventType === 'competitor_move') return 'Competitor pressure may change buyer leverage and required proof.';
+  if (eventType === 'signal_detected') return 'Market signal can change which scenarios ATLAS recommends.';
+  return 'Source memory updated for future recommendations.';
+}
+
+function BuyingGroupReimaginedWorkspace({
+  initialView,
+  profileRead,
+  profileUpdates,
+  workspace
+}: {
+  initialView?: string;
+  profileRead: BuyerProfileRead;
+  profileUpdates: BuyerProfileDocumentUpdate[];
+  workspace: BuyingGroupWorkspacePacket;
+}) {
+  const initialMiniView: BuyingGroupMiniView = initialView === 'timeline' || initialView === 'memory' || initialView === 'history'
+    ? 'timeline'
+    : initialView === 'current' || initialView === 'numbers' || initialView === 'strategy' || initialView === 'scenario'
+      ? 'current'
+      : 'profile';
+  const [activeView, setActiveView] = useState<BuyingGroupMiniView>(initialMiniView);
+  const negotiator = buyerNegotiatorProfile(workspace);
+  const topScenario = buyerScenarioRead(workspace)[0];
+  const miniViews: Array<{ id: BuyingGroupMiniView; label: string; helper: string }> = [
+    { id: 'profile', label: 'Profile', helper: 'Buyer behavior and negotiator read' },
+    { id: 'current', label: 'Current negotiation', helper: 'Numbers and predictive scenarios' },
+    { id: 'timeline', label: 'Timeline', helper: 'Cycle memory and source events' }
+  ];
+
+  function selectView(view: BuyingGroupMiniView) {
+    setActiveView(view);
+    window.history.replaceState(null, '', `/buying-groups/${workspace.buyingGroup.id}?view=${view}`);
+  }
+
+  return (
+    <section className="atlas-bg-workspace">
+      <div className="atlas-bg-back-row">
+        <a href="/buying-groups" aria-label="Back to buying groups">‹</a>
+        <span>Back to buying groups</span>
+      </div>
+
+      <header className="atlas-bg-hero">
+        <div>
+          <span>Living buying group intelligence</span>
+          <h1>Buying Group Profile: {workspace.buyingGroup.name}</h1>
+          <p>Historical notes, negotiator behavior, current numbers, and predictive scenarios converted into guidance for the next negotiation.</p>
+        </div>
+        <dl>
+          <div><dt>Risk</dt><dd>{workspace.buyingGroup.riskLevel}</dd></div>
+          <div><dt>Margin at risk</dt><dd>{euros(profileRead.exposure.marginAtRisk)}</dd></div>
+          <div><dt>Top scenario</dt><dd>{topScenario.name}</dd></div>
+        </dl>
+      </header>
+
+      <nav className="atlas-bg-mini-tabs" aria-label={`${workspace.buyingGroup.name} views`}>
+        {miniViews.map((view) => (
+          <button className={activeView === view.id ? 'active' : ''} key={view.id} onClick={() => selectView(view.id)} type="button">
+            <strong>{view.label}</strong>
+            <small>{view.helper}</small>
+          </button>
+        ))}
+      </nav>
+
+      {activeView === 'profile' ? <BuyingGroupProfileMiniView profileRead={profileRead} workspace={workspace} /> : null}
+      {activeView === 'current' ? <BuyingGroupCurrentNegotiationMiniView profileRead={profileRead} workspace={workspace} /> : null}
+      {activeView === 'timeline' ? <BuyingGroupTimelineMiniView profileUpdates={profileUpdates} workspace={workspace} /> : null}
     </section>
   );
 }
@@ -4865,7 +9784,7 @@ function BuyingGroupWorkspaceView({
   initialView?: string;
 }) {
   const workspace = buildBuyingGroupWorkspacePacket(buyingGroupId);
-  const [updates, setUpdates] = useState<BuyerProfileDocumentUpdate[]>([]);
+  const updates: BuyerProfileDocumentUpdate[] = [];
   if (!workspace) {
     return (
       <PageBrief
@@ -4879,28 +9798,12 @@ function BuyingGroupWorkspaceView({
   const profileRead = buildBuyerProfileRead(workspace, updates);
 
   return (
-    <>
-      <BuyingGroupStatePanel profileRead={profileRead} workspace={workspace} />
-      <BuyingGroupGenerativeWorkspace
-        initialPhase={initialPhase}
-        initialPrompt={initialPrompt}
-        initialView={initialView}
-        onAddProfileUpdate={(update) => setUpdates((current) => [update, ...current])}
-        profileRead={profileRead}
-        profileUpdates={updates}
-        workspace={workspace}
-      />
-      <AtlasCommandSurface
-        basePath={`/buying-groups/${workspace.buyingGroup.id}`}
-        examples={[
-          `Show me ${workspace.buyingGroup.name} financial exposure`,
-          `Pull ${workspace.buyingGroup.name} buyer history`,
-          `Create a ${workspace.buyingGroup.name} prep report`
-        ]}
-        initialPrompt={initialPrompt}
-        placeholder={`Ask ATLAS about ${workspace.buyingGroup.name}, its numbers, history, documents, or room reports...`}
-      />
-    </>
+    <BuyingGroupReimaginedWorkspace
+      initialView={initialView}
+      profileRead={profileRead}
+      profileUpdates={updates}
+      workspace={workspace}
+    />
   );
 }
 
@@ -4955,45 +9858,55 @@ function BuyingGroupFocusFilters({ activeView }: { activeView: string }) {
   );
 }
 
+function BuyingGroupSortControls({ activeSort = 'priority' }: { activeSort?: string }) {
+  const sorts = [
+    ['priority', 'Priority'],
+    ['margin', 'Margin risk'],
+    ['gap', 'Target gap'],
+    ['round', 'Round'],
+    ['revenue', 'Revenue']
+  ];
+
+  return (
+    <nav className="atlas-buyer-table-sort" aria-label="View buying groups by">
+      {sorts.map(([sort, label]) => (
+        <a className={activeSort === sort ? 'active' : ''} href={sort === 'priority' ? '/buying-groups' : `/buying-groups?sort=${sort}`} key={sort}>
+          {label}
+        </a>
+      ))}
+    </nav>
+  );
+}
+
 function sortBuyingGroups(groups: BuyingGroup[], sort?: string) {
-  const selected = sort || 'priority';
+  const { direction, key: selected } = parseSortParam(sort);
+  const compareNumbers = (aValue: number, bValue: number) => direction === 'asc' ? aValue - bValue : bValue - aValue;
   return [...groups].sort((a, b) => {
-    if (selected === 'margin') return b.financialExposure.marginAtRisk - a.financialExposure.marginAtRisk;
-    if (selected === 'revenue') return b.financialExposure.revenueUnderNegotiation - a.financialExposure.revenueUnderNegotiation;
+    if (selected === 'margin') return compareNumbers(a.financialExposure.marginAtRisk, b.financialExposure.marginAtRisk);
+    if (selected === 'revenue') return compareNumbers(a.financialExposure.revenueUnderNegotiation, b.financialExposure.revenueUnderNegotiation);
     if (selected === 'gap') {
       const gapA = a.financialExposure.targetPriceRealization - a.financialExposure.expectedPriceRealization;
       const gapB = b.financialExposure.targetPriceRealization - b.financialExposure.expectedPriceRealization;
-      return gapB - gapA;
+      return compareNumbers(gapA, gapB);
     }
-    if (selected === 'round') return Number(buyerRoundLabel(b).match(/\d+/)?.[0] ?? 0) - Number(buyerRoundLabel(a).match(/\d+/)?.[0] ?? 0);
-    return riskRank(b.riskLevel) - riskRank(a.riskLevel) || b.financialExposure.marginAtRisk - a.financialExposure.marginAtRisk;
+    if (selected === 'round') return compareNumbers(Number(buyerRoundLabel(a).match(/\d+/)?.[0] ?? 0), Number(buyerRoundLabel(b).match(/\d+/)?.[0] ?? 0));
+    return compareNumbers(riskRank(a.riskLevel), riskRank(b.riskLevel)) || compareNumbers(a.financialExposure.marginAtRisk, b.financialExposure.marginAtRisk);
   });
 }
 
 function BuyingGroupSortBar() {
-  const topGroup = packet.topExposureBuyingGroups[0] ?? packet.buyingGroups[0];
-  const realizationGap = topGroup.financialExposure.targetPriceRealization - topGroup.financialExposure.expectedPriceRealization;
+  const rankedGroups = sortBuyingGroups(packet.buyingGroups, 'priority');
+  const interventionGroups = rankedGroups.filter((group) => group.riskLevel === 'critical' || group.riskLevel === 'high');
+  const isMultiIntervention = interventionGroups.length > 1;
+  const topGroup = interventionGroups[0] ?? packet.topExposureBuyingGroups[0] ?? packet.buyingGroups[0];
 
   return (
-    <section className="atlas-buyer-list-head">
+    <section className={`atlas-buyer-list-head${isMultiIntervention ? ' atlas-buyer-list-head-multi' : ''}`}>
       <div>
-        <span className={`atlas-market-readiness-pill readiness-${topGroup.riskLevel === 'critical' ? 'escalation_needed' : 'needs_review'}`}>
-          {topGroup.riskLevel === 'critical' ? 'Escalation needed' : 'Needs review'}
-        </span>
-        <h1>{topGroup.name} needs focus: {euros(topGroup.financialExposure.marginAtRisk)} margin at risk across {buyerRoundLabel(topGroup).toLowerCase()}.</h1>
-        <p>Recommended action: open {topGroup.name}, review the {pct(realizationGap)} target gap, then model the next concession before CNO intervention.</p>
-        <div className="atlas-buyer-list-actions">
-          <a href={`/buying-groups/${topGroup.id}`}>Open {topGroup.name} <ArrowRight size={14} /></a>
-          <a href={`/scenario-models?buyingGroup=${topGroup.id}`}>Model exposure</a>
-        </div>
+        <span className="atlas-buyer-header-kicker">Buying group triage</span>
+        <h1>{isMultiIntervention ? `${interventionGroups.length} buyers need scenario planning.` : `Open ${topGroup.name} first.`}</h1>
+        <p>Sort the table to choose which buyer scenario to test first.</p>
       </div>
-      <dl>
-        <div><dt>Revenue in play</dt><dd>{euros(packet.summary.revenueUnderNegotiation)}</dd></div>
-        <div><dt>Margin at risk</dt><dd>{euros(packet.summary.marginAtRisk)}</dd></div>
-        <div><dt>High-risk groups</dt><dd>{packet.summary.highRiskBuyingGroups}</dd></div>
-        <div><dt>Top target gap</dt><dd>{pct(realizationGap)}</dd></div>
-        <div><dt>Active groups</dt><dd>{packet.summary.activeBuyingGroups}</dd></div>
-      </dl>
     </section>
   );
 }
@@ -5023,6 +9936,130 @@ function buyerMetricTone(metric: 'gap' | 'margin' | 'realization' | 'round', gro
   return 'good';
 }
 
+function buyerNextMilestone(group: BuyingGroup) {
+  if (group.negotiationStage === 'closed') return 'Cycle closed';
+  if (group.negotiationStage === 'prep') return 'Prep lock';
+  if (group.negotiationStage === 'paused') return 'Restart decision';
+  if (group.riskLevel === 'critical') return 'CNO checkpoint';
+  if (group.riskLevel === 'high') return 'Next buyer meeting';
+  return 'Monitor';
+}
+
+function buyerRiskReason(group: BuyingGroup) {
+  const exposure = group.financialExposure;
+  const realizationGap = exposure.targetPriceRealization - exposure.expectedPriceRealization;
+  const roundLabel = buyerRoundLabel(group).toLowerCase();
+
+  if (group.riskLevel === 'critical') {
+    return `${roundLabel}, ${euros(exposure.marginAtRisk)} margin at risk, ${pct(realizationGap)} target gap.`;
+  }
+  if (group.riskLevel === 'high') {
+    return `${euros(exposure.marginAtRisk)} margin at risk with ${pct(realizationGap)} target gap.`;
+  }
+  if (group.riskLevel === 'medium') {
+    return `Active negotiation, ${pct(realizationGap)} target gap, no CNO intervention trigger yet.`;
+  }
+  return `Low exposure and no active intervention trigger.`;
+}
+
+function buyerScenarioToTest(group: BuyingGroup) {
+  const exposure = group.financialExposure;
+  const realizationGap = exposure.targetPriceRealization - exposure.expectedPriceRealization;
+  const signal = signalsFor({ buyingGroupId: group.id })[0];
+
+  if (group.riskLevel === 'critical') return `Counter response at ${pct(exposure.expectedPriceRealization)} realization`;
+  if (realizationGap >= 0.8) return `Fallback needed to close ${pct(realizationGap)} gap`;
+  if (signal) return `Test response to ${signal.signalType.replaceAll('_', ' ')}`;
+  if (group.negotiationStage === 'prep') return 'Set first ask and guardrail';
+  if (group.negotiationStage === 'closed') return 'Debrief outcome into memory';
+  return 'Monitor buyer response';
+}
+
+function tableSortHref(sort: string) {
+  return sort === 'priority' ? '/buying-groups' : `/buying-groups?sort=${sort}`;
+}
+
+function BuyingGroupSortableHeader({
+  activeSort,
+  label,
+  sort
+}: {
+  activeSort: string;
+  label: string;
+  sort: string;
+}) {
+  const active = parseSortParam(activeSort).key === sort;
+  const nextSort = nextSortParam(activeSort, sort);
+  return (
+    <a className={active ? 'active' : ''} href={tableSortHref(nextSort)} aria-current={active ? 'true' : undefined}>
+      {label}
+      {active ? <span aria-hidden="true">{sortDirectionArrow(activeSort, sort)}</span> : null}
+    </a>
+  );
+}
+
+function BuyingGroupTriageTable({ activeSort = 'priority', groups }: { activeSort?: string; groups: BuyingGroup[] }) {
+  if (!groups.length) return <EmptyGeneratedState label="Buying groups" />;
+
+  return (
+    <section className="atlas-buyer-triage-table-wrap" aria-label="Buying group triage table">
+      <table className="atlas-buyer-triage-table">
+        <thead>
+          <tr>
+            <th>Buying group</th>
+            <th><BuyingGroupSortableHeader activeSort={activeSort} label="Risk" sort="priority" /></th>
+            <th><BuyingGroupSortableHeader activeSort={activeSort} label="Margin at risk" sort="margin" /></th>
+            <th><BuyingGroupSortableHeader activeSort={activeSort} label="Target gap" sort="gap" /></th>
+            <th>Scenario to test</th>
+          </tr>
+        </thead>
+        <tbody>
+          {groups.map((group) => {
+            const exposure = group.financialExposure;
+            const markets = group.primaryMarkets.map((id) => getMarket(id)?.name ?? id).join(' / ');
+            const realizationGap = exposure.targetPriceRealization - exposure.expectedPriceRealization;
+            const href = `/buying-groups/${group.id}?view=strategy`;
+            return (
+              <tr
+                className={`risk-${group.riskLevel}`}
+                key={group.id}
+                onClick={() => { window.location.href = href; }}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    window.location.href = href;
+                  }
+                }}
+                role="link"
+                tabIndex={0}
+              >
+                <td>
+                  <strong>{group.name}</strong>
+                  <small>{markets} · {buyerRoundLabel(group)} · {group.negotiationStage}</small>
+                </td>
+                <td>
+                  <span className="atlas-buyer-risk-explain" title={buyerRiskReason(group)}>
+                    <span className={`atlas-buyer-risk-table-pill risk-${group.riskLevel}`}>{group.riskLevel}</span>
+                    <span className="atlas-risk-tooltip" role="tooltip">{buyerRiskReason(group)}</span>
+                  </span>
+                </td>
+                <td className={`metric-${buyerMetricTone('margin', group)}`}>{euros(exposure.marginAtRisk)}</td>
+                <td className={`metric-${buyerMetricTone('gap', group)}`}>{pct(realizationGap)}</td>
+                <td>
+                  <span className="atlas-buyer-scenario-route">
+                    {buyerScenarioToTest(group)}
+                    <em>Open workspace</em>
+                  </span>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </section>
+  );
+}
+
 function BuyingGroupTriageCard({ group, rank }: { group: BuyingGroup; rank: number }) {
   const exposure = group.financialExposure;
   const markets = group.primaryMarkets.map((id) => getMarket(id)?.name ?? id).join(' / ');
@@ -5035,6 +10072,10 @@ function BuyingGroupTriageCard({ group, rank }: { group: BuyingGroup; rank: numb
           <span>#{rank} / {group.riskLevel} risk</span>
           <h3>{group.name}</h3>
           <p>{markets} · {group.categories.join(', ')}</p>
+          <WhyShownLine
+            detail="this buyer changes relationship priority, exposure, or intervention need"
+            reasons={['materiality', 'urgency', 'action']}
+          />
         </header>
         <dl className="atlas-buyer-triage-state">
           <div className={`metric-${buyerMetricTone('round', group)}`}><dt>Stage</dt><dd>{buyerRoundLabel(group)} · {group.negotiationStage}</dd></div>
@@ -5102,18 +10143,8 @@ function BuyingGroupsView({
   return (
     <>
       <BuyingGroupSortBar />
-      <AtlasCommandSurface
-        basePath="/buying-groups"
-        examples={[
-          'Which buying groups need CNO intervention?',
-          'Show groups below target realization',
-          'Show buyers with external pressure'
-        ]}
-        initialPrompt={initialPrompt}
-        placeholder="Ask for high-risk groups, long negotiation rounds, target gaps, or external pressure..."
-      />
       <section className="atlas-buyer-list-shell">
-        <BuyingGroupTriageQueue groups={visibleGroups} />
+        <BuyingGroupTriageTable activeSort={initialSort || 'priority'} groups={visibleGroups} />
       </section>
     </>
   );
@@ -5177,9 +10208,14 @@ function scenarioFocusLabel(focus: ScenarioFocus) {
 
 function ScenarioModelsView({
   buyingGroupId,
+  initialScenarioId,
+  initialScenarioLabMode,
+  initialPrompt,
   marketId
 }: {
   buyingGroupId?: string;
+  initialScenarioId?: string;
+  initialScenarioLabMode?: string;
   initialPrompt?: string;
   initialView?: string;
   marketId?: string;
@@ -5197,8 +10233,31 @@ function ScenarioModelsView({
   const scenarioSource = attachedBuyingGroup?.source ?? attachedMarket?.source ?? packet.documents.find((document) => document.id === defaultScenario.sourceIds[0])?.source ?? packet.markets[0].source;
   const [inputs, setInputs] = useState<ScenarioInputs>(initialInputs);
   const [scenarioSaveStatus, setScenarioSaveStatus] = useState('');
+  const [selectedLevel, setSelectedLevel] = useState<ScenarioWorkspaceLevel>(attachedBuyingGroup ? 'buying_group' : attachedMarket ? 'market' : 'portfolio');
+  const [selectedScenarioId, setSelectedScenarioId] = useState(initialScenarioId ?? '');
+  const [scenarioLabMode, setScenarioLabMode] = useState<ScenarioLabMode>(initialScenarioLabMode === 'create' ? 'create' : 'review');
+  const [scenarioTypeFilter, setScenarioTypeFilter] = useState('all');
+  const [expandedScenarioPriorityGroups, setExpandedScenarioPriorityGroups] = useState({ planning: false, traceability: false });
+  const [compareScenarioIds, setCompareScenarioIds] = useState<string[]>([]);
+  const [savedManualScenarios, setSavedManualScenarios] = useState<ScenarioLabOption[]>([]);
+  const [skuRows, setSkuRows] = useState<ScenarioSkuRow[]>([
+    { id: 'scenario-sku-core', sku: 'Core multipack family', priceMove: initialInputs.priceIncreasePercent, volumeRisk: Math.abs(initialInputs.volumeChangePercent), margin: 31.2, sensitivity: 'Medium' },
+    { id: 'scenario-sku-promo', sku: 'Promo pack architecture', priceMove: Math.max(0.5, initialInputs.priceIncreasePercent - 0.4), volumeRisk: Math.abs(initialInputs.volumeChangePercent) + 0.7, margin: 27.6, sensitivity: 'High' }
+  ]);
+  const [customLevers, setCustomLevers] = useState<ScenarioCustomLeverRow[]>([
+    { id: 'scenario-custom-terms', name: 'Payment terms', value: '30 days', impact: 'Protects cash exposure', status: 'Assumption', weight: 4 },
+    { id: 'scenario-custom-kpi', name: 'Retailer KPI support', value: 'Visibility commitment', impact: 'Improves buyer acceptance', status: 'User-added', weight: 3 }
+  ]);
+  const [scenarioDebriefStatus, setScenarioDebriefStatus] = useState('');
+  const [scenarioDebriefText, setScenarioDebriefText] = useState('');
+  const [scenarioDebriefBuyerCounter, setScenarioDebriefBuyerCounter] = useState('');
+  const [scenarioDebriefFinalLanded, setScenarioDebriefFinalLanded] = useState('');
+  const [scenarioDebriefBehavior, setScenarioDebriefBehavior] = useState('Asked for trade support before accepting price');
+  const [scenarioDebriefNextCycle, setScenarioDebriefNextCycle] = useState('');
+  const [scenarioDebriefAttachments, setScenarioDebriefAttachments] = useState('');
+  const [scenarioDebriefEntries, setScenarioDebriefEntries] = useState<ScenarioDebriefEntry[]>([]);
   const outputs = useMemo(() => calculateScenarioOutputs(inputs, baseRevenue), [baseRevenue, inputs]);
-  const scenarioOwnerName = attachedBuyingGroup?.name ?? attachedMarket?.name ?? 'Europe';
+  const scenarioOwnerName = attachedBuyingGroup?.name ?? attachedMarket?.name ?? 'Europe portfolio';
   const scenarioScopeName = attachedBuyingGroup && selectedMarket
     ? `${attachedBuyingGroup.name} · ${selectedMarket.name}`
     : scenarioOwnerName;
@@ -5208,32 +10267,190 @@ function ScenarioModelsView({
   const marketScopedBuyingGroups = selectedMarket
     ? packet.buyingGroups.filter((group) => group.primaryMarkets.includes(selectedMarket.id))
     : packet.buyingGroups;
+  const scenarioContextGroups = [...marketScopedBuyingGroups]
+    .sort((a, b) => riskRank(b.riskLevel) - riskRank(a.riskLevel) || b.financialExposure.marginAtRisk - a.financialExposure.marginAtRisk)
+    .slice(0, 5);
+  const attachedWorkspace = attachedBuyingGroup ? buildBuyingGroupWorkspacePacket(attachedBuyingGroup.id) : undefined;
+  const latestScenarioDebrief = scenarioDebriefEntries[0];
   function scenarioHref({ buyer = selectedBuyingGroupId, market = selectedMarketId }: { buyer?: string; market?: string } = {}) {
     const params = new URLSearchParams();
     if (market) params.set('market', market);
     if (buyer) params.set('buyingGroup', buyer);
     const query = params.toString();
-    return query ? `/scenario-models?${query}` : '/scenario-models';
+    return query ? `/scenario-lab?${query}` : '/scenario-lab';
   }
 
   useEffect(() => {
     setInputs(initialInputs);
   }, [initialInputs]);
 
+  useEffect(() => {
+    setScenarioDebriefEntries(readScenarioDebriefMemory(attachedBuyingGroup?.id));
+  }, [attachedBuyingGroup?.id]);
+
   function updateInput<K extends keyof ScenarioInputs>(key: K, value: ScenarioInputs[K]) {
     setInputs((current) => ({ ...current, [key]: value }));
+    setSelectedScenarioId('custom');
   }
+
+  function inputsForScenarioLevel(level: ScenarioWorkspaceLevel): ScenarioInputs {
+    if (level === 'portfolio') {
+      const topMarket = packet.highPressureMarkets[0];
+      return {
+        ...scenarioInputsForMarket(topMarket),
+        buyerAcceptanceProbability: Math.max(32, scenarioInputsForMarket(topMarket).buyerAcceptanceProbability - 8),
+        concessionAmount: Math.round(packet.summary.gapToPlan * 0.08),
+        tradeSpendChange: Math.round(packet.summary.marginAtRisk * 0.06)
+      };
+    }
+    if (level === 'market') return scenarioInputsForMarket(selectedMarket ?? attachedMarket ?? workspacePrimaryMarket(attachedWorkspace));
+    if (level === 'category') {
+      return {
+        ...initialInputs,
+        buyerAcceptanceProbability: Math.max(25, initialInputs.buyerAcceptanceProbability - 5),
+        concessionAmount: Math.round(initialInputs.concessionAmount * 1.08),
+        costInflationPercent: Math.min(7, initialInputs.costInflationPercent + 0.6),
+        expectedRealizationPercent: Math.max(0.5, initialInputs.expectedRealizationPercent - 0.2),
+        tradeSpendChange: Math.round(initialInputs.tradeSpendChange * 1.15),
+        volumeChangePercent: initialInputs.volumeChangePercent - 0.4
+      };
+    }
+    if (level === 'sku') {
+      const averagePriceMove = skuRows.reduce((sum, row) => sum + row.priceMove, 0) / Math.max(1, skuRows.length);
+      const averageVolumeRisk = skuRows.reduce((sum, row) => sum + row.volumeRisk, 0) / Math.max(1, skuRows.length);
+      const highSensitivityCount = skuRows.filter((row) => row.sensitivity.toLowerCase().includes('high')).length;
+      return {
+        ...initialInputs,
+        buyerAcceptanceProbability: Math.max(20, initialInputs.buyerAcceptanceProbability - highSensitivityCount * 5),
+        expectedRealizationPercent: Math.max(0.4, averagePriceMove - 0.35),
+        priceIncreasePercent: averagePriceMove,
+        volumeChangePercent: -Math.abs(averageVolumeRisk)
+      };
+    }
+    if (level === 'custom') {
+      const leverWeight = customLevers.reduce((sum, row) => sum + row.weight, 0);
+      return {
+        ...inputs,
+        buyerAcceptanceProbability: Math.max(20, Math.min(95, inputs.buyerAcceptanceProbability + Math.round(leverWeight / 3))),
+        concessionAmount: Math.round(inputs.concessionAmount + leverWeight * 18000),
+        tradeSpendChange: Math.round(inputs.tradeSpendChange + leverWeight * 22000)
+      };
+    }
+    return scenarioInputsForBuyingGroup(attachedBuyingGroup ?? attachedWorkspace?.buyingGroup);
+  }
+
+  function selectScenarioLevel(level: ScenarioWorkspaceLevel) {
+    setSelectedLevel(level);
+    setInputs(inputsForScenarioLevel(level));
+    setSelectedScenarioId(level === 'buying_group' || level === 'portfolio' ? 'recommended' : 'custom');
+  }
+
+  function workspacePrimaryMarket(workspace?: BuyingGroupWorkspacePacket) {
+    return workspace?.markets[0];
+  }
+
+  function updateSkuRow<K extends keyof ScenarioSkuRow>(id: string, key: K, value: ScenarioSkuRow[K]) {
+    setSkuRows((current) => current.map((row) => row.id === id ? { ...row, [key]: value } : row));
+    setSelectedLevel('sku');
+    setSelectedScenarioId('custom');
+  }
+
+  function addSkuRow() {
+    setSkuRows((current) => [
+      ...current,
+      { id: `scenario-sku-${current.length + 1}`, sku: 'User-added SKU / pack', priceMove: inputs.priceIncreasePercent, volumeRisk: Math.abs(inputs.volumeChangePercent), margin: 29.5, sensitivity: 'Needs review' }
+    ]);
+    setSelectedLevel('sku');
+    setSelectedScenarioId('custom');
+  }
+
+  function removeSkuRow(id: string) {
+    setSkuRows((current) => current.filter((row) => row.id !== id));
+    setSelectedScenarioId('custom');
+  }
+
+  function updateCustomLever<K extends keyof ScenarioCustomLeverRow>(id: string, key: K, value: ScenarioCustomLeverRow[K]) {
+    setCustomLevers((current) => current.map((row) => row.id === id ? { ...row, [key]: value } : row));
+    setSelectedLevel('custom');
+    setSelectedScenarioId('custom');
+  }
+
+  function addCustomLever() {
+    setCustomLevers((current) => [
+      ...current,
+      { id: `scenario-lever-${current.length + 1}`, name: 'User-added lever', value: 'Define value', impact: 'Describe impact', status: 'Needs review', weight: 2 }
+    ]);
+    setSelectedLevel('custom');
+    setSelectedScenarioId('custom');
+  }
+
+  function removeCustomLever(id: string) {
+    setCustomLevers((current) => current.filter((row) => row.id !== id));
+    setSelectedScenarioId('custom');
+  }
+
+  function saveScenarioDebrief() {
+    const hasDebrief = scenarioDebriefText.trim()
+      || scenarioDebriefBuyerCounter.trim()
+      || scenarioDebriefFinalLanded.trim()
+      || scenarioDebriefNextCycle.trim()
+      || scenarioDebriefAttachments.trim();
+    if (!hasDebrief) {
+      setScenarioDebriefStatus('Add a note, outcome, buyer counter, or next-cycle learning before saving.');
+      return;
+    }
+    const predictionImpact = scenarioDebriefNextCycle.trim()
+      ? `Prediction updated: next model should account for "${scenarioDebriefNextCycle.trim()}".`
+      : scenarioDebriefBuyerCounter.trim()
+        ? `Prediction updated: buyer-counter case now anchors near ${scenarioDebriefBuyerCounter.trim()}.`
+        : 'Prediction updated: buyer behavior memory now adjusts the scenario read.';
+    const entry: ScenarioDebriefEntry = {
+      attachments: scenarioDebriefAttachments.trim(),
+      behavior: scenarioDebriefBehavior,
+      buyingGroupId: attachedBuyingGroup?.id,
+      buyerCounter: scenarioDebriefBuyerCounter.trim(),
+      concessions: '',
+      createdAt: new Date().toISOString(),
+      evidenceStrengthAfter: selectedPredictiveScenario.evidenceStrength,
+      finalLanded: scenarioDebriefFinalLanded.trim(),
+      id: `scenario-debrief-${Date.now()}`,
+      nextCycle: scenarioDebriefNextCycle.trim(),
+      note: scenarioDebriefText.trim(),
+      predictionAfter: predictionImpact,
+      predictionBefore: selectedPredictiveScenario.buyerResponse,
+      scenarioId: selectedPredictiveScenario.id,
+      selectedScenarioLabel: selectedPredictiveScenario.name,
+      predictionImpact
+    };
+    writeScenarioDebriefMemory(entry);
+    setScenarioDebriefEntries((current) => [entry, ...current]);
+    setScenarioDebriefStatus(`Debrief saved. ${predictionImpact}`);
+    setScenarioDebriefText('');
+    setScenarioDebriefBuyerCounter('');
+    setScenarioDebriefFinalLanded('');
+    setScenarioDebriefNextCycle('');
+    setScenarioDebriefAttachments('');
+  }
+
   const scenarioControlRows: Array<{ affects: string; key: keyof ScenarioInputs; label: string; max: number; min: number; step: number }> = [
     { key: 'priceIncreasePercent', label: 'Price increase %', min: 0, max: Math.max(6, inputs.priceIncreasePercent + 1), step: 0.1, affects: 'Target ask, acceptance, revenue' },
     { key: 'expectedRealizationPercent', label: 'Expected realization %', min: 0, max: Math.max(5, inputs.priceIncreasePercent + 1), step: 0.1, affects: 'Gap to plan, margin, risk value' },
     { key: 'volumeChangePercent', label: 'Volume change %', min: -5, max: 3, step: 0.1, affects: 'Volume, revenue, buyer risk' },
     { key: 'tradeSpendChange', label: 'Trade spend change EUR', min: 0, max: Math.max(1000000, inputs.tradeSpendChange * 1.5), step: 25000, affects: 'Trade spend, margin, acceptance' },
     { key: 'concessionAmount', label: 'Concession amount EUR', min: 0, max: Math.max(1000000, inputs.concessionAmount * 1.75), step: 25000, affects: 'Revenue leakage, guardrail pressure' },
-    { key: 'costInflationPercent', label: 'Cost inflation %', min: 0, max: Math.max(6, inputs.costInflationPercent + 1), step: 0.1, affects: 'Proof strength, defendability' },
+    { key: 'costInflationPercent', label: 'Cost inflation %', min: 0, max: Math.max(6, inputs.costInflationPercent + 1), step: 0.1, affects: 'Evidence strength, defendability' },
     { key: 'buyerAcceptanceProbability', label: 'Buyer acceptance probability', min: 0, max: 100, step: 1, affects: 'Risk-adjusted value' },
     { key: 'contractLengthMonths', label: 'Contract length months', min: 3, max: 24, step: 1, affects: 'Exposure window, lock-in risk' }
   ];
-  const visibleScenarioControls = scenarioControlRows;
+  const primaryScenarioControlKeys = new Set<keyof ScenarioInputs>([
+    'priceIncreasePercent',
+    'expectedRealizationPercent',
+    'volumeChangePercent',
+    'tradeSpendChange',
+    'buyerAcceptanceProbability'
+  ]);
+  const visibleScenarioControls = scenarioControlRows.filter((row) => primaryScenarioControlKeys.has(row.key));
+  const advancedScenarioControls = scenarioControlRows.filter((row) => !primaryScenarioControlKeys.has(row.key));
   function formatScenarioInputValue(key: keyof ScenarioInputs, value: number) {
     if (key === 'buyerAcceptanceProbability' || key.includes('Percent')) return `${value.toFixed(key === 'buyerAcceptanceProbability' ? 0 : 1)}%`;
     if (key === 'contractLengthMonths') return `${value.toFixed(0)} mo`;
@@ -5275,11 +10492,30 @@ function ScenarioModelsView({
     { delta: outputs.volumeImpact, label: 'Volume', value: scenarioBaselineMetrics.volume },
     { delta: outputs.tradeSpendImpact, label: 'Trade spend', value: scenarioBaselineMetrics.trade }
   ];
+  const buyerAskForCorridor = attachedWorkspace ? Number.parseFloat(attachedWorkspace.currentState.latestBuyerAsk) : inputs.priceIncreasePercent + 1.2;
+  const currentPositionForCorridor = attachedWorkspace ? Number.parseFloat(attachedWorkspace.currentState.pepsicoPosition) : inputs.expectedRealizationPercent;
+  const recommendedAskForCorridor = inputs.priceIncreasePercent;
+  const targetForCorridor = Math.max(inputs.expectedRealizationPercent, recommendedAskForCorridor - 0.2);
+  const fallbackForCorridor = Math.max(0, inputs.expectedRealizationPercent - 0.4);
+  const redLineForCorridor = Math.max(0, fallbackForCorridor - 0.7);
+  const corridorValues = [
+    { label: 'Buyer ask', value: buyerAskForCorridor, tone: 'buyer' },
+    { label: 'Current', value: currentPositionForCorridor, tone: 'current' },
+    { label: 'Recommended ask', value: recommendedAskForCorridor, tone: 'recommended' },
+    { label: 'Target', value: targetForCorridor, tone: 'target' },
+    { label: 'Fallback', value: fallbackForCorridor, tone: 'fallback' },
+    { label: 'Red line', value: redLineForCorridor, tone: 'redline' }
+  ];
+  const corridorMin = Math.min(...corridorValues.map((item) => item.value), 0);
+  const corridorMax = Math.max(...corridorValues.map((item) => item.value), buyerAskForCorridor, recommendedAskForCorridor, 1);
+  const corridorPosition = (value: number) => `${Math.min(100, Math.max(0, ((value - corridorMin) / Math.max(corridorMax - corridorMin, 1)) * 100))}%`;
+  const corridorBreached = inputs.expectedRealizationPercent < redLineForCorridor || outputs.marginImpact < -Math.max(350000, scenarioBaselineMetrics.margin * 0.08);
   const scenarioReportPrompt = [
-    `Create a PDF-ready financial scenario report for ${scenarioScopeName}.`,
+    `Create a PDF-ready financial scenario output for ${scenarioScopeName}.`,
     attachedBuyingGroup ? `Buying group: ${attachedBuyingGroup.name}.` : null,
     selectedMarket ? `Market: ${selectedMarket.name}.` : attachedMarket ? `Market: ${attachedMarket.name}.` : 'Market scope: Europe.',
     `Inputs: price increase ${inputs.priceIncreasePercent.toFixed(1)}%, expected realization ${inputs.expectedRealizationPercent.toFixed(1)}%, volume change ${inputs.volumeChangePercent.toFixed(1)}%, trade spend ${euros(inputs.tradeSpendChange)}, concession ${euros(inputs.concessionAmount)}, cost inflation ${inputs.costInflationPercent.toFixed(1)}%, buyer acceptance ${inputs.buyerAcceptanceProbability.toFixed(0)}%, competitor pressure ${inputs.competitorPressureLevel}, contract length ${inputs.contractLengthMonths} months.`,
+    latestScenarioDebrief ? `Latest debrief memory: buyer counter ${latestScenarioDebrief.buyerCounter || 'not entered'}, landed ${latestScenarioDebrief.finalLanded || 'not entered'}, behavior "${latestScenarioDebrief.behavior}", next-cycle learning "${latestScenarioDebrief.nextCycle || latestScenarioDebrief.predictionImpact}".` : null,
     `Outputs: revenue ${scenarioDeltaLabel(outputs.revenueImpact)}, margin ${scenarioDeltaLabel(outputs.marginImpact)}, volume ${scenarioDeltaLabel(outputs.volumeImpact)}, trade spend ${scenarioDeltaLabel(outputs.tradeSpendImpact)}, gap to plan ${scenarioDeltaLabel(outputs.gapToPlanImpact)}, risk-adjusted value ${euros(outputs.riskAdjustedValue)}, risk ${outputs.riskLevel}.`,
     `Include current baseline, raw changes, percentage changes, source/freshness/confidence, assumptions, and recommended follow-up.`
   ].filter(Boolean).join('\n');
@@ -5287,11 +10523,548 @@ function ScenarioModelsView({
     mode: 'draft',
     print: '1',
     prompt: scenarioReportPrompt,
-    reportOnly: '1'
+    reportOnly: '1',
+    reportType: 'scenario_evidence'
   });
   if (selectedBuyingGroupId) scenarioReportParams.set('buyingGroupId', selectedBuyingGroupId);
   if (selectedMarketId) scenarioReportParams.set('marketId', selectedMarketId);
+  const scenarioAlerts = [
+    attachedBuyingGroup ? buyingGroupToAlert(attachedBuyingGroup) : null,
+    attachedMarket ? marketToAlert(attachedMarket) : selectedMarket ? marketToAlert(selectedMarket) : null,
+    attachedWorkspace?.signals[0] ? signalToAlert(attachedWorkspace.signals[0]) : null,
+    scenarioToAlert(defaultScenario)
+  ].filter((alert): alert is AtlasActiveAlert => Boolean(alert));
+  const scenarioLevels: Array<{ id: ScenarioWorkspaceLevel; label: string; note: string }> = [
+    { id: 'portfolio', label: 'Portfolio', note: 'Europe risk scan' },
+    { id: 'market', label: 'Market', note: selectedMarket?.name ?? attachedMarket?.name ?? 'Europe' },
+    { id: 'buying_group', label: 'Buying group', note: attachedBuyingGroup?.name ?? 'Select buyer' },
+    { id: 'category', label: 'Category', note: attachedBuyingGroup?.categories[0] ?? 'Category mix' },
+    { id: 'sku', label: 'SKU drill-in', note: `${skuRows.length} rows` },
+    { id: 'custom', label: 'Custom levers', note: `${customLevers.length} levers` }
+  ];
+  const portfolioTopGroup = packet.topExposureBuyingGroups[0];
+  const portfolioSecondGroup = packet.topExposureBuyingGroups[1] ?? portfolioTopGroup;
+  const portfolioTopMarket = packet.highPressureMarkets[0];
+  const portfolioSecondMarket = packet.highPressureMarkets[1] ?? portfolioTopMarket;
+  const scenarioOpportunityRows = [
+    {
+      action: 'Start portfolio scan',
+      detail: `${packet.summary.highRiskBuyingGroups} high-risk buyers · ${euros(packet.summary.gapToPlan)} gap to plan`,
+      effect: 'Compare the top market and buyer risks before choosing a focused scenario.',
+      href: '/scenario-lab',
+      level: 'Portfolio',
+      title: 'Europe plan exposure needs a scenario scan',
+      value: euros(packet.summary.marginAtRisk)
+    },
+    {
+      action: `Model ${portfolioTopGroup.name}`,
+      detail: `${pct(portfolioTopGroup.financialExposure.expectedPriceRealization)} expected vs ${pct(portfolioTopGroup.financialExposure.targetPriceRealization)} target`,
+      effect: 'Predict buyer counter, margin impact, and whether the move should feed buyer memory.',
+      href: `/scenario-lab?buyingGroup=${portfolioTopGroup.id}`,
+      level: 'Buying group',
+      title: `${portfolioTopGroup.name} has the highest buyer exposure`,
+      value: euros(portfolioTopGroup.financialExposure.marginAtRisk)
+    },
+    {
+      action: `Model ${portfolioTopMarket.name}`,
+      detail: `${portfolioTopMarket.activeBuyingGroups.length} buyers active · ${portfolioTopMarket.pressureLevel} pressure`,
+      effect: 'Test whether market pressure should change buyer scenarios or stay as watchout context.',
+      href: `/scenario-lab?market=${portfolioTopMarket.id}`,
+      level: 'Market',
+      title: `${portfolioTopMarket.name} pressure could affect multiple buyers`,
+      value: euros(portfolioTopMarket.marginAtRisk)
+    },
+    {
+      action: 'Compare buyer counter',
+      detail: `${portfolioSecondGroup.name} and ${portfolioTopGroup.name} are both below target realization`,
+      effect: 'Use A/B/C comparison to decide which buyer counter is worth preparing first.',
+      href: `/scenario-lab?buyingGroup=${portfolioSecondGroup.id}`,
+      level: 'Buyer counter',
+      title: 'Buyer-counter scenarios need prioritization',
+      value: `${pct(portfolioSecondGroup.financialExposure.targetPriceRealization - portfolioSecondGroup.financialExposure.expectedPriceRealization)} gap`
+    },
+    {
+      action: 'Test category/SKU drill-in',
+      detail: `${portfolioTopGroup.categories[0] ?? 'Core category'} · optional SKU rows only when material`,
+      effect: 'Use SKU-level inputs only if a specific pack, category, or customer lever changes the decision.',
+      href: `/scenario-lab?buyingGroup=${portfolioTopGroup.id}`,
+      level: 'SKU optional',
+      title: 'SKU or custom levers may matter for the top buyer',
+      value: `${skuRows.length} starter rows`
+    },
+    {
+      action: `Model ${portfolioSecondMarket.name}`,
+      detail: `${portfolioSecondMarket.activeBuyingGroups.length} active buyers · ${euros(portfolioSecondMarket.gapToPlan)} gap`,
+      effect: 'Check whether the second market creates an offset, watchout, or buyer-specific scenario input.',
+      href: `/scenario-lab?market=${portfolioSecondMarket.id}`,
+      level: 'Market',
+      title: `${portfolioSecondMarket.name} is the next market to test`,
+      value: euros(portfolioSecondMarket.marginAtRisk)
+    }
+  ];
+  const levelContextRows = [
+    { label: 'Scope', value: scenarioScopeName },
+    { label: 'Level', value: scenarioLevels.find((level) => level.id === selectedLevel)?.label ?? 'Scenario' },
+    { label: 'Source', value: sourceTypeLabel(scenarioSource) },
+    { label: 'Confidence', value: scenarioSource.confidence }
+  ];
+  function predictiveScenario(
+    id: string,
+    name: string,
+    description: string,
+    scenarioInputs: ScenarioInputs,
+    why: string
+  ): Omit<ScenarioLabOption, 'createdAt' | 'origin' | 'scenarioStyle'> {
+    const scenarioOutputs = calculateScenarioOutputs(scenarioInputs, baseRevenue);
+    const likelihood = Math.max(1, Math.min(99, Math.round(scenarioInputs.buyerAcceptanceProbability)));
+    const valueRatio = scenarioOutputs.riskAdjustedValue / Math.max(1, scenarioBaselineMetrics.margin || baseRevenue * 0.12);
+    const debriefMemoryBoost = latestScenarioDebrief ? 10 : 0;
+    const evidenceStrength = Math.min(96, 62 + (attachedWorkspace?.timelineEvents.length ?? 1) * 4 + (attachedWorkspace?.documents.length ?? 1) * 3 + debriefMemoryBoost);
+    const guardrailRisk = scenarioInputs.expectedRealizationPercent < Math.max(0.4, initialInputs.expectedRealizationPercent - 0.5)
+      ? 'Guardrail breach'
+      : scenarioInputs.expectedRealizationPercent < initialInputs.expectedRealizationPercent
+        ? 'Watch'
+        : 'Inside corridor';
+    const relationshipRisk = scenarioInputs.priceIncreasePercent > initialInputs.priceIncreasePercent + 0.55 || scenarioInputs.volumeChangePercent < initialInputs.volumeChangePercent - 0.8
+      ? 'High'
+      : scenarioInputs.priceIncreasePercent < initialInputs.priceIncreasePercent - 0.35
+        ? 'Low'
+        : 'Medium';
+    const guardrailScore = guardrailRisk === 'Inside corridor' ? 16 : guardrailRisk === 'Watch' ? 4 : -18;
+    const relationshipScore = relationshipRisk === 'Low' ? 10 : relationshipRisk === 'Medium' ? 4 : -10;
+    const atlasScore = Math.max(1, Math.min(100, Math.round(likelihood * 0.36 + Math.max(0, Math.min(100, valueRatio * 100)) * 0.24 + evidenceStrength * 0.22 + guardrailScore + relationshipScore)));
+    const likelyCounter = Math.max(0.4, scenarioInputs.priceIncreasePercent - (relationshipRisk === 'High' ? 0.8 : relationshipRisk === 'Medium' ? 0.5 : 0.3));
+    const buyerResponse = latestScenarioDebrief
+      ? `Updated from debrief: likely to counter near ${latestScenarioDebrief.buyerCounter || `${likelyCounter.toFixed(1)}%`} and repeat "${latestScenarioDebrief.behavior}".`
+      : likelihood >= 72
+      ? `Likely to challenge proof, then land near ${likelyCounter.toFixed(1)}%.`
+      : likelihood >= 55
+        ? `Likely to counter near ${likelyCounter.toFixed(1)}% and ask for trade support.`
+        : 'Likely to resist and use affordability, volume, or competitor pressure as leverage.';
+    const recommendedEdit = latestScenarioDebrief?.nextCycle
+      ? latestScenarioDebrief.nextCycle
+      : guardrailRisk === 'Guardrail breach'
+      ? 'Raise expected realization before using this scenario.'
+      : evidenceStrength < 76
+        ? 'Attach prior-year outcome and source proof before taking this into the room.'
+        : 'Usable for planning; pressure-test buyer counter before saving.';
+    return {
+      atlasScore,
+      buyerResponse,
+      description,
+      evidenceStrength,
+      guardrailRisk,
+      id,
+      inputs: scenarioInputs,
+      likelihood,
+      name,
+      outputs: scenarioOutputs,
+      recommendedEdit,
+      relationshipRisk,
+      valueProtected: scenarioOutputs.riskAdjustedValue,
+      why
+    };
+  }
+  const recommendedScenarioInputs = initialInputs;
+  const conservativeScenarioInputs: ScenarioInputs = {
+    ...initialInputs,
+    buyerAcceptanceProbability: Math.min(95, initialInputs.buyerAcceptanceProbability + 10),
+    concessionAmount: Math.round(initialInputs.concessionAmount * 1.08),
+    expectedRealizationPercent: Math.max(0.5, initialInputs.expectedRealizationPercent - 0.25),
+    priceIncreasePercent: Math.max(0.7, initialInputs.priceIncreasePercent - 0.3),
+    tradeSpendChange: Math.round(initialInputs.tradeSpendChange * 1.1),
+    volumeChangePercent: Math.min(1.5, initialInputs.volumeChangePercent + 0.35)
+  };
+  const buyerCounterInputs: ScenarioInputs = {
+    ...initialInputs,
+    buyerAcceptanceProbability: Math.max(25, initialInputs.buyerAcceptanceProbability - 16),
+    concessionAmount: Math.round(initialInputs.concessionAmount * 1.22),
+    expectedRealizationPercent: Math.max(0.5, initialInputs.expectedRealizationPercent - 0.55),
+    priceIncreasePercent: Math.max(initialInputs.expectedRealizationPercent, initialInputs.priceIncreasePercent - 0.35),
+    tradeSpendChange: Math.round(initialInputs.tradeSpendChange * 1.18),
+    volumeChangePercent: initialInputs.volumeChangePercent - 0.8
+  };
+  const aggressiveScenarioInputs: ScenarioInputs = {
+    ...initialInputs,
+    buyerAcceptanceProbability: Math.max(20, initialInputs.buyerAcceptanceProbability - 12),
+    concessionAmount: Math.round(initialInputs.concessionAmount * 0.82),
+    expectedRealizationPercent: Math.min(5.5, initialInputs.expectedRealizationPercent + 0.35),
+    priceIncreasePercent: Math.min(6, initialInputs.priceIncreasePercent + 0.45),
+    tradeSpendChange: Math.round(initialInputs.tradeSpendChange * 0.88),
+    volumeChangePercent: initialInputs.volumeChangePercent - 0.55
+  };
+  const planningScenarioOptions = [
+    {
+      createdAt: '2026-07-17T09:18:00.000Z',
+      description: 'Pairs the price ask with a service-value commitment to improve acceptance without opening a pure concession.',
+      id: 'service-value-tradeoff',
+      inputs: {
+        ...initialInputs,
+        buyerAcceptanceProbability: Math.min(95, initialInputs.buyerAcceptanceProbability + 6),
+        tradeSpendChange: Math.round(initialInputs.tradeSpendChange * 1.04),
+        volumeChangePercent: Math.min(1.5, initialInputs.volumeChangePercent + 0.2)
+      },
+      name: 'Service-value tradeoff',
+      scenarioStyle: 'Planning',
+      why: 'Tests whether non-price value can protect the ask before adding trade support.'
+    },
+    {
+      createdAt: '2026-07-17T09:21:00.000Z',
+      description: 'Stages the realization ask across the agreement period to reduce first-round buyer resistance.',
+      id: 'phased-realization-path',
+      inputs: {
+        ...initialInputs,
+        buyerAcceptanceProbability: Math.min(95, initialInputs.buyerAcceptanceProbability + 8),
+        expectedRealizationPercent: Math.max(0.5, initialInputs.expectedRealizationPercent - 0.15),
+        priceIncreasePercent: Math.max(0.7, initialInputs.priceIncreasePercent - 0.1)
+      },
+      name: 'Phased realization path',
+      scenarioStyle: 'Planning',
+      why: 'Tests if a staged ask keeps the negotiation inside guardrails while improving the chance to land.'
+    },
+    {
+      createdAt: '2026-07-17T09:24:00.000Z',
+      description: 'Uses a controlled promo envelope to defend volume while keeping the landed price near target.',
+      id: 'promo-envelope-defense',
+      inputs: {
+        ...initialInputs,
+        buyerAcceptanceProbability: Math.min(95, initialInputs.buyerAcceptanceProbability + 5),
+        expectedRealizationPercent: Math.max(0.5, initialInputs.expectedRealizationPercent - 0.1),
+        tradeSpendChange: Math.round(initialInputs.tradeSpendChange * 1.15),
+        volumeChangePercent: Math.min(1.5, initialInputs.volumeChangePercent + 0.45)
+      },
+      name: 'Promo envelope defense',
+      scenarioStyle: 'Planning',
+      why: 'Tests whether a small, bounded support package prevents volume risk without breaking the pricing case.'
+    },
+    {
+      createdAt: '2026-07-17T09:27:00.000Z',
+      description: 'Offsets buyer pushback by shifting focus toward higher-margin categories in the same buying group.',
+      id: 'category-mix-offset',
+      inputs: {
+        ...initialInputs,
+        buyerAcceptanceProbability: Math.max(25, initialInputs.buyerAcceptanceProbability - 2),
+        expectedRealizationPercent: Math.min(5.2, initialInputs.expectedRealizationPercent + 0.1),
+        priceIncreasePercent: Math.min(5.8, initialInputs.priceIncreasePercent + 0.15),
+        volumeChangePercent: initialInputs.volumeChangePercent - 0.2
+      },
+      name: 'Category mix offset',
+      scenarioStyle: 'Planning',
+      why: 'Tests if the strategy can protect value by moving pressure away from the most sensitive category.'
+    },
+    {
+      createdAt: '2026-07-17T09:30:00.000Z',
+      description: 'Holds the price position but adds a guardrail review before any concession is offered.',
+      id: 'finance-guardrail-review',
+      inputs: {
+        ...initialInputs,
+        buyerAcceptanceProbability: Math.max(30, initialInputs.buyerAcceptanceProbability - 4),
+        concessionAmount: Math.round(initialInputs.concessionAmount * 0.72),
+        expectedRealizationPercent: Math.max(0.5, initialInputs.expectedRealizationPercent - 0.05),
+        tradeSpendChange: Math.round(initialInputs.tradeSpendChange * 0.94)
+      },
+      name: 'Finance guardrail review',
+      scenarioStyle: 'Planning',
+      why: 'Tests whether the team should slow the negotiation until Finance confirms the concession boundary.'
+    }
+  ].map((scenario) => ({
+    ...predictiveScenario(scenario.id, scenario.name, scenario.description, scenario.inputs, scenario.why),
+    createdAt: scenario.createdAt,
+    origin: 'atlas' as const,
+    scenarioStyle: scenario.scenarioStyle
+  }));
+  const referenceScenarioOptions = [
+    {
+      createdAt: '2026-07-17T09:34:00.000Z',
+      description: 'Keeps the current recommended ask and only monitors buyer response timing against prior cycles.',
+      id: 'response-cadence-watch',
+      inputs: {
+        ...initialInputs,
+        buyerAcceptanceProbability: Math.min(95, initialInputs.buyerAcceptanceProbability + 2)
+      },
+      name: 'Response cadence watch',
+      scenarioStyle: 'Reference',
+      why: 'Keeps the scenario available as a low-risk watchout if buyer timing starts to look unusual.'
+    },
+    {
+      createdAt: '2026-07-17T09:37:00.000Z',
+      description: 'Tests whether stronger source documentation changes confidence without changing the commercial move.',
+      id: 'source-proof-only',
+      inputs: initialInputs,
+      name: 'Source proof only',
+      scenarioStyle: 'Reference',
+      why: 'Useful as a documentation check, but it does not change the pricing position by itself.'
+    },
+    {
+      createdAt: '2026-07-17T09:40:00.000Z',
+      description: 'Evaluates payment-term language as a minor support lever without changing price or trade spend.',
+      id: 'terms-language-check',
+      inputs: {
+        ...initialInputs,
+        buyerAcceptanceProbability: Math.min(95, initialInputs.buyerAcceptanceProbability + 1)
+      },
+      name: 'Terms language check',
+      scenarioStyle: 'Reference',
+      why: 'Keeps a light operational lever in view without treating it as a primary scenario.'
+    },
+    {
+      createdAt: '2026-07-17T09:43:00.000Z',
+      description: 'Tracks whether an external market signal should stay as context rather than change the buyer move.',
+      id: 'market-signal-monitor',
+      inputs: initialInputs,
+      name: 'Market signal monitor',
+      scenarioStyle: 'Reference',
+      why: 'Useful for awareness, but the signal is not material enough to change the current scenario.'
+    },
+    {
+      createdAt: '2026-07-17T09:46:00.000Z',
+      description: 'Keeps a buyer-history pattern visible for future rounds without changing this round’s assumption set.',
+      id: 'history-pattern-reference',
+      inputs: initialInputs,
+      name: 'History pattern reference',
+      scenarioStyle: 'Reference',
+      why: 'Preserves the closed-loop learning, but it is not urgent unless the buyer repeats the pattern.'
+    },
+    {
+      createdAt: '2026-07-17T09:49:00.000Z',
+      description: 'Checks whether shelf-visibility language should be added as supporting evidence, not a financial lever.',
+      id: 'visibility-language-check',
+      inputs: {
+        ...initialInputs,
+        buyerAcceptanceProbability: Math.min(95, initialInputs.buyerAcceptanceProbability + 1)
+      },
+      name: 'Visibility language check',
+      scenarioStyle: 'Reference',
+      why: 'A useful room-prep note, but not enough to change the modeled price or guardrail read.'
+    }
+  ].map((scenario) => ({
+    ...predictiveScenario(scenario.id, scenario.name, scenario.description, scenario.inputs, scenario.why),
+    createdAt: scenario.createdAt,
+    origin: 'atlas' as const,
+    scenarioStyle: scenario.scenarioStyle
+  }));
+	  const scenarioOptions = [
+    { ...predictiveScenario('recommended', 'Balanced evidence-backed ask', 'Best current move based on buyer history, finance guardrails, and market signals.', recommendedScenarioInputs, 'Best default when the team needs a sourced starting point.'), createdAt: '2026-07-17T09:00:00.000Z', origin: 'atlas' as const, scenarioStyle: 'Recommended' },
+    { ...predictiveScenario('conservative', 'Lower-risk landing path', 'Protect landing probability with a smaller price move and controlled support.', conservativeScenarioInputs, 'Best when relationship risk or source confidence makes the full move harder to land.'), createdAt: '2026-07-17T09:05:00.000Z', origin: 'atlas' as const, scenarioStyle: 'Conservative' },
+    { ...predictiveScenario('aggressive', 'Value capture stretch', 'Push for more price realization with less trade support and higher buyer resistance.', aggressiveScenarioInputs, 'Use when margin protection is more important than relationship safety.'), createdAt: '2026-07-17T09:08:00.000Z', origin: 'atlas' as const, scenarioStyle: 'Aggressive' },
+    { ...predictiveScenario('buyer-counter', 'Likely buyer counter', 'Models the buyer pushing back with lower realization and more trade support.', buyerCounterInputs, 'Use to prepare the downside case and pushback response.'), createdAt: '2026-07-17T09:10:00.000Z', origin: 'atlas' as const, scenarioStyle: 'Buyer counter' },
+    { ...predictiveScenario('custom', 'Current working model', 'Uses the current levers, scenario level, SKU rows, and custom assumptions.', inputs, 'Updates as the CNO changes the model.'), createdAt: '2026-07-17T09:15:00.000Z', origin: 'atlas' as const, scenarioStyle: 'Custom' },
+    ...planningScenarioOptions,
+    ...referenceScenarioOptions,
+    ...savedManualScenarios
+	  ];
+	  const topRecommendedScenario = [...scenarioOptions].sort((a, b) => b.atlasScore - a.atlasScore)[0];
+	  const selectedPredictiveScenario = scenarioOptions.find((scenario) => scenario.id === selectedScenarioId) ?? scenarioOptions[0];
+	  const selectedScenarioForPanel = selectedScenarioId ? scenarioOptions.find((scenario) => scenario.id === selectedScenarioId) : undefined;
+	  useEffect(() => {
+	    if (initialScenarioLabMode !== 'create' || !initialScenarioId) return;
+	    const scenario = scenarioOptions.find((item) => item.id === initialScenarioId);
+	    if (!scenario) return;
+	    setInputs(scenario.inputs);
+	    setSelectedScenarioId(scenario.id);
+	  }, [initialScenarioId, initialScenarioLabMode]);
+	  const visibleScenarioOptions = scenarioTypeFilter === 'all'
+    ? scenarioOptions
+    : scenarioTypeFilter === 'atlas'
+      ? scenarioOptions.filter((scenario) => scenario.origin === 'atlas')
+      : scenarioTypeFilter === 'manual'
+        ? scenarioOptions.filter((scenario) => scenario.origin === 'manual')
+        : scenarioOptions.filter((scenario) => scenario.id === scenarioTypeFilter || scenario.scenarioStyle.toLowerCase().replace(/\s+/g, '-') === scenarioTypeFilter);
+  function scenarioAttentionScore(scenario: ScenarioLabOption) {
+    const materialDownside = scenario.outputs.revenueImpact < -750000 || scenario.outputs.marginImpact < -300000;
+    const financialExposureScore = Math.min(34, Math.round((Math.abs(scenario.outputs.revenueImpact) + Math.abs(scenario.outputs.marginImpact)) / 42000));
+    const guardrailScore = scenario.guardrailRisk === 'Guardrail breach' ? 36 : scenario.guardrailRisk === 'Watch' ? 18 : 4;
+    const buyerResponseScore = scenario.relationshipRisk === 'High' ? 30 : scenario.relationshipRisk === 'Medium' ? 16 : 6;
+    const styleScore = scenario.scenarioStyle === 'Buyer counter'
+      ? 28
+      : scenario.scenarioStyle === 'Aggressive'
+        ? 24
+        : scenario.scenarioStyle === 'Recommended'
+          ? 18
+          : scenario.scenarioStyle === 'Reference'
+            ? -34
+            : 10;
+    const evidenceScore = scenario.evidenceStrength < 76 ? 10 : scenario.evidenceStrength >= 86 ? 6 : 2;
+    const likelihoodScore = scenario.likelihood < 55 ? 12 : scenario.likelihood >= 70 ? 6 : 3;
+    return financialExposureScore + guardrailScore + buyerResponseScore + styleScore + evidenceScore + likelihoodScore + (materialDownside ? 18 : 0);
+  }
+
+  function scenarioAttentionBucket(scenario: ScenarioLabOption) {
+    const attentionScore = scenarioAttentionScore(scenario);
+    const materialDownside = scenario.outputs.revenueImpact < -750000 || scenario.outputs.marginImpact < -300000;
+    if (
+      scenario.guardrailRisk === 'Guardrail breach'
+      || scenario.relationshipRisk === 'High'
+      || scenario.scenarioStyle === 'Aggressive'
+      || scenario.scenarioStyle === 'Buyer counter'
+      || materialDownside
+      || attentionScore >= 78
+    ) return 'cno-review';
+    if (scenario.scenarioStyle === 'Reference' || attentionScore < 45) return 'traceability';
+    return 'planning';
+  }
+
+  function scenarioAttentionReason(scenario: ScenarioLabOption) {
+    if (scenario.guardrailRisk === 'Guardrail breach') return 'Guardrail risk';
+    if (scenario.relationshipRisk === 'High') return 'Buyer pushback risk';
+    if (scenario.outputs.revenueImpact < -750000) return 'NR exposure';
+    if (scenario.outputs.marginImpact < -300000) return 'Margin exposure';
+    if (scenario.scenarioStyle === 'Buyer counter') return 'Likely counter';
+    if (scenario.scenarioStyle === 'Aggressive') return 'Stress test';
+    if (scenario.scenarioStyle === 'Reference') return 'Reference only';
+    return scenario.likelihood >= 70 ? 'High likelihood' : 'Planning option';
+  }
+
+  function scenarioBuyingGroupContext(scenario: ScenarioLabOption) {
+	    if (attachedBuyingGroup) {
+	      return {
+	        buyingGroup: attachedBuyingGroup.name,
+	        buyingGroupId: attachedBuyingGroup.id,
+	        market: attachedMarkets.map((market) => market.name).slice(0, 2).join(' / ') || selectedMarket?.name || 'Market',
+	        marketId: selectedMarket?.id || attachedBuyingGroup.primaryMarkets[0]
+	      };
+	    }
+    const directModel = packet.scenarioModels.find((model) => model.id === scenario.id || scenario.id.includes(model.buyingGroupId));
+    const directGroup = directModel ? getBuyingGroup(directModel.buyingGroupId) : undefined;
+    const seed = scenario.id.split('').reduce((sum, character) => sum + character.charCodeAt(0), 0);
+    const group = directGroup ?? scenarioContextGroups[seed % Math.max(1, scenarioContextGroups.length)];
+    const market = group?.primaryMarkets.map((id) => getMarket(id)?.name ?? id).slice(0, 2).join(' / ') ?? selectedMarket?.name ?? 'Europe portfolio';
+	    return {
+	      buyingGroup: group?.name ?? scenarioOwnerName,
+	      buyingGroupId: group?.id,
+	      market,
+	      marketId: group?.primaryMarkets[0] ?? selectedMarket?.id
+	    };
+	  }
+
+  const sortedVisibleScenarioOptions = [...visibleScenarioOptions].sort((a, b) => scenarioAttentionScore(b) - scenarioAttentionScore(a) || b.atlasScore - a.atlasScore);
+  const scenarioPriorityGroups = [
+    {
+      id: 'cno-review',
+      label: 'Look at immediately',
+      note: 'Highest first: guardrail risk, NR or margin exposure, buyer pushback risk, then evidence confidence.',
+      collapsedLabel: 'Always shown',
+      scenarios: sortedVisibleScenarioOptions.filter((scenario) => scenarioAttentionBucket(scenario) === 'cno-review')
+    },
+    {
+      id: 'planning',
+      label: 'Lower-priority planning',
+      note: 'Useful scenarios to keep nearby, but they do not appear to change the immediate negotiation move.',
+      collapsedLabel: 'Showing first 5',
+      scenarios: sortedVisibleScenarioOptions.filter((scenario) => scenarioAttentionBucket(scenario) === 'planning')
+    },
+    {
+      id: 'traceability',
+      label: 'Ran, not relevant now',
+      note: 'ATLAS tested these for traceability, but they do not currently change focus, risk, confidence, or the recommended action.',
+      collapsedLabel: 'Hidden by default',
+      scenarios: sortedVisibleScenarioOptions.filter((scenario) => scenarioAttentionBucket(scenario) === 'traceability')
+    }
+  ].map((group) => {
+    const isExpandable = group.id === 'planning' || group.id === 'traceability';
+    const isExpanded = group.id === 'planning' ? expandedScenarioPriorityGroups.planning : group.id === 'traceability' ? expandedScenarioPriorityGroups.traceability : true;
+    const previewCount = group.id === 'traceability' ? 0 : 5;
+    return {
+      ...group,
+      isExpandable,
+      isExpanded,
+      visibleScenarios: isExpandable && !isExpanded ? group.scenarios.slice(0, previewCount) : group.scenarios
+    };
+  });
+  const scenarioDecisionRows = [
+    {
+      label: 'Selected case',
+      value: selectedPredictiveScenario.name,
+      detail: `${selectedPredictiveScenario.atlasScore}/100 score · ${selectedPredictiveScenario.likelihood}% likely`
+    },
+    {
+      label: 'Buyer response',
+      value: selectedPredictiveScenario.buyerResponse,
+      detail: latestScenarioDebrief ? 'Updated by debrief memory' : 'Predicted from buyer history and current context'
+    },
+    {
+      label: 'Modeled impact',
+      value: `${scenarioDeltaLabel(selectedPredictiveScenario.outputs.revenueImpact)} NR / ${scenarioDeltaLabel(selectedPredictiveScenario.outputs.marginImpact)} GM`,
+      detail: `${selectedPredictiveScenario.guardrailRisk} · ${selectedPredictiveScenario.relationshipRisk} relationship risk`
+    },
+    {
+      label: 'Recommended adjustment',
+      value: selectedPredictiveScenario.recommendedEdit,
+      detail: `${selectedPredictiveScenario.evidenceStrength}% evidence strength`
+    }
+  ];
+  scenarioReportParams.set('scenarioName', selectedPredictiveScenario.name);
+  scenarioReportParams.set('scenarioLevel', selectedLevel);
+  scenarioReportParams.set('atlasScore', String(selectedPredictiveScenario.atlasScore));
+  scenarioReportParams.set('likelihood', String(selectedPredictiveScenario.likelihood));
+  scenarioReportParams.set('buyerResponse', selectedPredictiveScenario.buyerResponse);
+  scenarioReportParams.set('recommendedEdit', selectedPredictiveScenario.recommendedEdit);
+  scenarioReportParams.set('evidenceStrength', String(selectedPredictiveScenario.evidenceStrength));
+  scenarioReportParams.set('guardrailRisk', selectedPredictiveScenario.guardrailRisk);
+  scenarioReportParams.set('relationshipRisk', selectedPredictiveScenario.relationshipRisk);
+  scenarioReportParams.set('nrImpact', String(selectedPredictiveScenario.outputs.revenueImpact));
+  scenarioReportParams.set('gmImpact', String(selectedPredictiveScenario.outputs.marginImpact));
+  scenarioReportParams.set('volumeImpact', String(selectedPredictiveScenario.outputs.volumeImpact));
+  scenarioReportParams.set('tradeImpact', String(selectedPredictiveScenario.outputs.tradeSpendImpact));
+  scenarioReportParams.set('riskAdjustedValue', String(selectedPredictiveScenario.valueProtected));
+  scenarioReportParams.set('skuCount', String(skuRows.length));
+  scenarioReportParams.set('customLeverCount', String(customLevers.length));
+  scenarioReportParams.set('topRecommendedScenario', topRecommendedScenario.name);
+  scenarioReportParams.set('topRecommendedScore', String(topRecommendedScenario.atlasScore));
+  scenarioReportParams.set('topRecommendedMemoryAdjustment', latestScenarioDebrief ? '10' : '0');
+  scenarioReportParams.set('topRecommendedReason', `${topRecommendedScenario.why} ${topRecommendedScenario.recommendedEdit}`);
+  if (latestScenarioDebrief) {
+    scenarioReportParams.set('debriefMemory', `${latestScenarioDebrief.predictionImpact} Counter ${latestScenarioDebrief.buyerCounter || 'not entered'}, landed ${latestScenarioDebrief.finalLanded || 'not entered'}.`);
+  }
   const scenarioReportHref = `/generated-views?${scenarioReportParams.toString()}`;
+
+  function applyPredictiveScenario(scenarioId: string) {
+    const scenario = scenarioOptions.find((item) => item.id === scenarioId);
+    if (!scenario) return;
+    if (selectedScenarioId === scenario.id) {
+      setSelectedScenarioId('');
+      return;
+    }
+    setSelectedScenarioId(scenario.id);
+    setInputs(scenario.inputs);
+  }
+
+  function editScenarioFromCard(scenarioId: string) {
+    const scenario = scenarioOptions.find((item) => item.id === scenarioId);
+    if (!scenario) return;
+    setSelectedScenarioId(scenario.id);
+    setInputs(scenario.inputs);
+    setSelectedLevel(scenario.id === 'custom' || scenario.origin === 'manual' ? 'custom' : selectedLevel);
+    setScenarioLabMode('create');
+    setScenarioSaveStatus(`Loaded ${scenario.name} into Create scenario.`);
+  }
+
+  function selectScenarioRow(scenarioId: string) {
+    applyPredictiveScenario(scenarioId);
+    toggleCompareScenario(scenarioId);
+  }
+
+  function saveAdjustedScenarioToTable() {
+    const createdAt = new Date().toISOString();
+    const manualScenario: ScenarioLabOption = {
+      ...predictiveScenario(
+        `manual-${Date.now().toString(36)}`,
+        `Manual scenario ${savedManualScenarios.length + 1}`,
+        `CNO adjusted case using ${inputs.priceIncreasePercent.toFixed(1)}% price ask, ${inputs.expectedRealizationPercent.toFixed(1)}% realization, and ${inputs.buyerAcceptanceProbability.toFixed(0)}% buyer acceptance.`,
+        inputs,
+        'Saved from the manual scenario workspace for comparison against ATLAS generated scenarios.'
+      ),
+      createdAt,
+      origin: 'manual',
+      scenarioStyle: 'Manual adjustment'
+    };
+    setSavedManualScenarios((current) => [manualScenario, ...current]);
+    setSelectedScenarioId(manualScenario.id);
+    setCompareScenarioIds((current) => [manualScenario.id, ...current.filter((id) => id !== manualScenario.id)].slice(0, 4));
+    setScenarioTypeFilter('all');
+    setScenarioLabMode('review');
+    setScenarioSaveStatus('Manual scenario added to the scenario table.');
+  }
 
   function saveScenarioToBuyingGroup() {
     if (!attachedBuyingGroup) {
@@ -5300,7 +11073,7 @@ function ScenarioModelsView({
     }
     const now = new Date().toISOString();
     saveStoredGeneratedView({
-      artifactType: 'generated_view',
+      artifactType: 'scenario_output',
       audienceMode: 'internal_cno',
       buyingGroupId: attachedBuyingGroup.id,
       confidence: scenarioSource.confidence,
@@ -5314,6 +11087,27 @@ function ScenarioModelsView({
               `Concession: ${euros(inputs.concessionAmount)}`,
               `Volume change: ${inputs.volumeChangePercent.toFixed(1)}%`,
               `Contract length: ${inputs.contractLengthMonths} months`
+            ]
+          },
+          {
+            title: 'Pricing corridor and guardrail',
+            body: `${corridorBreached ? 'Guardrail review needed' : 'Scenario stays inside corridor'}: recommended ask ${recommendedAskForCorridor.toFixed(1)}%, target ${targetForCorridor.toFixed(1)}%, fallback ${fallbackForCorridor.toFixed(1)}%, red line ${redLineForCorridor.toFixed(1)}%.`,
+            bullets: [
+              `Buyer ask: ${buyerAskForCorridor.toFixed(1)}%`,
+              `Current PepsiCo position: ${currentPositionForCorridor.toFixed(1)}%`,
+              `Finance/NRM guardrail source: ${sourceDisplayName(scenarioSource)}`
+            ].concat(latestScenarioDebrief ? [
+              `Latest debrief: buyer counter ${latestScenarioDebrief.buyerCounter || 'not entered'}, final landed ${latestScenarioDebrief.finalLanded || 'not entered'}`
+            ] : [])
+          },
+          {
+            title: 'Predictive buyer response',
+            body: selectedPredictiveScenario.buyerResponse,
+            bullets: [
+              `Selected scenario: ${selectedPredictiveScenario.name}`,
+              `ATLAS score: ${selectedPredictiveScenario.atlasScore}/100`,
+              `Likelihood to land: ${selectedPredictiveScenario.likelihood}%`,
+              `Recommended edit: ${selectedPredictiveScenario.recommendedEdit}`
             ]
           },
           {
@@ -5340,120 +11134,816 @@ function ScenarioModelsView({
       savedDestination: 'buyer_profile',
       savedToProfileAt: now,
       sourceDate: scenarioSource.sourceDate,
-      sourceDecision: 'Saved from Scenario Models as buyer-specific scenario memory.',
+      sourceDecision: 'Saved from Scenario Lab as buyer-specific pricing corridor and guardrail memory.',
       sourceName: scenarioSource.sourceName,
-      summary: `${outputs.recommendation} Revenue ${scenarioDeltaLabel(outputs.revenueImpact)}, margin ${scenarioDeltaLabel(outputs.marginImpact)}, risk-adjusted value ${euros(outputs.riskAdjustedValue)}.`,
-      title: `${attachedBuyingGroup.name} scenario: ${inputs.expectedRealizationPercent.toFixed(1)}% realization`,
+      summary: `${selectedPredictiveScenario.name}: ${selectedPredictiveScenario.buyerResponse} Revenue ${scenarioDeltaLabel(outputs.revenueImpact)}, margin ${scenarioDeltaLabel(outputs.marginImpact)}, risk-adjusted value ${euros(outputs.riskAdjustedValue)}.`,
+      title: `${attachedBuyingGroup.name} ${selectedPredictiveScenario.name.replace(/^.\. /, '')}: ${inputs.expectedRealizationPercent.toFixed(1)}% realization`,
       updatedAt: now
     });
-    setScenarioSaveStatus(`Saved to ${attachedBuyingGroup.name} history.`);
+    setScenarioSaveStatus(`Saved to ${attachedBuyingGroup.name} scenario memory.`);
   }
 
-  return (
-    <>
-      <section className="atlas-scenario-page-head">
-        <div>
-          <span>Scenario model</span>
-          <h1>{scenarioScopeName} financial move</h1>
+  const mvpScenarioBuyingGroups = [...packet.topExposureBuyingGroups]
+    .sort((a, b) => riskRank(b.riskLevel) - riskRank(a.riskLevel) || b.financialExposure.marginAtRisk - a.financialExposure.marginAtRisk)
+    .slice(0, 4);
+	  const railMarkets = [...marketOptions]
+	    .sort((a, b) => riskRank(b.pressureLevel) - riskRank(a.pressureLevel) || b.marginAtRisk - a.marginAtRisk)
+	    .slice(0, 5);
+	  const scenarioTrigger = scenarioAlerts[0];
+	  const fullViewScenario = initialScenarioId && initialScenarioLabMode !== 'create'
+	    ? scenarioOptions.find((scenario) => scenario.id === initialScenarioId)
+	    : undefined;
+	  function scenarioDetailHref(scenarioId: string) {
+	    const params = new URLSearchParams();
+	    if (selectedMarketId) params.set('market', selectedMarketId);
+	    if (selectedBuyingGroupId) params.set('buyingGroup', selectedBuyingGroupId);
+	    params.set('scenario', scenarioId);
+	    return `/scenario-lab?${params.toString()}`;
+	  }
+	  function scenarioEditHref(scenarioId: string) {
+	    const params = new URLSearchParams();
+	    if (selectedMarketId) params.set('market', selectedMarketId);
+	    if (selectedBuyingGroupId) params.set('buyingGroup', selectedBuyingGroupId);
+	    params.set('mode', 'create');
+	    params.set('scenario', scenarioId);
+	    return `/scenario-lab?${params.toString()}`;
+	  }
+	  const compareParams = new URLSearchParams();
+  compareScenarioIds.forEach((id) => compareParams.append('scenario', id));
+  if (selectedBuyingGroupId) compareParams.set('buyingGroup', selectedBuyingGroupId);
+  if (selectedMarketId) compareParams.set('market', selectedMarketId);
+  const compareHref = compareScenarioIds.length >= 2 ? `/scenario-lab/compare?${compareParams.toString()}` : '#';
+
+	  function toggleCompareScenario(scenarioId: string) {
+	    setCompareScenarioIds((current) => {
+	      if (current.includes(scenarioId)) return current.filter((id) => id !== scenarioId);
+	      return [...current, scenarioId].slice(-4);
+	    });
+	  }
+
+	  if (fullViewScenario) {
+	    const scenario = fullViewScenario;
+	    const scenarioContext = scenarioBuyingGroupContext(scenario);
+	    const attentionReason = scenarioAttentionReason(scenario);
+	    const scenarioBasis = scenario.origin === 'manual'
+	      ? 'This scenario uses CNO-adjusted assumptions plus current buyer context and saved local inputs.'
+	      : `${scenario.why}${scenarioTrigger ? ` It was refreshed after ATLAS reviewed ${scenarioTrigger.title.toLowerCase()}.` : ''}`;
+	    const detailModeledNumbers = [
+	      { label: 'Price ask', value: pct(scenario.inputs.priceIncreasePercent) },
+	      { label: 'Expected realization', value: pct(scenario.inputs.expectedRealizationPercent) },
+	      { label: 'Trade spend', value: euros(scenario.inputs.tradeSpendChange) },
+	      { label: 'Volume risk', value: pct(scenario.inputs.volumeChangePercent) },
+	      { label: 'Buyer acceptance', value: `${scenario.likelihood}%` }
+	    ];
+	    const detailImpactNumbers = [
+	      { label: 'NR impact', value: scenarioDeltaLabel(scenario.outputs.revenueImpact) },
+	      { label: 'GM impact', value: scenarioDeltaLabel(scenario.outputs.marginImpact) },
+	      { label: 'Trade impact', value: scenarioDeltaLabel(scenario.outputs.tradeSpendImpact) },
+	      { label: 'Risk-adjusted value', value: euros(scenario.valueProtected) },
+	      { label: 'Guardrail', value: scenario.guardrailRisk }
+	    ];
+	    const scenarioCompareParams = new URLSearchParams();
+	    scenarioCompareParams.append('scenario', scenario.id);
+	    scenarioCompareParams.append('scenario', scenario.id === 'buyer-counter' ? 'recommended' : 'buyer-counter');
+	    if (scenarioContext.buyingGroupId) scenarioCompareParams.set('buyingGroup', scenarioContext.buyingGroupId);
+	    if (scenarioContext.marketId) scenarioCompareParams.set('market', scenarioContext.marketId);
+	    const buyerProfileHref = scenarioContext.buyingGroupId ? `/buying-groups/${scenarioContext.buyingGroupId}?view=current` : scenarioHref();
+	    const scenarioFullSummary = `Based on ${scenario.scenarioStyle.toLowerCase()} logic, ATLAS modeled ${pct(scenario.inputs.priceIncreasePercent)} ask / ${pct(scenario.inputs.expectedRealizationPercent)} realization with ${scenarioDeltaLabel(scenario.outputs.revenueImpact)} NR impact and ${scenario.likelihood}% likelihood to land.`;
+	    return (
+	      <section className="atlas-scenario-full-view" aria-label={`${scenario.name} full scenario view`}>
+	        <header className="atlas-scenario-full-header">
+	          <a href={scenarioHref()}>Back to Scenario Lab</a>
+	          <div>
+	            <span>{attentionReason} · {scenarioContext.buyingGroup}</span>
+	            <h1>{scenario.name.replace(/^[A-C]\.\s*/, '')}</h1>
+	            <p>{scenarioFullSummary}</p>
+	          </div>
+	          <div className="atlas-scenario-full-header-actions">
+	            <a href={scenarioEditHref(scenario.id)}>Edit scenario</a>
+	            <a href={`/scenario-lab/compare?${scenarioCompareParams.toString()}`}>Compare</a>
+	          </div>
+	        </header>
+
+	        <div className="atlas-scenario-full-grid">
+	          <article className="atlas-scenario-full-primary">
+	            <div className="atlas-scenario-card-heading">
+	              <span>{scenario.origin === 'manual' ? 'Manual' : 'ATLAS generated'}</span>
+	              <span>{scenario.scenarioStyle}</span>
+	              <span>{scenarioContext.market}</span>
+	            </div>
+	            <h2>What ATLAS modeled</h2>
+	            <p>{scenarioBasis}</p>
+	            <dl className="atlas-scenario-full-metrics">
+	              {detailModeledNumbers.map((item) => (
+	                <div key={item.label}>
+	                  <dt>{item.label}</dt>
+	                  <dd>{item.value}</dd>
+	                </div>
+	              ))}
+	            </dl>
+	          </article>
+
+	          <aside className="atlas-scenario-full-read">
+	            <h2>Scenario read</h2>
+	            <section>
+	              <h3>Expected buyer response</h3>
+	              <p>{scenario.buyerResponse}</p>
+	              <div className="atlas-scenario-progress"><i style={{ width: `${scenario.likelihood}%` }} /></div>
+	              <small>{scenario.likelihood}% likelihood to land · {scenario.evidenceStrength}% evidence strength</small>
+	            </section>
+	            <section>
+	              <h3>Recommended CNO action</h3>
+	              <p>{scenario.recommendedEdit}</p>
+	              <small>{scenario.relationshipRisk} relationship risk</small>
+	            </section>
+	          </aside>
+	        </div>
+
+	        <section className="atlas-scenario-full-impact" aria-label="Scenario impact and actions">
+	          <div>
+	            <h2>Expected impact</h2>
+	            <dl className="atlas-scenario-full-metrics">
+	              {detailImpactNumbers.map((item) => (
+	                <div key={item.label}>
+	                  <dt>{item.label}</dt>
+	                  <dd>{item.value}</dd>
+	                </div>
+	              ))}
+	            </dl>
+	          </div>
+	          <div className="atlas-scenario-full-actions">
+	            <a href={buyerProfileHref}>Save to buyer profile</a>
+	            <a href={scenarioReportHref} rel="noreferrer" target="_blank">Download report</a>
+	            <a href={scenarioEditHref(scenario.id)}>Adjust levers</a>
+	          </div>
+	        </section>
+
+	        <section className="atlas-scenario-full-source" aria-label="Scenario source trail">
+	          <h2>Source trail</h2>
+	          <p>ATLAS tied this run to buyer history, current scenario inputs, market signals, and finance guardrail context.</p>
+	          <SourceTrustMini source={scenarioSource} />
+	        </section>
+	      </section>
+	    );
+	  }
+
+	  return (
+	    <section className="atlas-scenario-modeler" aria-label="Scenario Lab intelligent modeler">
+	      <header className="atlas-scenario-modeler-head">
+	        <h1>Scenario Lab</h1>
+	        <p>Compare ATLAS-modeled moves, adjust the assumptions, and choose which scenarios are worth taking into buyer planning.</p>
+	      </header>
+
+      <nav className="atlas-scenario-workspace-tabs" aria-label="Scenario Lab views">
+        <button className={scenarioLabMode === 'review' ? 'active' : ''} type="button" onClick={() => setScenarioLabMode('review')}>Review scenarios</button>
+        <button className={scenarioLabMode === 'create' ? 'active' : ''} type="button" onClick={() => setScenarioLabMode('create')}>Create scenario</button>
+      </nav>
+
+		      {scenarioLabMode === 'review' ? <section className="atlas-scenario-overview" aria-label="Modeled scenario impact overview">
+		        <div className="atlas-scenario-table-filters" aria-label="Scenario table filters">
+		          <label>
+		            <span>Scenario type</span>
+		            <select value={scenarioTypeFilter} onChange={(event) => setScenarioTypeFilter(event.currentTarget.value)}>
+		              <option value="all">All scenarios</option>
+		              <option value="atlas">ATLAS generated</option>
+		              <option value="manual">Manual / adjusted</option>
+		              <option value="recommended">Recommended</option>
+		              <option value="conservative">Conservative</option>
+		              <option value="aggressive">Aggressive</option>
+		              <option value="buyer-counter">Buyer counter</option>
+		              <option value="custom">Custom working</option>
+		            </select>
+		          </label>
+		          <label>
+		            <span>Buying group</span>
+		            <select
+		              value={selectedBuyingGroupId}
+		              onChange={(event) => {
+		                window.location.href = scenarioHref({ buyer: event.currentTarget.value, market: selectedMarketId });
+		              }}
+		            >
+		              <option value="">All buying groups</option>
+		              {mvpScenarioBuyingGroups.map((group) => (
+		                <option value={group.id} key={group.id}>{group.name}</option>
+		              ))}
+		            </select>
+		          </label>
+		          <label>
+		            <span>Market</span>
+		            <select
+		              value={selectedMarketId}
+		              onChange={(event) => {
+		                window.location.href = scenarioHref({ buyer: selectedBuyingGroupId, market: event.currentTarget.value });
+		              }}
+		            >
+		              <option value="">All markets</option>
+		              {railMarkets.map((market) => (
+		                <option value={market.id} key={market.id}>{market.name}</option>
+		              ))}
+		            </select>
+		          </label>
+		        </div>
+		        <div className="atlas-scenario-selection-controls" aria-label="Scenario comparison controls">
+		          <span>{compareScenarioIds.length} selected</span>
+		          <a aria-disabled={compareScenarioIds.length < 2} href={compareHref}>Compare selected</a>
+		          <button disabled={compareScenarioIds.length === 0} onClick={() => setCompareScenarioIds([])} type="button">Clear selections</button>
+		        </div>
+		        <div className={`atlas-scenario-review-shell ${selectedScenarioForPanel ? 'has-selection' : ''}`}>
+		          <div className="atlas-scenario-review-list">
+		            <div className="atlas-scenario-priority-stack">
+		              {scenarioPriorityGroups.filter((group) => group.scenarios.length > 0).map((group) => (
+		                <section className={`atlas-scenario-priority-section priority-${group.id}`} key={group.id}>
+		                  <header>
+		                    <div>
+		                      <span>{group.label}</span>
+		                      <p>{group.note}</p>
+		                    </div>
+		                    <strong>{group.isExpanded ? 'Showing all' : group.collapsedLabel} · {group.scenarios.length} scenarios</strong>
+		                  </header>
+		                  {group.id === 'traceability' && !group.isExpanded ? (
+		                    <button
+		                      className="atlas-scenario-hidden-run-toggle"
+		                      onClick={() => setExpandedScenarioPriorityGroups((current) => ({
+		                        ...current,
+		                        traceability: true
+		                      }))}
+		                      type="button"
+		                    >
+		                      Show {group.scenarios.length} scenarios ATLAS ran but deprioritized
+		                    </button>
+		                  ) : null}
+		                  <div className="atlas-scenario-card-list">
+		                    {group.visibleScenarios.map((scenario, scenarioIndex) => {
+		                      const isSelected = selectedScenarioId === scenario.id;
+		                      const isCompareSelected = compareScenarioIds.includes(scenario.id);
+		                      const attentionReason = scenarioAttentionReason(scenario);
+		                      const scenarioContext = scenarioBuyingGroupContext(scenario);
+		                      const modeledMove = `${pct(scenario.inputs.priceIncreasePercent)} ask / ${pct(scenario.inputs.expectedRealizationPercent)} realization`;
+		                      const collapsedScenarioBasis = scenario.origin === 'manual'
+		                        ? 'Your adjusted assumptions'
+		                        : scenario.scenarioStyle === 'Reference'
+		                          ? 'Watchout context'
+		                          : `${scenario.scenarioStyle} logic`;
+			                      const scenarioSummarySentence = `Based on ${collapsedScenarioBasis.toLowerCase()}, ATLAS modeled ${modeledMove} with ${scenarioDeltaLabel(scenario.outputs.revenueImpact)} NR impact and ${scenario.likelihood}% likelihood to land.`;
+			                      return (
+		                        <article className={`atlas-scenario-list-card ${isSelected ? 'selected' : ''}`} key={scenario.id}>
+		                          <label className="atlas-scenario-compare-checkbox" aria-label={`Select ${scenario.name} for comparison`}>
+		                            <input
+		                              checked={isCompareSelected}
+		                              onChange={() => toggleCompareScenario(scenario.id)}
+		                              type="checkbox"
+		                            />
+		                          </label>
+		                          <div
+		                            aria-pressed={isSelected}
+		                            className="atlas-scenario-list-trigger"
+		                            onClick={() => applyPredictiveScenario(scenario.id)}
+		                            onKeyDown={(event) => {
+		                              if (event.key === 'Enter' || event.key === ' ') {
+		                                event.preventDefault();
+		                                applyPredictiveScenario(scenario.id);
+		                              }
+		                            }}
+		                            role="button"
+		                            tabIndex={0}
+		                          >
+		                            <div className="atlas-scenario-accordion-copy">
+		                              <div className="atlas-scenario-card-eyebrow">
+		                                <span>{String(scenarioIndex + 1).padStart(2, '0')}</span>
+		                                <strong>{attentionReason}</strong>
+		                                <em>{scenarioContext.buyingGroup} · {scenarioContext.market}</em>
+		                              </div>
+		                              <div className="atlas-scenario-card-heading">
+		                                <h3>{scenario.name.replace(/^[A-C]\.\s*/, '')}</h3>
+		                                <span>{scenario.origin === 'manual' ? 'Manual' : 'ATLAS generated'}</span>
+		                                <span>{scenario.scenarioStyle}</span>
+		                              </div>
+		                              <p className="atlas-scenario-summary-line">{scenarioSummarySentence}</p>
+		                            </div>
+			                            <dl className="atlas-scenario-row-metrics" aria-label={`${scenario.name} impact`}>
+			                              <div><dt>Land</dt><dd>{scenario.likelihood}%</dd></div>
+			                              <div><dt>NR</dt><dd>{scenarioDeltaLabel(scenario.outputs.revenueImpact)}</dd></div>
+			                            </dl>
+			                          </div>
+		                        </article>
+		                      );
+		                    })}
+		                  </div>
+		                  {group.isExpandable && (group.id !== 'traceability' || group.isExpanded) && (group.scenarios.length > 5 || group.id === 'traceability') ? (
+		                    <button
+		                      className="atlas-scenario-show-more"
+		                      onClick={() => setExpandedScenarioPriorityGroups((current) => ({
+		                        ...current,
+		                        [group.id as 'planning' | 'traceability']: !group.isExpanded
+		                      }))}
+		                      type="button"
+		                    >
+		                      {group.isExpanded
+		                        ? `Hide ${group.label.toLowerCase()}`
+		                        : group.id === 'traceability'
+		                          ? `Show ${group.scenarios.length} deprioritized scenarios`
+		                          : `Show ${group.scenarios.length - 5} more ${group.label.toLowerCase()}`}
+		                    </button>
+		                  ) : null}
+		                </section>
+		              ))}
+		            </div>
+		          </div>
+		          {selectedScenarioForPanel ? (() => {
+		            const scenario = selectedScenarioForPanel;
+		            const attentionReason = scenarioAttentionReason(scenario);
+		            const scenarioContext = scenarioBuyingGroupContext(scenario);
+		            const scenarioBasis = scenario.origin === 'manual'
+		              ? 'Your adjusted scenario inputs, current buyer context, and saved local assumptions.'
+		              : `${scenario.why}${scenarioTrigger ? ` Trigger: ${scenarioTrigger.title}.` : ''}`;
+		            const modeledNumbers = [
+		              { label: 'Price ask', value: pct(scenario.inputs.priceIncreasePercent) },
+		              { label: 'Realization', value: pct(scenario.inputs.expectedRealizationPercent) },
+		              { label: 'Trade spend', value: euros(scenario.inputs.tradeSpendChange) },
+		              { label: 'Volume risk', value: pct(scenario.inputs.volumeChangePercent) }
+		            ];
+		            const expectedImpact = [
+		              { label: 'NR', value: scenarioDeltaLabel(scenario.outputs.revenueImpact) },
+		              { label: 'GM', value: scenarioDeltaLabel(scenario.outputs.marginImpact) },
+		              { label: 'Value', value: euros(scenario.valueProtected) },
+		              { label: 'Guardrail', value: scenario.guardrailRisk }
+		            ];
+		            const guardrailTone = scenario.guardrailRisk.toLowerCase().replace(/\s+/g, '-');
+		            return (
+		              <aside className="atlas-scenario-inspector" aria-label={`${scenario.name} details`}>
+		                <header>
+		                  <span>{attentionReason}</span>
+		                  <button aria-label="Close scenario detail" onClick={() => setSelectedScenarioId('')} type="button"><X size={16} /></button>
+		                </header>
+		                <div className="atlas-scenario-inspector-title">
+		                  <h2>{scenario.name.replace(/^[A-C]\.\s*/, '')}</h2>
+		                  <p>{scenarioContext.buyingGroup} · {scenarioContext.market}</p>
+		                </div>
+		                <section>
+		                  <h3>Why this matters</h3>
+		                  <p>{scenarioBasis}</p>
+		                </section>
+		                <section>
+		                  <h3>Modeled numbers</h3>
+		                  <dl className="atlas-scenario-inspector-grid">
+		                    {modeledNumbers.map((item) => (
+		                      <div key={item.label}><dt>{item.label}</dt><dd>{item.value}</dd></div>
+		                    ))}
+		                  </dl>
+		                </section>
+		                <section>
+		                  <h3>Expected impact</h3>
+		                  <dl className="atlas-scenario-inspector-grid">
+		                    {expectedImpact.map((item) => (
+		                      <div key={item.label}><dt>{item.label}</dt><dd className={item.label === 'Guardrail' ? `guardrail-${guardrailTone}` : ''}>{item.value}</dd></div>
+		                    ))}
+		                  </dl>
+		                </section>
+		                <section className="atlas-scenario-inspector-callout">
+		                  <h3>Buyer response</h3>
+		                  <p>{scenario.buyerResponse}</p>
+		                  <div className="atlas-scenario-progress"><i style={{ width: `${scenario.likelihood}%` }} /></div>
+		                  <small>{scenario.likelihood}% likelihood to land · {scenario.evidenceStrength}% evidence strength</small>
+		                </section>
+		                <section>
+		                  <h3>Recommended action</h3>
+		                  <p>{scenario.recommendedEdit}</p>
+		                  <small>{scenario.relationshipRisk} relationship risk</small>
+		                </section>
+			                <div className="atlas-scenario-selected-actions">
+			                  <a href={scenarioDetailHref(scenario.id)}>Open full view</a>
+			                  <a href={scenarioReportHref} rel="noreferrer" target="_blank">Download report</a>
+			                  <button type="button" onClick={() => editScenarioFromCard(scenario.id)}>Edit scenario</button>
+			                  <button type="button" onClick={saveScenarioToBuyingGroup}>Save to buyer profile</button>
+		                </div>
+		                <SourceTrustMini source={scenarioSource} />
+		                {scenarioSaveStatus ? <span className="atlas-scenario-save-status">{scenarioSaveStatus}</span> : null}
+		              </aside>
+		            );
+		          })() : null}
+		        </div>
+		      </section> : null}
+
+      {scenarioLabMode === 'create' ? <section className="atlas-scenario-lever-workbench atlas-scenario-modeler-levers" aria-label="Scenario lever controls">
+        <header>
+          <div>
+            <span>Manual scenario</span>
+            <h2>Change the primary levers and save the adjusted scenario back to the table.</h2>
+          </div>
+          <div className="atlas-scenario-manual-actions">
+            <label>
+              <span>Competitor pressure</span>
+              <select value={inputs.competitorPressureLevel} onChange={(event) => updateInput('competitorPressureLevel', event.target.value as ScenarioInputs['competitorPressureLevel'])}>
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+              </select>
+            </label>
+            <button type="button" onClick={saveAdjustedScenarioToTable}>Save adjusted scenario to table</button>
+          </div>
+        </header>
+        <div className="atlas-scenario-delta-strip" aria-label="Difference from ATLAS prediction">
+          {scenarioMetricCards.map((metric) => (
+            <article className={metric.delta < 0 ? 'negative' : metric.delta > 0 ? 'positive' : ''} key={metric.label}>
+              <span>{metric.label}</span>
+              <strong>{scenarioDeltaLabel(metric.delta)}</strong>
+              <em>{scenarioPercentChange(metric.delta, metric.value)} from current</em>
+            </article>
+          ))}
         </div>
-        <strong>{outputs.riskLevel} risk / {euros(outputs.riskAdjustedValue)} risk-adjusted value</strong>
-      </section>
-      <section className="atlas-scenario-filter-controls" aria-label="Scenario model filters">
-        <label>
-          <span>Market</span>
-          <select
-            value={selectedMarketId}
-            onChange={(event) => {
-              const nextMarket = event.currentTarget.value;
-              window.location.href = scenarioHref({
-                buyer: selectedBuyingGroupId,
-                market: nextMarket
-              });
-            }}
-          >
-            <option value="">{attachedBuyingGroup ? `All ${attachedBuyingGroup.name} markets` : 'Europe default'}</option>
-            {[...marketOptions]
-              .sort((a, b) => riskRank(b.pressureLevel) - riskRank(a.pressureLevel) || b.marginAtRisk - a.marginAtRisk)
-              .map((market) => (
-                <option value={market.id} key={market.id}>{market.name} · {euros(market.marginAtRisk)} margin risk</option>
-              ))}
-          </select>
-        </label>
-        <label>
-          <span>Buying group</span>
-          <select
-            value={selectedBuyingGroupId}
-            onChange={(event) => {
-              const nextBuyer = event.currentTarget.value;
-              const buyer = nextBuyer ? getBuyingGroup(nextBuyer) : undefined;
-              const buyerSupportsMarket = selectedMarketId && buyer?.primaryMarkets.includes(selectedMarketId);
-              window.location.href = scenarioHref({
-                buyer: nextBuyer,
-                market: buyerSupportsMarket ? selectedMarketId : ''
-              });
-            }}
-          >
-            <option value="">{selectedMarket ? `${selectedMarket.name} market model` : 'All buying groups'}</option>
-            {[...marketScopedBuyingGroups]
-              .sort((a, b) => riskRank(b.riskLevel) - riskRank(a.riskLevel) || b.financialExposure.marginAtRisk - a.financialExposure.marginAtRisk)
-              .map((group) => (
-                <option value={group.id} key={group.id}>{group.name} · {euros(group.financialExposure.marginAtRisk)} risk</option>
-              ))}
-          </select>
-        </label>
-      </section>
-      <section className="atlas-scenario-layout">
-        <section className="atlas-scenario-controls">
-          <header className="atlas-scenario-modeling-header">
-            <div className="atlas-scenario-modeling-title">
-              <h2>Scenario modeling</h2>
-              <label className="atlas-scenario-pressure-control">
-                <span>Competitor pressure</span>
-                <select value={inputs.competitorPressureLevel} onChange={(event) => updateInput('competitorPressureLevel', event.target.value as ScenarioInputs['competitorPressureLevel'])}>
-                  <option value="low">Low</option>
-                  <option value="medium">Medium</option>
-                  <option value="high">High</option>
-                </select>
-              </label>
-            </div>
-            <div className="atlas-scenario-header-actions">
-              <div className="atlas-scenario-action-row">
-                <button type="button" onClick={saveScenarioToBuyingGroup}>
-                  <CheckCircle2 size={14} />
-                  Save to buying group
-                </button>
-                <a href={scenarioReportHref} rel="noreferrer" target="_blank">
-                  <Download size={14} />
-                  PDF
-                </a>
-              </div>
-            </div>
-          </header>
-          {scenarioSaveStatus ? <span className="atlas-scenario-save-status">{scenarioSaveStatus}</span> : null}
-          <div className="atlas-scenario-delta-strip" aria-label="Scenario metric changes">
-            {scenarioMetricCards.map((metric) => (
-              <article className={metric.delta < 0 ? 'negative' : metric.delta > 0 ? 'positive' : ''} key={metric.label}>
-                <span>{metric.label}</span>
-                <strong>{scenarioDeltaLabel(metric.delta)}</strong>
-                <em>{scenarioPercentChange(metric.delta, metric.value)} from current</em>
-                <small>Current {euros(metric.value)}</small>
-              </article>
+        <div className="atlas-scenario-lever-grid">
+          {visibleScenarioControls.map(({ key, label, max, min, step }) => (
+            <label className="atlas-scenario-input" key={key}>
+              <span>{label}</span>
+              <strong>{formatScenarioInputValue(key, Number(inputs[key]))}</strong>
+              <input type="range" min={min} max={max} step={step} value={Number(inputs[key])} onChange={(event) => updateInput(key, Number(event.target.value) as ScenarioInputs[typeof key])} onInput={(event) => updateInput(key, Number(event.currentTarget.value) as ScenarioInputs[typeof key])} />
+              <small><span>{formatScenarioInputValue(key, min)}</span><span>{formatScenarioInputValue(key, max)}</span></small>
+            </label>
+          ))}
+        </div>
+      </section> : null}
+
+      {scenarioLabMode === 'create' ? <details className="atlas-scenario-advanced-workbench">
+          <summary>Advanced modeling: levels, SKU drill-in, custom levers, and debrief memory</summary>
+          <div className="atlas-scenario-level-buttons">
+            {scenarioLevels.map((level) => (
+              <button className={selectedLevel === level.id ? 'active' : ''} key={level.id} onClick={() => selectScenarioLevel(level.id)} type="button">
+                <span>{level.label}</span>
+                <small>{level.note}</small>
+              </button>
             ))}
           </div>
           <div className="atlas-scenario-lever-grid">
-            {visibleScenarioControls.map(({ key, label, max, min, step }) => (
+            {advancedScenarioControls.map(({ key, label, max, min, step }) => (
               <label className="atlas-scenario-input" key={key}>
                 <span>{label}</span>
-                <strong>{key.includes('Percent') || key === 'buyerAcceptanceProbability' ? `${inputs[key]}%` : key === 'contractLengthMonths' ? `${inputs[key]} mo` : euros(Number(inputs[key]))}</strong>
+                <strong>{formatScenarioInputValue(key, Number(inputs[key]))}</strong>
                 <input type="range" min={min} max={max} step={step} value={Number(inputs[key])} onChange={(event) => updateInput(key, Number(event.target.value) as ScenarioInputs[typeof key])} onInput={(event) => updateInput(key, Number(event.currentTarget.value) as ScenarioInputs[typeof key])} />
                 <small><span>{formatScenarioInputValue(key, min)}</span><span>{formatScenarioInputValue(key, max)}</span></small>
               </label>
             ))}
           </div>
-          <SourceTrustBar source={scenarioSource} />
-        </section>
+          <section className="atlas-scenario-detail-table atlas-standalone-scenario-detail-table">
+            <header><h4>Optional SKU / pack drill-in</h4><button type="button" onClick={addSkuRow}>Add SKU</button></header>
+            <table>
+              <thead><tr><th>SKU / pack</th><th>Price move</th><th>Volume risk</th><th>GM rate</th><th>Buyer sensitivity</th><th>Action</th></tr></thead>
+              <tbody>
+                {skuRows.map((row) => (
+                  <tr key={row.id}>
+                    <td><input value={row.sku} onChange={(event) => updateSkuRow(row.id, 'sku', event.currentTarget.value)} /></td>
+                    <td><input type="number" step="0.1" value={row.priceMove} onChange={(event) => updateSkuRow(row.id, 'priceMove', Number(event.currentTarget.value))} />%</td>
+                    <td><input type="number" step="0.1" value={row.volumeRisk} onChange={(event) => updateSkuRow(row.id, 'volumeRisk', Number(event.currentTarget.value))} />%</td>
+                    <td><input type="number" step="0.1" value={row.margin} onChange={(event) => updateSkuRow(row.id, 'margin', Number(event.currentTarget.value))} />%</td>
+                    <td>
+                      <select value={row.sensitivity} onChange={(event) => updateSkuRow(row.id, 'sensitivity', event.currentTarget.value)}>
+                        <option>Low</option>
+                        <option>Medium</option>
+                        <option>High</option>
+                        <option>Needs review</option>
+                      </select>
+                    </td>
+                    <td><button type="button" onClick={() => removeSkuRow(row.id)}>Remove</button></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </section>
+          <section className="atlas-scenario-detail-table atlas-standalone-scenario-detail-table">
+            <header><h4>Custom scenario levers</h4><button type="button" onClick={addCustomLever}>Add lever</button></header>
+            <table>
+              <thead><tr><th>Lever</th><th>Value</th><th>Impact</th><th>Weight</th><th>Status</th><th>Action</th></tr></thead>
+              <tbody>
+                {customLevers.map((row) => (
+                  <tr key={row.id}>
+                    <td><input value={row.name} onChange={(event) => updateCustomLever(row.id, 'name', event.currentTarget.value)} /></td>
+                    <td><input value={row.value} onChange={(event) => updateCustomLever(row.id, 'value', event.currentTarget.value)} /></td>
+                    <td><input value={row.impact} onChange={(event) => updateCustomLever(row.id, 'impact', event.currentTarget.value)} /></td>
+                    <td><input type="number" min="0" max="10" value={row.weight} onChange={(event) => updateCustomLever(row.id, 'weight', Number(event.currentTarget.value))} /></td>
+                    <td>
+                      <select value={row.status} onChange={(event) => updateCustomLever(row.id, 'status', event.currentTarget.value)}>
+                        <option>Assumption</option>
+                        <option>User-added</option>
+                        <option>Needs review</option>
+                        <option>Validated</option>
+                      </select>
+                    </td>
+                    <td><button type="button" onClick={() => removeCustomLever(row.id)}>Remove</button></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </section>
+          <section className="atlas-scenario-debrief-loop" aria-label="Debrief updates scenario prediction">
+            <header>
+              <div>
+                <span>Debrief memory</span>
+                <h3>Capture what happened so the next model is smarter.</h3>
+              </div>
+              {latestScenarioDebrief ? <strong>Prediction updated</strong> : <strong>Not yet captured</strong>}
+            </header>
+            <div className="atlas-scenario-debrief-grid">
+              <div className="atlas-scenario-debrief-form">
+                <textarea value={scenarioDebriefText} onChange={(event) => setScenarioDebriefText(event.currentTarget.value)} placeholder="What happened in the room? Add buyer ask, objections, concessions, and outcome." />
+                <div>
+                  <label><span>Buyer counter</span><input value={scenarioDebriefBuyerCounter} onChange={(event) => setScenarioDebriefBuyerCounter(event.currentTarget.value)} placeholder="ex: 2.1%" /></label>
+                  <label><span>Final landed</span><input value={scenarioDebriefFinalLanded} onChange={(event) => setScenarioDebriefFinalLanded(event.currentTarget.value)} placeholder="ex: 2.6%" /></label>
+                  <label>
+                    <span>Behavior pattern</span>
+                    <select value={scenarioDebriefBehavior} onChange={(event) => setScenarioDebriefBehavior(event.currentTarget.value)}>
+                      <option>Asked for trade support before accepting price</option>
+                      <option>Delayed decision until Finance evidence was shown</option>
+                      <option>Challenged volume risk and category pressure</option>
+                      <option>Accepted price after prior-year outcome proof</option>
+                    </select>
+                  </label>
+                  <label><span>Attachment note</span><input value={scenarioDebriefAttachments} onChange={(event) => setScenarioDebriefAttachments(event.currentTarget.value)} placeholder="ex: room notes, signed CMA" /></label>
+                </div>
+                <input value={scenarioDebriefNextCycle} onChange={(event) => setScenarioDebriefNextCycle(event.currentTarget.value)} placeholder="Next-cycle learning, ex: lead with prior-year concession evidence" />
+                <button type="button" onClick={saveScenarioDebrief}>Save debrief to memory</button>
+              </div>
+              <aside>
+                {latestScenarioDebrief ? (
+                  <>
+                    <span>{new Date(latestScenarioDebrief.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                    <strong>{latestScenarioDebrief.predictionImpact}</strong>
+                    <p>Counter: {latestScenarioDebrief.buyerCounter || 'not entered'} / Landed: {latestScenarioDebrief.finalLanded || 'not entered'}</p>
+                  </>
+                ) : (
+                  <>
+                    <span>Closed loop</span>
+                    <strong>Debriefs update buyer-counter predictions and report evidence.</strong>
+                    <p>Use this after a round to capture what changed and what should influence the next scenario.</p>
+                  </>
+                )}
+                {scenarioDebriefStatus ? <em>{scenarioDebriefStatus}</em> : null}
+              </aside>
+            </div>
+          </section>
+      </details> : null}
+    </section>
+  );
+}
+
+function ScenarioCompareView({
+  buyingGroupId,
+  initialView,
+  marketId
+}: {
+  buyingGroupId?: string;
+  initialView?: string;
+  marketId?: string;
+}) {
+  const attachedBuyingGroup = buyingGroupId ? getBuyingGroup(buyingGroupId) : undefined;
+  const requestedMarket = marketId ? getMarket(marketId) : undefined;
+  const selectedMarket = requestedMarket && (!attachedBuyingGroup || attachedBuyingGroup.primaryMarkets.includes(requestedMarket.id))
+    ? requestedMarket
+    : requestedMarket;
+  const initialInputs = useMemo(() => attachedBuyingGroup ? scenarioInputsForBuyingGroup(attachedBuyingGroup) : scenarioInputsForMarket(selectedMarket), [attachedBuyingGroup, selectedMarket]);
+  const baseRevenue = attachedBuyingGroup?.financialExposure.revenueUnderNegotiation ?? selectedMarket?.revenueUnderNegotiation ?? 22000000;
+  const scenarioSource = attachedBuyingGroup?.source
+    ?? selectedMarket?.source
+    ?? packet.documents.find((document) => document.id === packet.scenarioModels[0]?.sourceIds[0])?.source
+    ?? packet.markets[0].source;
+  const contextLabel = attachedBuyingGroup
+    ? `${attachedBuyingGroup.name}${selectedMarket ? ` / ${selectedMarket.name}` : ''}`
+    : selectedMarket
+      ? `${selectedMarket.name} market`
+      : 'Europe portfolio';
+  const scenarioDefinitions = useMemo(() => {
+    const conservative: ScenarioInputs = {
+      ...initialInputs,
+      buyerAcceptanceProbability: Math.min(95, initialInputs.buyerAcceptanceProbability + 10),
+      concessionAmount: Math.round(initialInputs.concessionAmount * 1.08),
+      expectedRealizationPercent: Math.max(0.5, initialInputs.expectedRealizationPercent - 0.25),
+      priceIncreasePercent: Math.max(0.7, initialInputs.priceIncreasePercent - 0.3),
+      tradeSpendChange: Math.round(initialInputs.tradeSpendChange * 1.1),
+      volumeChangePercent: Math.min(1.5, initialInputs.volumeChangePercent + 0.35)
+    };
+    const buyerCounter: ScenarioInputs = {
+      ...initialInputs,
+      buyerAcceptanceProbability: Math.max(25, initialInputs.buyerAcceptanceProbability - 16),
+      concessionAmount: Math.round(initialInputs.concessionAmount * 1.22),
+      expectedRealizationPercent: Math.max(0.5, initialInputs.expectedRealizationPercent - 0.55),
+      priceIncreasePercent: Math.max(initialInputs.expectedRealizationPercent, initialInputs.priceIncreasePercent - 0.35),
+      tradeSpendChange: Math.round(initialInputs.tradeSpendChange * 1.18),
+      volumeChangePercent: initialInputs.volumeChangePercent - 0.8
+    };
+    const aggressive: ScenarioInputs = {
+      ...initialInputs,
+      buyerAcceptanceProbability: Math.max(25, initialInputs.buyerAcceptanceProbability - 12),
+      expectedRealizationPercent: initialInputs.expectedRealizationPercent + 0.25,
+      priceIncreasePercent: initialInputs.priceIncreasePercent + 0.45,
+      tradeSpendChange: Math.max(0, Math.round(initialInputs.tradeSpendChange * 0.92)),
+      volumeChangePercent: initialInputs.volumeChangePercent - 0.55
+    };
+    return [
+      {
+        id: 'recommended',
+        inputs: initialInputs,
+        name: 'Recommended',
+        note: 'ATLAS default based on current buyer history, market pressure, and finance guardrails.'
+      },
+      {
+        id: 'conservative',
+        inputs: conservative,
+        name: 'Conservative',
+        note: 'Protects landing probability with a smaller price move and controlled support.'
+      },
+      {
+        id: 'buyer-counter',
+        inputs: buyerCounter,
+        name: 'Buyer counter',
+        note: 'Models the buyer pushing back with lower realization and more trade support.'
+      },
+      {
+        id: 'aggressive',
+        inputs: aggressive,
+        name: 'Aggressive',
+        note: 'Tests a stronger ask with higher relationship and volume risk.'
+      },
+      {
+        id: 'custom',
+        inputs: initialInputs,
+        name: 'Custom',
+        note: 'Editable working scenario for CNO assumptions.'
+      }
+    ];
+  }, [initialInputs]);
+  const requestedIds = (initialView ?? '').split(',').map((item) => item.trim()).filter(Boolean);
+  const initialIds = requestedIds.length >= 2 ? requestedIds : ['recommended', 'buyer-counter'];
+  const [compareScenarios, setCompareScenarios] = useState(() => {
+    const selected = initialIds
+      .map((id) => scenarioDefinitions.find((scenario) => scenario.id === id))
+      .filter((scenario): scenario is typeof scenarioDefinitions[number] => Boolean(scenario));
+    return (selected.length >= 2 ? selected : scenarioDefinitions.slice(0, 2)).map((scenario) => ({ ...scenario, inputs: { ...scenario.inputs } }));
+  });
+  const compareBackParams = new URLSearchParams();
+  if (attachedBuyingGroup) compareBackParams.set('buyingGroup', attachedBuyingGroup.id);
+  if (selectedMarket) compareBackParams.set('market', selectedMarket.id);
+  const compareBackHref = `/scenario-lab${compareBackParams.toString() ? `?${compareBackParams.toString()}` : ''}`;
+
+  function updateCompareInput(scenarioId: string, key: keyof ScenarioInputs, value: number) {
+    setCompareScenarios((current) => current.map((scenario) => scenario.id === scenarioId
+      ? { ...scenario, inputs: { ...scenario.inputs, [key]: value } }
+      : scenario
+    ));
+  }
+
+  function addCompareScenario(scenarioId: string) {
+    const definition = scenarioDefinitions.find((scenario) => scenario.id === scenarioId);
+    if (!definition) return;
+    setCompareScenarios((current) => {
+      if (current.some((scenario) => scenario.id === definition.id)) return current;
+      return [...current, { ...definition, inputs: { ...definition.inputs } }].slice(0, 4);
+    });
+  }
+
+  function removeCompareScenario(scenarioId: string) {
+    setCompareScenarios((current) => current.length <= 2 ? current : current.filter((scenario) => scenario.id !== scenarioId));
+  }
+
+  function compareDeltaLabel(value: number) {
+    if (value === 0) return 'No change';
+    return `${value > 0 ? '+' : ''}${euros(value)}`;
+  }
+
+  function compareInputValue(key: keyof ScenarioInputs, value: number) {
+    if (key === 'buyerAcceptanceProbability' || key.includes('Percent')) return `${value.toFixed(key === 'buyerAcceptanceProbability' ? 0 : 1)}%`;
+    if (key === 'contractLengthMonths') return `${value.toFixed(0)} mo`;
+    return euros(value);
+  }
+
+  function compareGuardrail(inputs: ScenarioInputs, outputs: ReturnType<typeof calculateScenarioOutputs>) {
+    if (inputs.expectedRealizationPercent < Math.max(0.4, initialInputs.expectedRealizationPercent - 0.5) || outputs.marginImpact < -450000) return 'Guardrail breach';
+    if (inputs.expectedRealizationPercent < initialInputs.expectedRealizationPercent || outputs.marginImpact < 0) return 'Watch';
+    return 'Inside corridor';
+  }
+
+  function compareBuyerResponse(inputs: ScenarioInputs, guardrail: string) {
+    if (guardrail === 'Guardrail breach') return 'Likely to reject unless evidence or tradeoff changes.';
+    if (inputs.buyerAcceptanceProbability >= 70) return `Likely to challenge proof, then land near ${Math.max(0.5, inputs.priceIncreasePercent - 0.3).toFixed(1)}%.`;
+    if (inputs.buyerAcceptanceProbability >= 55) return `Likely to counter near ${Math.max(0.5, inputs.priceIncreasePercent - 0.5).toFixed(1)}% and ask for support.`;
+    return 'Likely to resist and use affordability or competitor pressure as leverage.';
+  }
+
+  const compareRows = compareScenarios.map((scenario) => {
+    const outputs = calculateScenarioOutputs(scenario.inputs, baseRevenue);
+    const guardrail = compareGuardrail(scenario.inputs, outputs);
+    return {
+      ...scenario,
+      buyerResponse: compareBuyerResponse(scenario.inputs, guardrail),
+      guardrail,
+      outputs
+    };
+  });
+  const bestScenario = [...compareRows].sort((a, b) => b.outputs.riskAdjustedValue - a.outputs.riskAdjustedValue)[0];
+  const availableToAdd = scenarioDefinitions.filter((definition) => !compareScenarios.some((scenario) => scenario.id === definition.id));
+
+  return (
+    <section className="atlas-scenario-compare-workspace" aria-label="Scenario comparison workspace">
+      <header className="atlas-scenario-compare-head">
+        <a href={compareBackHref}>Back to Scenario Lab</a>
+        <span>{contextLabel}</span>
+        <h1>Compare scenarios</h1>
+        <p>Edit the levers inside each scenario and compare how the buyer response, NR, GM, trade spend, volume risk, and guardrails change.</p>
+      </header>
+
+      <section className="atlas-scenario-compare-summary" aria-label="Comparison summary">
+        <header>
+          <div>
+            <span>Best current read</span>
+            <h2>{bestScenario?.name ?? 'Scenario'} protects the most risk-adjusted value.</h2>
+          </div>
+          <label>
+            <span>Add scenario</span>
+            <select value="" onChange={(event) => addCompareScenario(event.currentTarget.value)}>
+              <option value="">Choose scenario</option>
+              {availableToAdd.map((scenario) => (
+                <option value={scenario.id} key={scenario.id}>{scenario.name}</option>
+              ))}
+            </select>
+          </label>
+        </header>
+        <div className="atlas-scenario-compare-table">
+          <table>
+            <thead>
+              <tr>
+                <th>Scenario</th>
+                <th>Likelihood</th>
+                <th>NR</th>
+                <th>GM</th>
+                <th>Trade spend</th>
+                <th>Volume risk</th>
+                <th>Guardrail</th>
+                <th>Buyer response</th>
+              </tr>
+            </thead>
+            <tbody>
+              {compareRows.map((scenario) => (
+                <tr key={scenario.id}>
+                  <td>{scenario.name}</td>
+                  <td>{scenario.inputs.buyerAcceptanceProbability.toFixed(0)}%</td>
+                  <td>{compareDeltaLabel(scenario.outputs.revenueImpact)}</td>
+                  <td>{compareDeltaLabel(scenario.outputs.marginImpact)}</td>
+                  <td>{compareDeltaLabel(scenario.outputs.tradeSpendImpact)}</td>
+                  <td>{compareDeltaLabel(scenario.outputs.volumeImpact)}</td>
+                  <td><span className={`atlas-scenario-guardrail ${scenario.guardrail.toLowerCase().replaceAll(' ', '-')}`}>{scenario.guardrail}</span></td>
+                  <td>{scenario.buyerResponse}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </section>
-    </>
+
+      <section className="atlas-scenario-compare-columns" aria-label="Editable scenario columns">
+        {compareRows.map((scenario) => (
+          <article key={scenario.id}>
+            <header>
+              <div>
+                <span>{scenario.guardrail}</span>
+                <h2>{scenario.name}</h2>
+                <p>{scenario.note}</p>
+              </div>
+              <button disabled={compareScenarios.length <= 2} onClick={() => removeCompareScenario(scenario.id)} type="button">Remove</button>
+            </header>
+            <div className="atlas-scenario-compare-metrics">
+              <div><span>NR</span><strong>{compareDeltaLabel(scenario.outputs.revenueImpact)}</strong></div>
+              <div><span>GM</span><strong>{compareDeltaLabel(scenario.outputs.marginImpact)}</strong></div>
+              <div><span>Value</span><strong>{euros(scenario.outputs.riskAdjustedValue)}</strong></div>
+            </div>
+            <div className="atlas-scenario-compare-levers">
+              {([
+                ['priceIncreasePercent', 'Price ask %', 0, Math.max(6, scenario.inputs.priceIncreasePercent + 1), 0.1],
+                ['expectedRealizationPercent', 'Expected realization %', 0, Math.max(5, scenario.inputs.priceIncreasePercent + 1), 0.1],
+                ['tradeSpendChange', 'Trade spend EUR', 0, Math.max(1000000, scenario.inputs.tradeSpendChange * 1.5), 25000],
+                ['volumeChangePercent', 'Volume risk %', -5, 3, 0.1],
+                ['buyerAcceptanceProbability', 'Buyer acceptance', 0, 100, 1]
+              ] as Array<[keyof ScenarioInputs, string, number, number, number]>).map(([key, label, min, max, step]) => (
+                <label key={key}>
+                  <span>{label}</span>
+                  <strong>{compareInputValue(key, Number(scenario.inputs[key]))}</strong>
+                  <input
+                    max={max}
+                    min={min}
+                    onChange={(event) => updateCompareInput(scenario.id, key, Number(event.currentTarget.value))}
+                    step={step}
+                    type="range"
+                    value={Number(scenario.inputs[key])}
+                  />
+                </label>
+              ))}
+            </div>
+            <footer>
+              <span>Buyer response</span>
+              <p>{scenario.buyerResponse}</p>
+            </footer>
+          </article>
+        ))}
+      </section>
+
+      <SourceTrustMini source={scenarioSource} />
+    </section>
   );
 }
 
@@ -5486,7 +11976,7 @@ function MemoryDecisionPanel({
   const cards = [
     {
       action: reusable[0] ? 'Open source' : 'Review library',
-      href: reusable[0] ? hrefForDocumentArtifact(reusable[0]) : '/documents',
+      href: reusable[0] ? hrefForDocumentArtifact(reusable[0]) : '/intelligence',
       label: 'Approved sources',
       source: reusable[0]?.source,
       title: `${reusable.length} reusable`,
@@ -5494,7 +11984,7 @@ function MemoryDecisionPanel({
     },
     {
       action: topWatchout ? 'Resolve source' : 'Open documents',
-      href: topWatchout ? hrefForDocumentArtifact(topWatchout) : '/documents',
+      href: topWatchout ? hrefForDocumentArtifact(topWatchout) : '/intelligence',
       label: 'Source watchout',
       source: topWatchout?.source,
       tone: sourceWatchouts.length ? 'watch' : 'good',
@@ -5502,8 +11992,8 @@ function MemoryDecisionPanel({
       value: topWatchout ? sourceDecisionForDocument(topWatchout) : 'All sources ready'
     },
     {
-      action: latestBuyerId ? 'Open buyer memory' : 'Open timeline',
-      href: latestBuyerId ? `/buying-groups/${latestBuyerId}?view=memory` : '/timeline',
+      action: latestBuyerId ? 'Use in buyer scenario' : 'Open timeline',
+      href: latestBuyerId ? `/buying-groups/${latestBuyerId}?view=strategy` : '/intelligence',
       label: 'Latest memory',
       source: latestEvent?.source,
       title: latestEvent?.title ?? 'No memory event',
@@ -5514,12 +12004,12 @@ function MemoryDecisionPanel({
       }) : 'No modeled impact'
     },
     {
-      action: generated[0] ? 'Open latest draft' : 'Create view',
+      action: generated[0] ? 'Open latest brief' : 'Create scenario brief',
       href: generated[0] ? hrefForDocumentArtifact(generated[0]) : '/generated-views?prompt=Create%20source-backed%20CNO%20readout&mode=draft&editable=1',
-      label: 'Generated views',
+      label: 'Scenario briefs',
       source: generated[0]?.source,
       title: `${generated.length} stored`,
-      value: generated[0]?.title ?? 'Create only when no source exists'
+      value: generated[0]?.title ?? 'Create only after a scenario is selected'
     }
   ];
 
@@ -5554,28 +12044,28 @@ function TimelineDecisionPanel({ events }: { events: TimelineEvent[] }) {
 
   const rows = [
     {
-      href: firstBuyer ? `/buying-groups/${firstBuyer}?view=memory` : '/buying-groups',
+      href: firstBuyer ? `/buying-groups/${firstBuyer}?view=strategy` : '/buying-groups',
       label: 'Buyer memory',
       metric: String(buyerLinked.length),
       title: buyerLinked[0]?.title ?? 'Open buyer memory',
       source: buyerLinked[0]?.source
     },
     {
-      href: debriefs[0]?.buyingGroupIds[0] ? `/buying-groups/${debriefs[0].buyingGroupIds[0]}?view=memory` : '/timeline',
+      href: debriefs[0]?.buyingGroupIds[0] ? `/buying-groups/${debriefs[0].buyingGroupIds[0]}?view=strategy` : '/intelligence',
       label: 'Debriefs',
       metric: String(debriefs.length),
       title: debriefs[0]?.title ?? 'No debrief event selected',
       source: debriefs[0]?.source
     },
     {
-      href: scenarios[0]?.buyingGroupIds[0] ? `/buying-groups/${scenarios[0].buyingGroupIds[0]}?view=financials` : '/scenario-models',
+      href: scenarios[0]?.buyingGroupIds[0] ? `/buying-groups/${scenarios[0].buyingGroupIds[0]}?view=strategy` : '/scenario-lab',
       label: 'Scenario memory',
       metric: String(scenarios.length),
       title: scenarios[0]?.title ?? 'No scenario event selected',
       source: scenarios[0]?.source
     },
     {
-      href: sourceWatchouts[0]?.buyingGroupIds[0] ? `/buying-groups/${sourceWatchouts[0].buyingGroupIds[0]}?view=memory` : '/documents',
+      href: sourceWatchouts[0]?.buyingGroupIds[0] ? `/buying-groups/${sourceWatchouts[0].buyingGroupIds[0]}?view=strategy` : '/intelligence',
       label: 'Source watchouts',
       metric: String(sourceWatchouts.length),
       title: sourceWatchouts[0]?.title ?? 'No open watchouts',
@@ -5616,14 +12106,14 @@ function DocumentsView({ initialPrompt }: { initialPrompt?: string }) {
         ]}
       />
       <AtlasCommandSurface
-        basePath="/documents"
+        basePath="/intelligence"
         examples={[
           'Retrieve prior-year EDEKA debrief',
           'Show stale prep documents',
           'Find documents for Carrefour'
         ]}
         initialPrompt={initialPrompt}
-        placeholder="Ask to retrieve debriefs, prep documents, source gaps, or generated outputs..."
+        placeholder="Ask to retrieve debriefs, prep documents, source gaps, or scenario outputs..."
       />
       <MemoryDecisionPanel documents={packet.documents} events={packet.latestTimelineEvents} />
       <section className="atlas-hub-section">
@@ -5653,7 +12143,7 @@ function TimelineView({ initialPrompt }: { initialPrompt?: string }) {
         ]}
       />
       <AtlasCommandSurface
-        basePath="/timeline"
+        basePath="/intelligence"
         examples={[
           'Show debriefs needing validation',
           'Show recent live outputs',
@@ -5695,6 +12185,11 @@ function SignalsView({ initialPrompt }: { initialPrompt?: string }) {
         initialPrompt={initialPrompt}
         placeholder="Ask for signal impact, affected buyers, source freshness, or financial implication..."
       />
+      <ActiveAlertsPanel
+        alerts={packet.signals.map(signalToAlert)}
+        eyebrow="Signal alerts"
+        title="External changes and their possible negotiation effect."
+      />
       <SignalActionBoard signals={packet.signals} />
     </>
   );
@@ -5715,7 +12210,7 @@ function CompetitorsView({ initialPrompt }: { initialPrompt?: string }) {
         ]}
       />
       <AtlasCommandSurface
-        basePath="/competitors"
+        basePath="/signals"
         examples={[
           'Find competitor moves affecting Carrefour',
           'Show private label leverage',
@@ -5723,6 +12218,11 @@ function CompetitorsView({ initialPrompt }: { initialPrompt?: string }) {
         ]}
         initialPrompt={initialPrompt}
         placeholder="Ask for competitor leverage, affected buyers, or PepsiCo financial implication..."
+      />
+      <ActiveAlertsPanel
+        alerts={packet.competitorMoves.map(competitorToAlert)}
+        eyebrow="Competitor alerts"
+        title="Competitor moves that could change buyer leverage."
       />
       <CompetitorActionBoard moves={packet.competitorMoves} />
     </>
@@ -5812,7 +12312,7 @@ function buildSourceDatabaseRows(): SourceDatabaseRow[] {
     affectedBuyingGroups: buyingGroupNames(move.affectedBuyingGroups),
     financialImpact: compactFinancialImpact({ margin: move.estimatedMarginImpact, revenue: move.estimatedRevenueImpact }),
     source: move.source,
-    recordHref: `/competitors?move=${move.id}`
+    recordHref: `/signals?move=${move.id}`
   }));
   const documentRows = packet.documents.map((document): SourceDatabaseRow => ({
     id: `document-${document.id}`,
@@ -5822,7 +12322,7 @@ function buildSourceDatabaseRows(): SourceDatabaseRow[] {
     affectedBuyingGroups: document.buyingGroupId ? buyingGroupNames([document.buyingGroupId]) : 'Not buyer-specific',
     financialImpact: document.lastUsed ? `Last used ${document.lastUsed}` : document.reusable ? 'Reusable source' : 'Draft source',
     source: document.source,
-    recordHref: `/documents?document=${document.id}`
+    recordHref: `/intelligence?document=${document.id}`
   }));
   const timelineRows = packet.timelineEvents.map((event): SourceDatabaseRow => ({
     id: `timeline-${event.id}`,
@@ -5836,7 +12336,7 @@ function buildSourceDatabaseRows(): SourceDatabaseRow[] {
       trade: event.financialImpact?.tradeSpendImpact
     }),
     source: event.source,
-    recordHref: `/timeline?event=${event.id}`
+    recordHref: `/intelligence?event=${event.id}`
   }));
   const patternRows = packet.crossMarketPatterns.map((pattern): SourceDatabaseRow => ({
     id: `pattern-${pattern.id}`,
@@ -5869,7 +12369,7 @@ function buildSourceDatabaseRows(): SourceDatabaseRow[] {
         volume: scenario.outputs.volumeImpact
       }),
       source,
-      recordHref: `/scenario-models?buyingGroup=${scenario.buyingGroupId}`
+      recordHref: `/scenario-lab?buyingGroup=${scenario.buyingGroupId}`
     };
   });
 
@@ -5938,7 +12438,7 @@ function SourceDatabaseView({ initialPrompt }: { initialPrompt?: string }) {
     },
     {
       action: 'Do not treat as source truth',
-      detail: 'Non-canonical records need owner approval or replacement before governed use.',
+      detail: 'Non-canonical records need owner validation or replacement before governed use.',
       label: 'Non-canonical',
       tone: 'blocked',
       value: String(nonCanonicalRows.length)
@@ -5948,10 +12448,10 @@ function SourceDatabaseView({ initialPrompt }: { initialPrompt?: string }) {
   return (
     <>
       <IntentBrief
-        eyebrow="Database"
-        title={`${rows.length} source-backed records / ${sourceWatchouts.length} watchouts.`}
+        eyebrow="Intelligence Library"
+        title={`${rows.length} memory, source, and scenario records / ${sourceWatchouts.length} watchouts.`}
         body={`${approvedRows.length} approved or ready / ${highConfidenceRows.length} high confidence records.`}
-        action="Open the record or source when a number needs traceability."
+        action="Use this library to validate sources, approve memory, and audit prediction confidence."
         metrics={[
           { label: 'Records', value: String(rows.length) },
           { label: 'High confidence', value: String(highConfidenceRows.length), tone: 'good' },
@@ -5959,16 +12459,16 @@ function SourceDatabaseView({ initialPrompt }: { initialPrompt?: string }) {
         ]}
       />
       <AtlasCommandSurface
-        basePath="/database"
+        basePath="/intelligence"
         examples={[
           'Show stale source records',
           'Find source links for Carrefour',
-          'Show high confidence competitor sources'
+          'Show prediction accuracy records'
         ]}
         initialPrompt={initialPrompt}
-        placeholder="Ask for source records by buyer, market, confidence, status, or data type..."
+        placeholder="Ask for memory, debriefs, prediction accuracy, sources, confidence, or approval status..."
       />
-      <MemoryDecisionPanel documents={packet.documents} events={packet.latestTimelineEvents} title="Database control read" />
+      <MemoryDecisionPanel documents={packet.documents} events={packet.latestTimelineEvents} title="Library control read" />
       <section className="atlas-source-governance-summary" aria-label="Source governance summary">
         {governanceCards.map((card) => (
           <article className={`tone-${card.tone}`} key={card.label}>
@@ -6006,7 +12506,7 @@ function SourceDatabaseView({ initialPrompt }: { initialPrompt?: string }) {
               </div>
               <div>
                 <em>{row.source.sourceType}</em>
-                <strong>{row.source.sourceName}</strong>
+                <strong>{sourceDisplayName(row.source)}</strong>
               </div>
               <span>{row.source.sourceDate}</span>
               <div className="atlas-source-database-status">
@@ -6016,7 +12516,7 @@ function SourceDatabaseView({ initialPrompt }: { initialPrompt?: string }) {
               <span>{row.affectedMarkets} / {row.affectedBuyingGroups}</span>
               <span>{row.financialImpact}</span>
               <div className="atlas-source-database-links">
-                <a href={row.source.url ?? `/database?source=${encodeURIComponent(row.id)}`}>Open source</a>
+                <a href={row.source.url ?? `/intelligence?source=${encodeURIComponent(row.id)}`}>Open source</a>
                 <a href={row.recordHref}>Open record</a>
               </div>
             </article>
@@ -6048,23 +12548,39 @@ function HowItWorksView() {
       step: 'Drill in'
     },
     {
-      action: 'Run Scenario Models from the buyer profile or Impact page.',
-      input: 'Price realization, volume, trade spend, concession, buyer acceptance.',
-      output: 'Financial implication and risk-adjusted value.',
+      action: 'Run the Scenario Lab from the buyer workspace, market, or Impact page.',
+      input: 'Price realization, volume, trade spend, concession, buyer acceptance, category/SKU drill-ins, and custom levers.',
+      output: 'Predicted buyer response, financial implication, and risk-adjusted value.',
       step: 'Model'
     },
     {
-      action: 'Use generated views or Live Room to pull source-backed reports in a new tab.',
-      input: 'Prep docs, buyer history, source records, room requests.',
+      action: 'Choose a scenario and decide which evidence, history, and assumptions should carry forward.',
+      input: 'Buyer profile, market gaps, saved scenarios, documents, debriefs, source records, and scenario outputs.',
+      output: 'Selected move with evidence, assumptions, and pushback preparation.',
+      step: 'Decide'
+    },
+    {
+      action: 'Generate a scenario evidence report only after the user chooses what to carry forward.',
+      input: 'Selected scenario, buyer history, source records, evidence choices, and assumptions.',
       output: 'Editable report artifact with PDF download and save-to-profile action.',
       step: 'Generate'
     },
     {
-      action: 'Add generated views, debriefs, documents, and scenario events back to buyer or market memory.',
-      input: 'What changed, document evidence, financial deltas, decisions, generated report links.',
+      action: 'Add scenario outputs, debriefs, documents, and scenario events back to buyer or market memory.',
+      input: 'What changed, document evidence, financial deltas, decisions, scenario output links.',
       output: 'Updated memory for the next cycle.',
       step: 'Debrief / Memory'
     }
+  ];
+  const futureProcessSteps = [
+    'AI summarizes prior-year local account and CNO inputs from history.',
+    'Local account teams validate negotiation results, signed CMAs, retailer KPIs, and buyer feedback.',
+    'CNO validates sector-level inputs, market priorities, and the 3-year plan.',
+    'Finance/NRM guardrails define the pricing corridor, fallback, and red line.',
+    'ATLAS diagnoses market and customer performance shifts that affect the negotiation.',
+    'Scenario Lab tests pricing moves, buyer counters, category/SKU drill-ins, and custom levers.',
+    'CNO uses the chosen scenario, evidence, and pushback read to decide the negotiation move.',
+    'Debrief, signed agreements, saved scenarios, and scenario outputs save back to buyer history.'
   ];
   const pageIntents = [
     {
@@ -6073,7 +12589,7 @@ function HowItWorksView() {
       problem: 'CNOs need to know where to focus first without reading a dashboard wall.',
       source: 'Watchlist, market packets, buying group packets, signals, competitor moves.',
       intent: 'What do I need to focus on right now?',
-      action: 'Open the top buyer, compare markets, or ask ATLAS for a focused view.'
+      action: 'Open the top buyer, compare markets, or ask ATLAS to create a scenario read.'
     },
     {
       answer: 'Market comparison by margin risk, gap to plan, trade spend, active buyer pressure.',
@@ -6094,10 +12610,10 @@ function HowItWorksView() {
     {
       answer: 'Current round, latest ask, PepsiCo position, target, margin risk, history, docs, scenarios.',
       page: 'Buying Group Profile',
-      problem: 'Users need one place to understand the buyer and update the memory loop.',
+      problem: 'Users need one customizable workspace to model the buyer, read history, and update the memory loop.',
       source: 'Buyer packet, timeline, supporting documents, signals, competitor moves, scenarios.',
-      intent: 'What is happening with this exact buying group?',
-      action: 'Review financials, run scenario, open Live Room, add update.'
+      intent: 'What could happen with this buyer, and what scenario should I test?',
+      action: 'Run a scenario, inspect history, add debrief, or save the modeled output.'
     },
     {
       answer: 'Margin at risk, gap to plan, realization tracker, exposure ranking.',
@@ -6109,19 +12625,27 @@ function HowItWorksView() {
     },
     {
       answer: 'Modeled revenue, margin, volume, trade spend, gap to plan, risk-adjusted value.',
-      page: 'Scenario Models',
-      problem: 'Users need to test a pricing move before approving or discussing it.',
+      page: 'Scenario Lab',
+      problem: 'Users need to test a pricing move, buyer counter, category/SKU drill-in, or custom lever before deciding what to do.',
       source: 'Buyer financials, scenario assumptions, linked source documents.',
-      intent: 'What happens if we move price, trade spend, volume, or concessions?',
-      action: 'Download scenario visual or save modeled output to buyer/market memory.'
+      intent: 'What happens if we move price, trade spend, volume, concessions, SKU mix, or buyer-specific levers?',
+      action: 'Compare scenarios, download a scenario report, or save modeled output to buyer/market memory.'
+    },
+    {
+      answer: 'Selected scenario, evidence, buyer pushback, assumptions, and source trail.',
+      page: 'Scenario decision output',
+      problem: 'Users need the intelligence to become a defensible move, not remain scattered across pages.',
+      source: 'Buyer profile, history, saved scenarios, documents, market signals, scenario outputs, user edits.',
+      intent: 'Which modeled move should carry forward, and why?',
+      action: 'Confirm, remove, edit, save, or export the selected scenario evidence.'
     },
     {
       answer: 'Editable report artifact with source decision, metrics, sections, PDF download, duplicate/edit, and save destination.',
-      page: 'Generated Views',
-      problem: 'Users need ATLAS to retrieve existing work when it exists, or create an editable draft when it does not.',
-      source: 'Document library, source metadata, buyer/market scope, generated report service.',
-      intent: 'Can I get this exact report or view right now?',
-      action: 'Download PDF, duplicate/edit, or add to buyer/market profile.'
+      page: 'Scenario Outputs',
+      problem: 'Users need ATLAS to retrieve reusable scenario evidence when it exists, or create an editable scenario artifact when it does not.',
+      source: 'Document library, source metadata, buyer/market scope, scenario generation service.',
+      intent: 'Can I export the scenario evidence behind this move right now?',
+      action: 'Download PDF, duplicate/edit, save to memory, or reuse in the Scenario Lab.'
     },
     {
       answer: 'Recommended action, buyer leverage, affected financials, affected buyers, source.',
@@ -6145,8 +12669,8 @@ function HowItWorksView() {
     <>
       <IntentBrief
         eyebrow="Builder explainer"
-        title="How ATLAS gets a CNO from question to answer in 60 seconds."
-        body="ATLAS is an intelligence loop: monitor what changed, diagnose financial exposure, drill into the buyer, model the move, generate the right view, then save the result back to memory."
+        title="How ATLAS gets a CNO from question to tested scenario in 60 seconds."
+        body="ATLAS is an intelligence loop: monitor what changed, diagnose financial exposure, drill into the buyer, model possible moves, choose what carries forward, then save the result back to memory."
         action="Design goal: every page should answer the user’s question, show affected financials, show source trust, and make the next action obvious."
         metrics={[
           { label: 'Goal', value: '<60 sec' },
@@ -6158,7 +12682,7 @@ function HowItWorksView() {
       <section className="atlas-how-loop">
         <header>
           <span>System loop</span>
-          <h2>Monitor → Diagnose → Drill in → Model → Generate → Debrief → Memory</h2>
+          <h2>Monitor → Diagnose → Drill in → Model → Decide → Generate → Debrief → Memory</h2>
         </header>
         <div>
           {loopSteps.map((step, index) => (
@@ -6177,14 +12701,60 @@ function HowItWorksView() {
 
       <section className="atlas-how-answer-model">
         <div>
-          <span>60-second answer model</span>
-          <h2>Every view should collapse to four things.</h2>
+          <span>Relevance logic</span>
+          <h2>ATLAS does not cap data. Every visible item must earn its place.</h2>
         </div>
         <ol>
-          <li><strong>Recommended action.</strong><span>What should the user do next?</span></li>
-          <li><strong>Why now.</strong><span>What changed or what is at risk?</span></li>
-          <li><strong>Affected data.</strong><span>Revenue, margin, volume, trade spend, gap, buyer, market.</span></li>
-          <li><strong>Source trust.</strong><span>Where did the data come from, how fresh is it, and how confident is ATLAS?</span></li>
+          <li><strong>Materiality.</strong><span>Affects revenue, margin, volume, trade spend, price realization, or gap to plan.</span></li>
+          <li><strong>Urgency.</strong><span>Affects a current negotiation, upcoming milestone, open decision, or escalation.</span></li>
+          <li><strong>Strategy impact.</strong><span>Changes the in-going position, concession path, levers, risk posture, or fallback.</span></li>
+          <li><strong>Source impact.</strong><span>Is high-confidence, newly updated, stale, disputed, or user-added.</span></li>
+          <li><strong>Pattern impact.</strong><span>Connects to a cross-market or cross-buyer pattern.</span></li>
+          <li><strong>Memory impact.</strong><span>Comes from a prior negotiation, debrief, saved scenario, uploaded document, or locked strategy.</span></li>
+          <li><strong>Actionability.</strong><span>Creates a clear next step for the user.</span></li>
+        </ol>
+      </section>
+
+      <section className="atlas-how-strategy-loop">
+        <header>
+          <span>Predictive scenario value loop</span>
+          <h2>The Scenario Lab is where intelligence becomes a tested move.</h2>
+        </header>
+        <div>
+          <article>
+            <strong>ATLAS proposes</strong>
+            <p>Market gaps, buyer history, saved scenarios, scenario outputs, supporting documents, and source records become scenario recommendations.</p>
+          </article>
+          <article>
+            <strong>User tests</strong>
+            <p>The CNO can adjust price, volume, trade, category/SKU assumptions, and custom levers before choosing what carries forward.</p>
+          </article>
+          <article>
+            <strong>Scenario saves</strong>
+            <p>The selected scenario becomes the working reference for evidence, pushback prep, and scenario outputs.</p>
+          </article>
+          <article>
+            <strong>Memory updates</strong>
+            <p>Saved scenarios, reports, debriefs, and outcomes return to buyer history and affect future predictions only when relevant.</p>
+          </article>
+        </div>
+      </section>
+
+      <section className="atlas-how-future-process">
+        <header>
+          <div>
+            <span>Future process loop</span>
+            <h2>How ATLAS supports predictive negotiation planning.</h2>
+          </div>
+          <p>Local account and Finance inputs are represented as source roles in this POC. Full local-account workflows, Finance workflows, meeting capture, and production integrations stay in backlog.</p>
+        </header>
+        <ol>
+          {futureProcessSteps.map((step, index) => (
+            <li key={step}>
+              <em>{String(index + 1).padStart(2, '0')}</em>
+              <span>{step}</span>
+            </li>
+          ))}
         </ol>
       </section>
 
@@ -6229,6 +12799,8 @@ function AtlasIntelligenceContent({
   initialGeneratedView,
   initialMonitorTab,
   initialPrompt,
+  initialScenarioId,
+  initialScenarioLabMode,
   initialSort
 }: AtlasIntelligenceHubProps) {
   if (view === 'markets' || view === 'market') return <MarketsView initialGeneratedView={initialGeneratedView} initialPrompt={initialPrompt} initialSort={initialSort} marketId={marketId} />;
@@ -6250,7 +12822,8 @@ function AtlasIntelligenceContent({
   if (view === 'timeline') return <TimelineView initialPrompt={initialPrompt} />;
   if (view === 'database') return <SourceDatabaseView initialPrompt={initialPrompt} />;
   if (view === 'howItWorks') return <HowItWorksView />;
-  if (view === 'scenarioModels') return <ScenarioModelsView buyingGroupId={buyingGroupId} initialPrompt={initialPrompt} initialView={initialGeneratedView} marketId={marketId} />;
+  if (view === 'scenarioCompare') return <ScenarioCompareView buyingGroupId={buyingGroupId} initialView={initialGeneratedView} marketId={marketId} />;
+  if (view === 'scenarioModels') return <ScenarioModelsView buyingGroupId={buyingGroupId} initialPrompt={initialPrompt} initialScenarioId={initialScenarioId} initialScenarioLabMode={initialScenarioLabMode} initialView={initialGeneratedView} marketId={marketId} />;
   return <EuropeOverview initialGeneratedView={initialGeneratedView} initialMonitorTab={initialMonitorTab} initialPrompt={initialPrompt} />;
 }
 

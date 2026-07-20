@@ -4,7 +4,7 @@ type AtlasCommandPageProps = {
 };
 
 function routeForPrompt(prompt: string) {
-  return `/atlas-output?prompt=${encodeURIComponent(prompt)}`;
+  return `/generated-views?prompt=${encodeURIComponent(prompt || 'Create a scenario evidence output')}&mode=draft&editable=1`;
 }
 
 export default async function AtlasCommandPage({ searchParams }: AtlasCommandPageProps) {

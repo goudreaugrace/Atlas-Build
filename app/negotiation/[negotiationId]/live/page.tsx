@@ -1,21 +1,14 @@
-import AtlasLiveNegotiatorMode from '../../../atlas-live-negotiator-mode';
+import { redirect } from 'next/navigation';
 
 type LiveNegotiationPageProps = {
   params: Promise<{ negotiationId: string }>;
-  searchParams: Promise<{ autostart?: string; deck?: string; group?: string }>;
+  searchParams: Promise<{ group?: string }>;
 };
 
 export default async function LiveNegotiationPage({ params, searchParams }: LiveNegotiationPageProps) {
-  const { negotiationId } = await params;
+  await params;
   const query = await searchParams;
+  const buyingGroupId = query.group || 'carrefour';
 
-  return (
-    <AtlasLiveNegotiatorMode
-      autoStartLive={query.autostart === '1'}
-      initialPrepDeckLabel={query.deck}
-      initialBuyingGroupId={query.group}
-      initialStartedAt={query.autostart === '1' ? new Date().toISOString() : undefined}
-      negotiationId={negotiationId}
-    />
-  );
+  redirect(`/buying-groups/${buyingGroupId}?view=memory&legacy=live-room`);
 }

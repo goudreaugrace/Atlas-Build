@@ -147,15 +147,15 @@ export function answerNegotiationQuestion(record: NegotiationRecord, prompt: str
     return `Say back: "${pushback.recommendedResponse}" Keep it evidence-led and avoid exposing red lines. The strongest proof is the commodity bridge plus margin waterfall; confidence is ${pushback.confidence}, so keep any unsupported commodity causality out of the customer-facing version.`;
   }
 
-  if (/(kam|cam|cascade|safe pack)/.test(normalized)) {
-    return 'I can create a KAM-safe cascade from the approved CNO scenario. It will include approved talking points, permitted levers, customer concerns, what not to say, and escalation triggers while removing red lines, fallback thresholds, sensitive margin controls, recovery logic, and confidence gaps.';
+  if (/(field|cascade|safe pack|shareable)/.test(normalized)) {
+    return 'I can create a field-ready scenario brief from the approved CNO scenario. It will include approved talking points, permitted levers, buyer concerns, evidence to show, escalation triggers, and a redacted source trail that removes internal thresholds, sensitive margin controls, recovery logic, and confidence gaps.';
   }
 
   if (/(brief|prep|memo|document|output)/.test(normalized)) {
     return `I can build a CNO prep brief from ${activeScenario.name}. It should include the current position, selected scenario, pushback forecast, concession path, watch-outs, open decisions, evidence trail, and next-best action. Official export stays gated until review.`;
   }
 
-  return `For ${record.customer} ${record.market}, I recommend staying anchored on ${activeScenario.name}: ${activeScenario.strategy} It has ${activeScenario.probabilityToLandPct}% modeled probability to land, ${activeScenario.sanctionRisk} sanction risk, and keeps the current plan above red-line watch. Ask me to compare scenarios, capture a live update, or create the CNO prep brief.`;
+  return `For ${record.customer} ${record.market}, I recommend staying anchored on ${activeScenario.name}: ${activeScenario.strategy} It has ${activeScenario.probabilityToLandPct}% modeled probability to land, ${activeScenario.sanctionRisk} sanction risk, and keeps the current plan above red-line watch. Ask me to compare scenarios, capture a debrief, or create the CNO prep brief.`;
 }
 
 function redactedBodyForAudience(body: string[], audienceMode: AudienceMode) {

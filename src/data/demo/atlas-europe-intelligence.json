@@ -294,8 +294,8 @@
       },
       "currentSignals": ["signal-fr-private-label", "signal-fr-regulatory"],
       "competitorMoves": ["move-private-label-fr", "move-mondelez-value-pack"],
-      "documents": ["doc-carrefour-2025-debrief", "doc-carrefour-2026-corridor", "doc-carrefour-q2-finance", "doc-carrefour-live-debrief-july"],
-      "timelineEvents": ["event-carrefour-ask", "event-carrefour-doc-retrieved", "event-scenario-carrefour-32", "event-carrefour-live-debrief"],
+      "documents": ["doc-carrefour-2025-debrief", "doc-carrefour-2026-corridor", "doc-carrefour-q2-finance", "doc-carrefour-debrief-july"],
+      "timelineEvents": ["event-carrefour-ask", "event-carrefour-doc-retrieved", "event-scenario-carrefour-32", "event-carrefour-debrief"],
       "lastUpdated": "2026-07-09",
       "source": {
         "sourceName": "ATLAS Carrefour synthetic buying group packet",
@@ -339,7 +339,7 @@
       "currentSignals": ["signal-de-retailer-margin", "signal-de-private-label"],
       "competitorMoves": ["move-kellanova-discounting", "move-private-label-de"],
       "documents": ["doc-edeka-2025-debrief", "doc-edeka-financial-summary"],
-      "timelineEvents": ["event-edeka-financial-change", "event-edeka-competitor-move"],
+      "timelineEvents": ["event-edeka-financial-change", "event-edeka-buyer-counter-round-3", "event-edeka-competitor-move", "event-edeka-finance-guardrail-review", "event-edeka-opening-ask", "event-edeka-2025-final-agreement", "event-edeka-2025-counter-pattern", "event-edeka-2025-debrief"],
       "lastUpdated": "2026-07-09",
       "source": {
         "sourceName": "ATLAS EDEKA synthetic buying group packet",
@@ -1207,16 +1207,16 @@
       "lastUsed": "2026-06-18"
     },
     {
-      "id": "doc-carrefour-live-debrief-july",
-      "title": "Carrefour Live Negotiation Debrief",
-      "documentType": "live_debrief",
+      "id": "doc-carrefour-debrief-july",
+      "title": "Carrefour Debrief Memory",
+      "documentType": "debrief",
       "buyingGroupId": "carrefour",
       "marketId": "france",
       "year": 2026,
       "status": "needs_validation",
       "reusable": true,
       "source": {
-        "sourceName": "ATLAS Live Negotiator generated debrief",
+        "sourceName": "ATLAS debrief memory",
         "sourceType": "ai_generated",
         "sourceDate": "2026-07-09",
         "lastUpdated": "2026-07-09",
@@ -1224,7 +1224,7 @@
         "status": "needs_validation",
         "governance": {
           "sourceType": "ai_generated",
-          "sourceOwner": "ATLAS live negotiator prototype",
+          "sourceOwner": "ATLAS debrief capture",
           "approvalStatus": "draft",
           "allowedUse": ["demo", "review_draft"],
           "canonicalUseAllowed": "with_caveat",
@@ -1624,16 +1624,16 @@
       "status": "modeled"
     },
     {
-      "id": "event-carrefour-live-debrief",
+      "id": "event-carrefour-debrief",
       "timestamp": "2026-07-09T09:05:00.000Z",
       "eventType": "debrief_created",
-      "title": "Live Negotiator debrief saved to Carrefour memory",
+      "title": "Debrief saved to Carrefour memory",
       "summary": "ATLAS generated a post-meeting debrief with buyer ask, pricing guardrail pressure, promo exposure and Germany offset validation needs.",
       "marketIds": ["france"],
       "buyingGroupIds": ["carrefour"],
       "financialImpact": { "revenueImpact": -450000, "marginImpact": -180000, "tradeSpendImpact": -120000 },
       "source": {
-        "sourceName": "ATLAS Live Negotiator generated debrief",
+        "sourceName": "ATLAS debrief memory",
         "sourceType": "ai_generated",
         "sourceDate": "2026-07-09",
         "lastUpdated": "2026-07-09",
@@ -1641,7 +1641,7 @@
         "status": "needs_validation",
         "governance": {
           "sourceType": "ai_generated",
-          "sourceOwner": "ATLAS live negotiator prototype",
+          "sourceOwner": "ATLAS debrief capture",
           "approvalStatus": "draft",
           "allowedUse": ["demo", "review_draft"],
           "canonicalUseAllowed": "with_caveat",
@@ -1711,6 +1711,180 @@
       "status": "needs_validation"
     },
     {
+      "id": "event-edeka-buyer-counter-round-3",
+      "timestamp": "2026-07-03T14:10:00.000Z",
+      "eventType": "negotiation_update",
+      "title": "Round 3 counter shifted pressure to trade funding",
+      "summary": "EDEKA held its 1.8% landing position and requested EUR 640K in incremental promotional support before accepting the Germany price move.",
+      "marketIds": ["germany"],
+      "buyingGroupIds": ["edeka"],
+      "financialImpact": { "revenueImpact": -760000, "marginImpact": -280000, "tradeSpendImpact": -640000 },
+      "source": {
+        "sourceName": "EDEKA round 3 CNO notes",
+        "sourceType": "historical",
+        "sourceDate": "2026-07-03",
+        "lastUpdated": "2026-07-09",
+        "confidence": "medium",
+        "status": "needs_validation",
+        "governance": {
+          "sourceType": "historical",
+          "sourceOwner": "Germany CNO team",
+          "approvalStatus": "reviewed_for_prototype",
+          "allowedUse": ["demo", "review_draft"],
+          "canonicalUseAllowed": "with_caveat",
+          "confidence": "medium",
+          "caveats": ["Synthetic meeting note event."],
+          "replacementRequirement": "Validated EDEKA round 3 notes"
+        }
+      },
+      "status": "needs_validation"
+    },
+    {
+      "id": "event-edeka-finance-guardrail-review",
+      "timestamp": "2026-06-27T10:35:00.000Z",
+      "eventType": "validation_completed",
+      "title": "Finance validated 2.8% floor before escalation",
+      "summary": "Finance/NRM confirmed that concessions below 2.8% realization would breach the Germany corridor unless offset by volume commitment or lower trade funding.",
+      "marketIds": ["germany"],
+      "buyingGroupIds": ["edeka"],
+      "financialImpact": { "revenueImpact": 0, "marginImpact": 420000, "tradeSpendImpact": 0 },
+      "source": {
+        "sourceName": "Germany NRM guardrail review",
+        "sourceType": "internal",
+        "sourceDate": "2026-06-27",
+        "lastUpdated": "2026-07-09",
+        "confidence": "high",
+        "status": "approved",
+        "governance": {
+          "sourceType": "internal",
+          "sourceOwner": "Finance/NRM",
+          "approvalStatus": "approved_source",
+          "allowedUse": ["demo", "review_draft", "pilot_candidate"],
+          "canonicalUseAllowed": "with_caveat",
+          "confidence": "high",
+          "caveats": ["Synthetic finance guardrail placeholder."],
+          "replacementRequirement": "Approved Finance/NRM guardrail file"
+        }
+      },
+      "status": "approved"
+    },
+    {
+      "id": "event-edeka-opening-ask",
+      "timestamp": "2026-06-18T09:00:00.000Z",
+      "eventType": "negotiation_update",
+      "title": "Opening ask set at 3.6% with phased service value",
+      "summary": "The CNO team opened above the 3.2% target to leave room for a phased landing path tied to assortment discipline and execution support.",
+      "marketIds": ["germany"],
+      "buyingGroupIds": ["edeka"],
+      "financialImpact": { "revenueImpact": 680000, "marginImpact": 260000, "tradeSpendImpact": -120000 },
+      "source": {
+        "sourceName": "EDEKA 2026 negotiation plan",
+        "sourceType": "internal",
+        "sourceDate": "2026-06-18",
+        "lastUpdated": "2026-07-09",
+        "confidence": "high",
+        "status": "approved",
+        "governance": {
+          "sourceType": "internal",
+          "sourceOwner": "Germany CNO team",
+          "approvalStatus": "approved_source",
+          "allowedUse": ["demo", "review_draft", "pilot_candidate"],
+          "canonicalUseAllowed": "with_caveat",
+          "confidence": "high",
+          "caveats": ["Synthetic negotiation plan placeholder."],
+          "replacementRequirement": "Approved EDEKA negotiation plan"
+        }
+      },
+      "status": "approved"
+    },
+    {
+      "id": "event-edeka-2025-final-agreement",
+      "timestamp": "2025-11-14T16:20:00.000Z",
+      "eventType": "decision_made",
+      "title": "2025 final agreement landed after four rounds",
+      "summary": "EDEKA accepted a 2.6% phased increase after PepsiCo held the base price and traded only time-bound execution support.",
+      "marketIds": ["germany"],
+      "buyingGroupIds": ["edeka"],
+      "financialImpact": { "revenueImpact": 980000, "marginImpact": 390000, "tradeSpendImpact": -210000 },
+      "source": {
+        "sourceName": "EDEKA 2025 signed agreement recap",
+        "sourceType": "historical",
+        "sourceDate": "2025-11-14",
+        "lastUpdated": "2026-07-09",
+        "confidence": "high",
+        "status": "approved",
+        "governance": {
+          "sourceType": "historical",
+          "sourceOwner": "CNO archive",
+          "approvalStatus": "approved_source",
+          "allowedUse": ["demo", "review_draft", "pilot_candidate"],
+          "canonicalUseAllowed": "with_caveat",
+          "confidence": "high",
+          "caveats": ["Synthetic signed-agreement placeholder."],
+          "replacementRequirement": "Actual 2025 signed agreement"
+        }
+      },
+      "status": "approved"
+    },
+    {
+      "id": "event-edeka-2025-counter-pattern",
+      "timestamp": "2025-10-21T13:45:00.000Z",
+      "eventType": "negotiation_update",
+      "title": "2025 counter pattern: early affordability pushback",
+      "summary": "Buyer challenged the opening ask with affordability language in rounds 1-2, then moved to competitor benchmarking once price proof improved.",
+      "marketIds": ["germany"],
+      "buyingGroupIds": ["edeka"],
+      "financialImpact": { "revenueImpact": -420000, "marginImpact": -160000, "tradeSpendImpact": -90000 },
+      "source": {
+        "sourceName": "EDEKA 2025 round notes",
+        "sourceType": "historical",
+        "sourceDate": "2025-10-21",
+        "lastUpdated": "2026-07-09",
+        "confidence": "high",
+        "status": "approved",
+        "governance": {
+          "sourceType": "historical",
+          "sourceOwner": "CNO archive",
+          "approvalStatus": "approved_source",
+          "allowedUse": ["demo", "review_draft", "pilot_candidate"],
+          "canonicalUseAllowed": "with_caveat",
+          "confidence": "high",
+          "caveats": ["Synthetic negotiation-history placeholder."],
+          "replacementRequirement": "Actual 2025 EDEKA round notes"
+        }
+      },
+      "status": "approved"
+    },
+    {
+      "id": "event-edeka-2025-debrief",
+      "timestamp": "2025-09-29T11:30:00.000Z",
+      "eventType": "debrief_created",
+      "title": "2025 debrief: evidence worked when tied to category value",
+      "summary": "Debrief notes show EDEKA responded better to category-growth proof and service-value framing than to broad commodity-cost claims.",
+      "marketIds": ["germany"],
+      "buyingGroupIds": ["edeka"],
+      "financialImpact": { "revenueImpact": 510000, "marginImpact": 190000, "tradeSpendImpact": -70000 },
+      "source": {
+        "sourceName": "EDEKA 2025 CNO debrief",
+        "sourceType": "historical",
+        "sourceDate": "2025-09-29",
+        "lastUpdated": "2026-07-09",
+        "confidence": "high",
+        "status": "approved",
+        "governance": {
+          "sourceType": "historical",
+          "sourceOwner": "CNO archive",
+          "approvalStatus": "approved_source",
+          "allowedUse": ["demo", "review_draft", "pilot_candidate"],
+          "canonicalUseAllowed": "with_caveat",
+          "confidence": "high",
+          "caveats": ["Synthetic debrief placeholder."],
+          "replacementRequirement": "Actual EDEKA 2025 debrief"
+        }
+      },
+      "status": "approved"
+    },
+    {
       "id": "event-tesco-signal",
       "timestamp": "2026-07-08T16:20:00.000Z",
       "eventType": "signal_detected",
@@ -1738,6 +1912,122 @@
         }
       },
       "status": "needs_validation"
+    },
+    {
+      "id": "event-tesco-round-seven-ask",
+      "timestamp": "2026-07-08T09:30:00.000Z",
+      "eventType": "negotiation_update",
+      "title": "Round 7 buyer ask moved to value-pack funding",
+      "summary": "Tesco held the base-price challenge and shifted pressure toward value-pack funding and temporary promo support.",
+      "marketIds": ["united-kingdom"],
+      "buyingGroupIds": ["tesco"],
+      "financialImpact": { "revenueImpact": -780000, "marginImpact": -310000, "tradeSpendImpact": -220000 },
+      "source": {
+        "sourceName": "Tesco round 7 meeting notes",
+        "sourceType": "historical",
+        "sourceDate": "2026-07-08",
+        "lastUpdated": "2026-07-09",
+        "confidence": "medium",
+        "status": "needs_validation",
+        "governance": {
+          "sourceType": "historical",
+          "sourceOwner": "UK CNO team",
+          "approvalStatus": "reviewed_for_prototype",
+          "allowedUse": ["demo", "review_draft"],
+          "canonicalUseAllowed": "with_caveat",
+          "confidence": "medium",
+          "caveats": ["Synthetic meeting note event."],
+          "replacementRequirement": "Validated CNO meeting notes"
+        }
+      },
+      "status": "needs_validation"
+    },
+    {
+      "id": "event-tesco-scenario-value-pack",
+      "timestamp": "2026-07-07T14:45:00.000Z",
+      "eventType": "scenario_modeled",
+      "title": "Value-pack concession scenario saved",
+      "summary": "ATLAS modeled a limited value-pack concession that protects the red line but raises trade-spend exposure.",
+      "marketIds": ["united-kingdom"],
+      "buyingGroupIds": ["tesco"],
+      "financialImpact": { "revenueImpact": 340000, "marginImpact": 90000, "tradeSpendImpact": -180000 },
+      "source": {
+        "sourceName": "ATLAS scenario model",
+        "sourceType": "modeled",
+        "sourceDate": "2026-07-07",
+        "lastUpdated": "2026-07-09",
+        "confidence": "medium",
+        "status": "modeled",
+        "governance": {
+          "sourceType": "modeled",
+          "sourceOwner": "ATLAS prototype model",
+          "approvalStatus": "prototype_simulation",
+          "allowedUse": ["demo", "review_draft"],
+          "canonicalUseAllowed": "no",
+          "confidence": "medium",
+          "caveats": ["Prototype formula.", "Not production financial model."],
+          "replacementRequirement": "Approved scenario engine"
+        }
+      },
+      "status": "modeled"
+    },
+    {
+      "id": "event-tesco-2025-debrief",
+      "timestamp": "2025-10-16T11:00:00.000Z",
+      "eventType": "debrief_created",
+      "title": "2025 debrief: Tesco conceded when proof was SKU-level enough",
+      "summary": "Prior-year debrief shows Tesco accepted price movement when PepsiCo paired the ask with shopper-value evidence and category margin proof.",
+      "marketIds": ["united-kingdom"],
+      "buyingGroupIds": ["tesco"],
+      "financialImpact": { "revenueImpact": 620000, "marginImpact": 240000, "tradeSpendImpact": -80000 },
+      "source": {
+        "sourceName": "Tesco 2025 CNO debrief",
+        "sourceType": "historical",
+        "sourceDate": "2025-10-16",
+        "lastUpdated": "2026-07-09",
+        "confidence": "high",
+        "status": "approved",
+        "governance": {
+          "sourceType": "historical",
+          "sourceOwner": "CNO archive",
+          "approvalStatus": "approved_source",
+          "allowedUse": ["demo", "review_draft", "pilot_candidate"],
+          "canonicalUseAllowed": "with_caveat",
+          "confidence": "high",
+          "caveats": ["Synthetic debrief placeholder."],
+          "replacementRequirement": "Actual Tesco 2025 debrief"
+        }
+      },
+      "status": "approved"
+    },
+    {
+      "id": "event-tesco-2024-decision",
+      "timestamp": "2024-09-20T15:00:00.000Z",
+      "eventType": "decision_made",
+      "title": "2024 decision: hold base price, trade on promo windows",
+      "summary": "The team preserved base price and used time-bound promo windows as the concession path; this remains the strongest historical playbook.",
+      "marketIds": ["united-kingdom"],
+      "buyingGroupIds": ["tesco"],
+      "financialImpact": { "revenueImpact": 480000, "marginImpact": 210000, "tradeSpendImpact": -120000 },
+      "source": {
+        "sourceName": "UK negotiation decision log",
+        "sourceType": "historical",
+        "sourceDate": "2024-09-20",
+        "lastUpdated": "2026-07-09",
+        "confidence": "high",
+        "status": "approved",
+        "governance": {
+          "sourceType": "historical",
+          "sourceOwner": "UK commercial archive",
+          "approvalStatus": "approved_source",
+          "allowedUse": ["demo", "review_draft", "pilot_candidate"],
+          "canonicalUseAllowed": "with_caveat",
+          "confidence": "high",
+          "caveats": ["Synthetic decision record."],
+          "replacementRequirement": "Actual decision record"
+        }
+      },
+      "status": "approved"
     },
     {
       "id": "event-ahold-document-added",

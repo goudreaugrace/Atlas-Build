@@ -190,7 +190,7 @@ function liveFailureReport(prompt: string, model: string, generatedAt: string, d
     sourceMode: 'openai',
     model,
     generatedAt,
-    summary: 'ATLAS is configured for live generation, but the OpenAI request failed or returned an unusable response. This is not the offline placeholder path.',
+    summary: 'ATLAS is configured for live generation, but the OpenAI request failed or returned an unusable response. No local draft content was substituted.',
     metrics: [
       { label: 'Live mode', value: 'Configured', note: 'OPENAI_API_KEY is present' },
       { label: 'Model', value: model, note: 'From OPENAI_MODEL' },
@@ -217,7 +217,7 @@ function liveFailureReport(prompt: string, model: string, generatedAt: string, d
       { label: 'Local environment', detail: 'OPENAI_API_KEY present' },
       { label: 'OpenAI model', detail: model }
     ],
-    caveats: ['No placeholder data was substituted for this failed live request.']
+    caveats: ['No local draft data was substituted for this failed live request.']
   };
 }
 
@@ -240,7 +240,7 @@ function offlineFinanceReport(prompt: string): AtlasGeneratedReport {
     sourceMode: 'offline_placeholder',
     model: null,
     generatedAt,
-    summary: `ATLAS is not connected to a live financial filing source in this local session, so this is a structured placeholder P&L artifact. Once OPENAI_API_KEY and/or a filings data connector is configured, the same prompt should produce sourced figures and commentary.`,
+    summary: `ATLAS is not connected to a live financial filing source in this local session, so this is a structured local P&L draft. Once OPENAI_API_KEY and/or a filings data connector is configured, the same prompt should produce sourced figures and commentary.`,
     metrics: [
       { label: 'Net revenue', value: 'TBD', note: 'Requires 10-K / annual report source' },
       { label: 'Gross profit', value: 'TBD', note: 'Requires reported cost of sales' },
@@ -282,7 +282,7 @@ function offlineFinanceReport(prompt: string): AtlasGeneratedReport {
     ],
     sources: [
       { label: 'Source required', detail: `${company} ${year} annual report / Form 10-K` },
-      { label: 'Current mode', detail: 'Offline placeholder because OPENAI_API_KEY is not present in the local environment.' }
+      { label: 'Current mode', detail: 'Local draft because OPENAI_API_KEY is not present in the local environment.' }
     ],
     caveats: [
       'Do not use these TBD values as financial facts.',
@@ -300,10 +300,10 @@ function offlineGeneralReport(prompt: string): AtlasGeneratedReport {
     sourceMode: 'offline_placeholder',
     model: null,
     generatedAt,
-    summary: 'ATLAS is running in offline placeholder mode. This artifact is structured around the user request, but it is not model-generated. Add OPENAI_API_KEY to enable real freeform generation.',
+    summary: 'ATLAS is running in local draft mode. This artifact is structured around the user request, but it is not model-generated. Add OPENAI_API_KEY to enable real freeform generation.',
     metrics: [
       { label: 'Request type', value: 'Freeform', note: 'No fixed template matched' },
-      { label: 'Data mode', value: 'Placeholder', note: 'Live model not configured' },
+      { label: 'Data mode', value: 'Local draft', note: 'Live model not configured' },
       { label: 'Primary context', value: demoNegotiation.customer, note: 'Default local ATLAS packet' },
       { label: 'Confidence', value: 'Low', note: 'Needs live generation/source retrieval' }
     ],
@@ -323,12 +323,12 @@ function offlineGeneralReport(prompt: string): AtlasGeneratedReport {
         bullets: [
           'Set OPENAI_API_KEY in the local environment.',
           'Optionally add a data connector for SEC filings, annual reports, internal financials, and negotiation records.',
-          'Keep the PDF renderer generic so any model-generated report shape can render.'
+          'Keep the renderer flexible so any scenario evidence output shape can render.'
         ]
       }
     ],
     sources: [
-      { label: 'Current mode', detail: 'Offline placeholder' },
+      { label: 'Current mode', detail: 'Local draft' },
       { label: 'Fallback context', detail: 'ATLAS Carrefour synthetic negotiation packet' }
     ],
     caveats: ['This output is not live model-generated until OPENAI_API_KEY is configured.']
@@ -359,13 +359,13 @@ function offlineKamSafeReport(prompt: string, buyingGroupId?: string): AtlasGene
   const source = workspace?.documents[0]?.source ?? workspace?.buyingGroup.source;
 
   return {
-    title: `${buyingGroup} KAM-Safe Negotiation Guide`,
-    subtitle: 'Editable field-ready report for CNO review before sending to KAM',
-    audience: 'KAM-safe / field negotiation guidance',
+    title: `${buyingGroup} Field-Ready Negotiation Guide`,
+    subtitle: 'Editable account guidance for CNO review',
+    audience: 'field-ready account guidance',
     sourceMode: 'offline_placeholder',
     model: null,
     generatedAt,
-    summary: `This draft translates ATLAS buyer intelligence into KAM-safe guidance for ${buyingGroup}. It keeps the field team focused on the approved customer-facing story, proof points, likely buyer pressure, and next actions while removing internal red lines, fallback thresholds, sensitive margin controls, and unsupported claims.`,
+    summary: `This draft translates ATLAS buyer intelligence into field-ready guidance for ${buyingGroup}. It keeps account teams focused on the approved customer-facing story, proof points, likely buyer pressure, and next actions while removing internal red lines, fallback thresholds, sensitive margin controls, and unsupported claims.`,
     metrics: [
       { label: 'Buying group', value: buyingGroup, note: markets },
       { label: 'Negotiation round', value: currentState?.negotiationRound ?? 'TBD', note: 'Use as field context only' },
@@ -378,11 +378,11 @@ function offlineKamSafeReport(prompt: string, buyingGroupId?: string): AtlasGene
     ],
     sections: [
       {
-        title: 'KAM-safe negotiation posture',
+        title: 'Field-ready negotiation posture',
         body: `Use this posture with ${buyingGroup}: defend the current PepsiCo position through customer value, category performance, execution support, and source-backed external pressure. Keep the conversation anchored on what the buyer can validate, not internal thresholds.`,
         bullets: [
           currentState?.pepsicoPosition ? `Lead with the approved PepsiCo position: ${currentState.pepsicoPosition}.` : 'Lead with the CNO-approved PepsiCo position.',
-          'Do not mention red lines, internal fallback thresholds, approval dependencies, or sensitive margin logic.',
+          'Do not mention red lines, internal fallback thresholds, review dependencies, or sensitive margin logic.',
           'If the buyer presses beyond the approved position, capture the ask and return to CNO/finance for review.'
         ]
       },
@@ -399,14 +399,14 @@ function offlineKamSafeReport(prompt: string, buyingGroupId?: string): AtlasGene
       },
       {
         title: 'Approved proof points to use',
-        body: 'Keep proof points simple, customer-facing, and easy for the KAM to repeat in the room.',
+        body: 'Keep proof points simple, customer-facing, and easy for the account team to repeat in the room.',
         bullets: [
           'Category and shopper value: branded performance, basket role, and execution quality.',
           'External pressure: inflation, commodity, supply chain, or retailer-market signals only when sourced.',
           'Execution support: promo phasing, service, visibility, or portfolio support that has been approved for field use.'
         ],
         table: {
-          title: 'KAM-safe proof point checklist',
+          title: 'Field-ready proof point checklist',
           columns: ['Proof point', 'Use in room', 'Source posture'],
           rows: [
             ['Buyer ask context', currentState?.latestBuyerAsk ?? 'Confirm latest ask before use', 'Buyer profile'],
@@ -429,10 +429,10 @@ function offlineKamSafeReport(prompt: string, buyingGroupId?: string): AtlasGene
     sources: [
       { label: source?.sourceName ?? 'ATLAS buyer profile', detail: source ? `${source.sourceType.replaceAll('_', ' ')} / ${source.sourceDate}` : 'Synthetic buyer profile source' },
       { label: 'Original request', detail: prompt },
-      { label: 'Safety rule', detail: 'KAM-safe output removes red lines, fallback thresholds, sensitive margin controls, confidence gaps, and unsupported claims.' }
+      { label: 'Safety rule', detail: 'Field-ready output removes red lines, fallback thresholds, sensitive margin controls, confidence gaps, and unsupported claims.' }
     ],
     caveats: [
-      'CNO must review and save this guide before sending to KAM.',
+      'CNO must review and save this guide before account-team use.',
       'Do not use this report as customer-facing material without additional redaction.',
       'Values are prototype data unless connected to approved PepsiCo source systems.'
     ]
@@ -467,7 +467,7 @@ function offlineLiveDebriefReport(prompt: string, context: LiveDebriefReportCont
       { label: 'Buying group', value: context.buyingGroup, note: 'Live setup selection' },
       { label: 'Generated docs', value: String(context.generatedDocuments.length), note: 'Included in appendix' },
       { label: 'Detected signals', value: String(context.detectedSignals.length), note: 'Hidden structured event log' },
-      { label: 'Prep deck', value: context.prepDeckLabel, note: 'Placeholder source input' }
+      { label: 'Prep evidence', value: context.prepDeckLabel, note: 'Source input' }
     ],
     sections: [
       {
@@ -476,7 +476,7 @@ function offlineLiveDebriefReport(prompt: string, context: LiveDebriefReportCont
         bullets: [
           'Buyer and pricing signals should be reviewed before being promoted to the official negotiation history.',
           'Generated documents should be treated as draft internal artifacts until source validation is complete.',
-          'Any fallback position remains approval-gated when finance validation is open.'
+          'Any fallback position remains review-gated when finance validation is open.'
         ]
       },
       {
@@ -511,12 +511,12 @@ function offlineLiveDebriefReport(prompt: string, context: LiveDebriefReportCont
     ],
     sources: [
       { label: 'Live session', detail: `Session ${context.sessionId}` },
-      { label: 'Prep / strategy deck', detail: context.prepDeckLabel },
+      { label: 'Scenario evidence packet', detail: context.prepDeckLabel },
       { label: 'Original prompt', detail: prompt }
     ],
     caveats: [
-      'Offline placeholder mode: values are generated from local live-session context, not a connected model.',
-      'Live Negotiator uses structured signals as the report source trail.',
+      'Local draft mode: values are generated from local session context, not a connected model.',
+      'Scenario workspace signals are used as the report source trail.',
       'Validate margin, pricing, and customer-facing claims before external use.'
     ]
   };
@@ -570,19 +570,20 @@ export async function generateAtlasReport(prompt: string, options: AtlasReportGe
 
   const baseBody = {
     model,
-    instructions: `You are ATLAS, a senior strategy and finance copilot. Generate a report for any user request.
+    instructions: `You are ATLAS, a senior strategy and finance copilot. Generate a scenario evidence output or, when the request is not scenario-related, the closest ATLAS decision readout.
 
 Return valid JSON only. Do not wrap in markdown.
 
 Rules:
-- Always write the generated report in English, regardless of the market, country, source language, or user prompt language.
+- Always write the generated scenario output in English, regardless of the market, country, source language, or user prompt language.
 - Do not force every answer into Carrefour negotiation context. Use it only when relevant.
 - If the user asks for public company financials or P&L, produce a finance-style report with line items, interpretation, and source caveats.
 - If exact current or historical facts are uncertain, mark them as needing source validation rather than inventing certainty.
 - If the request is negotiation-related, use the ATLAS context packet.
-- If the request asks for a KAM-safe report, guide, or pack, produce field-ready guidance for KAMs and remove internal red lines, fallback thresholds, sensitive margin controls, unsupported claims, and confidence gaps. Include only approved external posture, safe proof points, escalation triggers, what to capture, and CNO review notes.
+- For negotiation, buyer, market, pricing, scenario, SKU, lever, or report requests, structure the answer around scenario tested, assumptions, predicted buyer response, evidence/source trail, recommended next move, and memory/debrief implications.
+- If the request asks for field-ready account guidance, produce account guidance and remove internal red lines, fallback thresholds, sensitive margin controls, unsupported claims, and confidence gaps. Include only approved external posture, safe proof points, escalation triggers, what to capture, and CNO review notes.
 - If the request asks for recent news, current events, or latest developments, use web search when available and cite source names and dates in the sources array.
-- Make the output feel like a polished PDF-ready artifact.
+- Make the output feel like a concise scenario evidence artifact, not a generic narrative report.
 - Do not return a generic placeholder. If exact data is unavailable, still answer the specific user request with clearly labeled assumptions and gaps.
 
 JSON shape:

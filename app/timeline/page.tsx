@@ -1,4 +1,4 @@
-import AtlasIntelligenceHub from '../atlas-intelligence-hub';
+import { redirect } from 'next/navigation';
 
 type TimelinePageProps = {
   searchParams: Promise<{ ask?: string; prompt?: string; view?: string }>;
@@ -6,6 +6,10 @@ type TimelinePageProps = {
 
 export default async function TimelinePage({ searchParams }: TimelinePageProps) {
   const query = await searchParams;
+  const params = new URLSearchParams();
+  if (query.ask) params.set('ask', query.ask);
+  if (query.prompt) params.set('prompt', query.prompt);
+  if (query.view) params.set('view', query.view ?? 'memory');
 
-  return <AtlasIntelligenceHub view="timeline" initialGeneratedView={query.view ?? ''} initialPrompt={query.ask ?? query.prompt ?? ''} />;
+  redirect(`/intelligence${params.toString() ? `?${params.toString()}` : ''}`);
 }

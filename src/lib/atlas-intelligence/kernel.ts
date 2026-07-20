@@ -17,7 +17,55 @@ import type {
   TimelineEvent
 } from '@/src/lib/atlas-intelligence/types';
 
-export const atlasIntelligenceSeed = atlasSeedJson as AtlasIntelligenceSeed;
+const rawAtlasIntelligenceSeed = atlasSeedJson as AtlasIntelligenceSeed;
+
+export const MVP_BUYING_GROUP_IDS = ['edeka', 'tesco', 'carrefour', 'rewe', 'ahold-delhaize'] as const;
+
+const mvpBuyingGroupIdSet = new Set<string>(MVP_BUYING_GROUP_IDS);
+
+export function isMvpBuyingGroupId(id: string) {
+  return mvpBuyingGroupIdSet.has(id);
+}
+
+function mvpGroupIds(ids: string[]) {
+  return ids.filter(isMvpBuyingGroupId);
+}
+
+function filterAtlasSeedForMvp(seed: AtlasIntelligenceSeed): AtlasIntelligenceSeed {
+  const buyingGroups = seed.buyingGroups.filter((group) => isMvpBuyingGroupId(group.id));
+  const markets = seed.markets.map((market) => ({
+    ...market,
+    activeBuyingGroups: mvpGroupIds(market.activeBuyingGroups)
+  }));
+  const signals = seed.signals
+    .map((signal) => ({ ...signal, affectedBuyingGroups: mvpGroupIds(signal.affectedBuyingGroups) }))
+    .filter((signal) => signal.affectedBuyingGroups.length > 0);
+  const competitorMoves = seed.competitorMoves
+    .map((move) => ({ ...move, affectedBuyingGroups: mvpGroupIds(move.affectedBuyingGroups) }))
+    .filter((move) => move.affectedBuyingGroups.length > 0);
+  const documents = seed.documents.filter((document) => !document.buyingGroupId || isMvpBuyingGroupId(document.buyingGroupId));
+  const timelineEvents = seed.timelineEvents
+    .map((event) => ({ ...event, buyingGroupIds: mvpGroupIds(event.buyingGroupIds) }))
+    .filter((event) => event.buyingGroupIds.length > 0 || event.marketIds.length > 0);
+  const crossMarketPatterns = seed.crossMarketPatterns
+    .map((pattern) => ({ ...pattern, affectedBuyingGroups: mvpGroupIds(pattern.affectedBuyingGroups) }))
+    .filter((pattern) => pattern.affectedBuyingGroups.length > 0);
+
+  return {
+    ...seed,
+    buyingGroups,
+    markets,
+    signals,
+    competitorMoves,
+    documents,
+    timelineEvents,
+    crossMarketPatterns,
+    scenarioModels: seed.scenarioModels.filter((scenario) => isMvpBuyingGroupId(scenario.buyingGroupId)),
+    retrievalNotes: seed.retrievalNotes.filter((note) => note.buyingGroupId ? isMvpBuyingGroupId(note.buyingGroupId) : false)
+  };
+}
+
+export const atlasIntelligenceSeed = filterAtlasSeedForMvp(rawAtlasIntelligenceSeed);
 
 export function euros(value: number) {
   const abs = Math.abs(value);
@@ -64,6 +112,7 @@ export function getMarket(id: string): Market | undefined {
 }
 
 export function getBuyingGroup(id: string): BuyingGroup | undefined {
+  if (!isMvpBuyingGroupId(id)) return undefined;
   return atlasIntelligenceSeed.buyingGroups.find((group) => group.id === id);
 }
 
@@ -427,7 +476,7 @@ export function buildBuyingGroupWorkspacePacket(buyingGroupId: string): BuyingGr
     recommendedActions: [
       {
         label: 'Model financial move',
-        href: `/scenario-models?buyingGroup=${buyingGroup.id}`,
+        href: `/scenario-lab?buyingGroup=${buyingGroup.id}`,
         reason: `${euros(buyingGroup.financialExposure.marginAtRisk)} margin at risk needs scenario pressure testing.`
       },
       {
@@ -436,9 +485,9 @@ export function buildBuyingGroupWorkspacePacket(buyingGroupId: string): BuyingGr
         reason: retrievalNote.message
       },
       {
-        label: 'Start Live Negotiator',
-        href: `/negotiation/carrefour-france-2026-pricing/live?group=${buyingGroup.id}&deck=${encodeURIComponent(`${buyingGroup.name} 2026 prep documents`)}`,
-        reason: 'Use only when entering a meeting; generated reports and debrief flow back to memory.'
+        label: 'Add debrief memory',
+        href: `/buying-groups/${buyingGroup.id}?view=memory`,
+        reason: 'Capture what happened so future scenario predictions update from buyer memory.'
       }
     ]
   };
@@ -480,7 +529,7 @@ export function buildNegotiationPlanPacket(buyingGroupId: string): NegotiationPl
     targetPercent: target,
     redLinePercent: redLine,
     fallbackPercent: fallback,
-    walkAwayLogic: `Do not move below ${redLine.toFixed(1)}% without CNO and Finance approval. If buyer pressure escalates, hold price and move only approved promo timing or volume-support levers.`,
+    walkAwayLogic: `Do not move below ${redLine.toFixed(1)}% without CNO and Finance review. If buyer pressure escalates, hold price and move only validated promo timing or volume-support levers.`,
     sellingStory: `Anchor on cost pressure, branded category value, and execution support. Use the latest market signals to defend the ask and keep concessions tied to measurable buyer commitments.`,
     rationale: primarySignal
       ? `${primarySignal.negotiationImplication} This supports a value-led posture rather than a pure price concession.`
@@ -492,7 +541,7 @@ export function buildNegotiationPlanPacket(buyingGroupId: string): NegotiationPl
       'Market offset discussion where Finance has validated volume recovery'
     ],
     cannotConcede: [
-      `Formal counter below ${redLine.toFixed(1)}% without approval`,
+      `Formal counter below ${redLine.toFixed(1)}% without source-backed finance review`,
       'Open-ended trade spend without retailer commitment',
       'Customer-facing disclosure of internal margin controls or fallback logic'
     ],
@@ -683,22 +732,26 @@ export const navGroups = [
     label: 'Buying Groups',
     items: [
       { label: 'All Groups', href: '/buying-groups' },
-      { label: 'Carrefour Profile', href: '/buying-groups/carrefour' }
+      { label: 'EDEKA', href: '/buying-groups/edeka' },
+      { label: 'Tesco', href: '/buying-groups/tesco' },
+      { label: 'Carrefour', href: '/buying-groups/carrefour' },
+      { label: 'Rewe', href: '/buying-groups/rewe' },
+      { label: 'Ahold Delhaize', href: '/buying-groups/ahold-delhaize' }
     ]
   },
   {
     label: 'Impact',
     items: [
       { label: 'Financial Impact', href: '/financial-impact' },
-      { label: 'Scenario Models', href: '/scenario-models' }
+      { label: 'Scenario Lab', href: '/scenario-lab' }
     ]
   },
   {
     label: 'Memory',
     items: [
       { label: 'Documents', href: '/documents' },
-      { label: 'Timeline', href: '/timeline' },
-      { label: 'Debriefs', href: '/timeline?type=debrief_created' }
+      { label: 'Timeline', href: '/intelligence' },
+      { label: 'Debriefs', href: '/intelligence?type=debrief_created' }
     ]
   }
 ];

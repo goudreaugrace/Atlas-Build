@@ -334,7 +334,7 @@ export const demoNegotiation: NegotiationRecord = {
         freshness: 'Entered 2026-03-22',
         confidence: 'low'
       },
-      implication: 'Blocking issue for approval; confidence stays medium until finance validates.'
+      implication: 'Blocking issue for use; confidence stays medium until finance validates.'
     },
     {
       id: 'history-volume-argument',
@@ -485,7 +485,7 @@ export const demoNegotiation: NegotiationRecord = {
       id: 'scenario-tradeoff',
       name: 'D. 3.2% with promo phasing',
       scenarioType: 'tradeoff',
-      strategy: 'Counter at 3.2% with Q4 promo phasing. Potentially viable, but requires finance approval and validation of promo funding.',
+      strategy: 'Counter at 3.2% with Q4 promo phasing. Potentially viable, but requires finance review and validation of promo funding.',
       priceMovePct: 3.2,
       concessionPct: 1.0,
       tradeSpendChangePct: 0.5,
@@ -531,7 +531,7 @@ export const demoNegotiation: NegotiationRecord = {
       timing: 'Back-to-school and Q4 moments',
       control: 'joint',
       redLineImpact: 'Watch margin leakage if stacked with price concession.',
-      escalationTrigger: 'Escalate if requested outside approved windows.'
+      escalationTrigger: 'Escalate if requested outside validated windows.'
     },
     {
       id: 'innovation-visibility',
@@ -556,7 +556,7 @@ export const demoNegotiation: NegotiationRecord = {
       expectedCustomerValue: 'Creates continuity path if delisting or visibility threat becomes credible.',
       timing: 'Only after explicit threat',
       control: 'central',
-      redLineImpact: 'High risk if used before leadership approval.',
+      redLineImpact: 'High risk if used before leadership review.',
       escalationTrigger: 'Any delisting, reduced visibility, or buying-group pressure language.'
     },
     {
@@ -758,13 +758,13 @@ export const demoNegotiation: NegotiationRecord = {
       priority: 'high',
       deadline: '2026-03-26',
       riskLevel: 'medium',
-      recommendedAction: 'Confirm latest forecast before approving the recommended counter.',
+      recommendedAction: 'Confirm latest forecast before using the recommended counter.',
       status: 'ready_to_review'
     },
     {
       id: 'task-france-approval',
-      title: 'France red-line approval needed',
-      reason: 'Any move above the 3.0% red line requires explicit CNO approval.',
+      title: 'France red-line review needed',
+      reason: 'Any move above the 3.0% red line requires explicit CNO review.',
       owner: 'CNO',
       priority: 'high',
       deadline: '2026-03-27',
@@ -815,7 +815,7 @@ export const demoNegotiation: NegotiationRecord = {
       id: 'risk-tax-change',
       title: 'Local tax or regulatory pressure',
       riskType: 'tax_change',
-      relevance: 'Local market pressure could alter shelf-price defensibility and should be pressure-tested before final approval.',
+      relevance: 'Local market pressure could alter shelf-price defensibility and should be pressure-tested before final use.',
       source: {
         value: 'External factor not yet verified for current demo.',
         label: 'unknown_gap',
@@ -838,7 +838,7 @@ export const demoNegotiation: NegotiationRecord = {
         'Marked Germany volume recovery as needs validation.',
         'Kept 3.0% counter as recommended position.'
       ],
-      signoffNeeded: 'Finance validation on Germany volume uplift before CNO approval.',
+      signoffNeeded: 'Finance validation on Germany volume uplift before CNO use.',
       debriefImpact: 'Latest debrief reduced confidence from high to medium because promo exclusion was implied but not confirmed.',
       source: {
         value: 'Strategy update derived from latest debrief and Scenario B model.',
@@ -926,11 +926,11 @@ export const demoStrategyWatchouts: StrategyWatchout[] = [
   {
     id: 'watchout-carrefour-silence',
     title: 'Carrefour response window tightening',
-    detail: 'Buyer has been silent for 14 days with response due Mar 28; sanction language should be monitored live.',
+    detail: 'Buyer has been silent for 14 days with response due Mar 28; sanction language should be captured in the next debrief.',
     riskLevel: 'high',
     whyItMatters: 'The strategy depends on staying proof-led; silence may turn into deadline pressure or visibility leverage.',
     status: 'deadline',
-    action: 'Start Live Negotiator or review debrief before the Mar 28 response window.',
+    action: 'Review debrief memory before the Mar 28 response window.',
     source: {
       value: 'Latest debrief and response-deadline rule',
       label: 'user_assumption',
@@ -944,9 +944,9 @@ export const demoStrategyWatchouts: StrategyWatchout[] = [
     title: 'Germany offset not validated',
     detail: 'Scenario B depends on 8% Germany volume uplift; finance has not validated the latest forecast.',
     riskLevel: 'medium',
-    whyItMatters: 'The recommended counter is only approval-ready if the offset logic survives finance review.',
+    whyItMatters: 'The recommended counter is only ready to use if the offset logic survives finance review.',
     status: 'needs_validation',
-    action: 'Ask finance to confirm the latest Germany forecast before generating the final strategy deck.',
+    action: 'Ask finance to confirm the latest Germany forecast before downloading a scenario evidence report.',
     source: {
       value: 'Scenario B offset assumption',
       label: 'user_assumption',

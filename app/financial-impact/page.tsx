@@ -1,4 +1,4 @@
-import AtlasIntelligenceHub from '../atlas-intelligence-hub';
+import { redirect } from 'next/navigation';
 
 type FinancialImpactPageProps = {
   searchParams: Promise<{ ask?: string; prompt?: string; view?: string }>;
@@ -6,6 +6,10 @@ type FinancialImpactPageProps = {
 
 export default async function FinancialImpactPage({ searchParams }: FinancialImpactPageProps) {
   const query = await searchParams;
+  const params = new URLSearchParams();
+  const ask = query.ask ?? query.prompt;
+  if (ask) params.set('ask', ask);
+  if (query.view) params.set('view', query.view);
 
-  return <AtlasIntelligenceHub view="financialImpact" initialGeneratedView={query.view ?? ''} initialPrompt={query.ask ?? query.prompt ?? ''} />;
+  redirect(`/scenario-lab${params.size ? `?${params.toString()}` : ''}`);
 }

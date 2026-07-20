@@ -854,7 +854,7 @@ export default async function BrandWorkDetailPage({ params }: BrandWorkDetailPag
 
               <div className="solution-section-head compact">
                 <span className="section-kicker">Approved Views</span>
-                <h2>Workspace modules</h2>
+                <h2>Reusable output views</h2>
               </div>
               <div className="work-view-list">
                 {work.approvedViewIds.map((viewId, index) => (

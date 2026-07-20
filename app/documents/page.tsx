@@ -1,4 +1,4 @@
-import AtlasIntelligenceHub from '../atlas-intelligence-hub';
+import { redirect } from 'next/navigation';
 
 type DocumentsPageProps = {
   searchParams: Promise<{ ask?: string; prompt?: string; view?: string }>;
@@ -6,6 +6,10 @@ type DocumentsPageProps = {
 
 export default async function DocumentsPage({ searchParams }: DocumentsPageProps) {
   const query = await searchParams;
+  const params = new URLSearchParams();
+  const ask = query.ask ?? query.prompt;
+  if (ask) params.set('ask', ask);
+  if (query.view) params.set('view', query.view);
 
-  return <AtlasIntelligenceHub view="documents" initialGeneratedView={query.view ?? ''} initialPrompt={query.ask ?? query.prompt ?? ''} />;
+  redirect(`/intelligence${params.size ? `?${params.toString()}` : ''}`);
 }

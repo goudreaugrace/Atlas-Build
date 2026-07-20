@@ -14,6 +14,31 @@ type GeneratedViewsPageProps = {
     prompt?: string;
     print?: string;
     reportOnly?: string;
+    reportType?: string;
+    scenarioName?: string;
+    scenarioLevel?: string;
+    atlasScore?: string;
+    likelihood?: string;
+    topRecommendedMemoryAdjustment?: string;
+    topRecommendedReason?: string;
+    topRecommendedScenario?: string;
+    topRecommendedScore?: string;
+    buyerResponse?: string;
+    recommendedEdit?: string;
+    evidenceStrength?: string;
+    guardrailRisk?: string;
+    relationshipRisk?: string;
+    nrImpact?: string;
+    gmImpact?: string;
+    volumeImpact?: string;
+    tradeImpact?: string;
+    riskAdjustedValue?: string;
+    skuCount?: string;
+    customLeverCount?: string;
+    debriefMemory?: string;
+    excludedEvidence?: string;
+    reviewEvidence?: string;
+    selectedEvidence?: string;
     storedViewId?: string;
   }>;
 };
@@ -108,7 +133,7 @@ function buildRetrievedReport(prompt: string, document: DocumentArtifact): Atlas
           : 'Use this retrieved document as the base source and ask ATLAS to expand the view with current buyer, market, or competitor context.',
         bullets: [
           buyingGroup ? `Open ${buyingGroup} profile to compare this read against negotiation history.` : 'Attach this view to the relevant buyer or market profile.',
-          'Use Scenario Models for pricing or trade spend movement before committing to a position.',
+          'Use Scenario Lab for pricing, trade spend, SKU, or custom-lever movement before committing to a position.',
           'Download the PDF when the view is ready to share internally.'
         ]
       }
@@ -121,6 +146,304 @@ function buildRetrievedReport(prompt: string, document: DocumentArtifact): Atlas
       ? governance.caveats
       : ['Retrieved from the local ATLAS prototype source library. Confirm against source system before external use.']
   };
+}
+
+function buildPricingJustificationReport(prompt: string, buyingGroupId?: string, marketId?: string): AtlasGeneratedReport {
+  const buyingGroup = buyingGroupId
+    ? packet.buyingGroups.find((group) => group.id === buyingGroupId)
+    : packet.buyingGroups.find((group) => prompt.toLowerCase().includes(group.name.toLowerCase()));
+  const market = marketId
+    ? packet.markets.find((item) => item.id === marketId)
+    : buyingGroup?.primaryMarkets[0]
+      ? packet.markets.find((item) => item.id === buyingGroup.primaryMarkets[0])
+      : packet.markets.find((item) => prompt.toLowerCase().includes(item.name.toLowerCase()));
+  const exposure = buyingGroup?.financialExposure;
+  const latestEvent = packet.latestTimelineEvents.find((event) => buyingGroup?.id && event.buyingGroupIds.includes(buyingGroup.id));
+  const signal = packet.signals.find((item) => (
+    (buyingGroup?.id && item.affectedBuyingGroups.includes(buyingGroup.id))
+    || (market?.id && item.affectedMarkets.includes(market.id))
+  ));
+  const recommendedAsk = exposure ? Math.max(exposure.targetPriceRealization + 0.6, exposure.expectedPriceRealization + 1.2) : 3.2;
+  const buyerAsk = recommendedAsk + 1.1;
+  const fallback = Math.max(0, exposure ? exposure.expectedPriceRealization + 0.4 : recommendedAsk - 0.8);
+  const redLine = Math.max(0, fallback - 0.7);
+  const realizationGap = exposure ? exposure.targetPriceRealization - exposure.expectedPriceRealization : 0.9;
+  const source = buyingGroup?.source ?? market?.source ?? packet.documents[0].source;
+
+  return {
+    title: `${buyingGroup?.name ?? market?.name ?? 'ATLAS'} pricing justification`,
+    subtitle: `${market?.name ?? 'Europe'} / Strategy-linked pricing corridor / ${source.sourceDate}`,
+    audience: 'CNO negotiation prep',
+    sourceMode: 'offline_placeholder',
+    model: null,
+    generatedAt: new Date().toISOString(),
+    summary: `Use a ${recommendedAsk.toFixed(1)}% recommended ask, defend it with corridor evidence, and do not move below the ${redLine.toFixed(1)}% red line unless the buyer replaces value with measurable volume, mix, or trade commitments.`,
+    metrics: [
+      { label: 'Recommended ask', value: `${recommendedAsk.toFixed(1)}%`, note: `Buyer expected to open near ${buyerAsk.toFixed(1)}%` },
+      { label: 'Target', value: `${(exposure?.targetPriceRealization ?? recommendedAsk - 0.4).toFixed(1)}%`, note: `${realizationGap.toFixed(1)} pts realization gap` },
+      { label: 'Red line', value: `${redLine.toFixed(1)}%`, note: 'Finance/NRM guardrail input' },
+      { label: 'Margin at risk', value: exposure ? euros(exposure.marginAtRisk) : euros(market?.marginAtRisk ?? 0), note: exposure ? `${euros(exposure.revenueUnderNegotiation)} revenue in negotiation` : `${market?.name ?? 'Market'} exposure` }
+    ],
+    sections: [
+      {
+        title: 'Pricing corridor',
+        body: `The recommended ask sits between the buyer opening position and the Finance/NRM red line, with fallback space reserved for measurable value exchange.`,
+        bullets: [
+          `Buyer ask: ${buyerAsk.toFixed(1)}%`,
+          `Recommended ask: ${recommendedAsk.toFixed(1)}%`,
+          `Fallback: ${fallback.toFixed(1)}%`,
+          `Red line: ${redLine.toFixed(1)}%`
+        ]
+      },
+      {
+        title: 'Evidence to use in the room',
+        body: 'Lead with evidence tied directly to the pricing number, then move to concessions only when the buyer offers measurable value back.',
+        bullets: [
+          exposure ? `${euros(exposure.marginAtRisk)} margin at risk on ${euros(exposure.revenueUnderNegotiation)} revenue under negotiation.` : `${market?.name ?? 'Market'} pressure is the working scope.`,
+          signal ? `${signal.title}: ${signal.negotiationImplication}` : 'Use internal performance data as the primary justification.',
+          latestEvent ? `${latestEvent.title}: ${latestEvent.summary}` : 'Prior-year negotiation memory should be reviewed before external sharing.'
+        ]
+      },
+      {
+        title: 'Expected buyer pushback',
+        body: `${buyingGroup?.name ?? 'The buyer'} will likely challenge affordability, competitor options, and whether the increase is supported by category performance.`,
+        bullets: [
+          'If buyer asks for trade support, require volume, space, mix, or promo commitments.',
+          'If buyer challenges inflation evidence, show historical realization gap and margin exposure before discussing concessions.',
+          'If buyer threatens sanctions, escalate before crossing the red line.'
+        ]
+      },
+      {
+        title: 'Do-not-cross guardrails',
+        body: 'Keep the plan inside the corridor unless Finance/NRM updates the guardrail or the buyer replaces the value through confirmed commitments.',
+        bullets: [
+          `Do not move below ${redLine.toFixed(1)}% without a new source-backed finance input.`,
+          'Do not concede trade spend without a measured volume or visibility exchange.',
+          'Do not use external signals without confirming source freshness.'
+        ]
+      }
+    ],
+    sources: [
+      { label: source.sourceName, detail: `${source.sourceType.replaceAll('_', ' ')} / ${source.sourceDate} / ${source.confidence} confidence` },
+      { label: 'ATLAS pricing corridor model', detail: 'Prototype Finance/NRM guardrail simulation' },
+      { label: signal?.source.sourceName ?? 'ATLAS market signal packet', detail: signal?.source.sourceDate ?? source.sourceDate }
+    ],
+    caveats: [
+      'Prototype readout based on synthetic ATLAS source records.',
+      'Confirm Finance/NRM guardrails before external buyer use.'
+    ]
+  };
+}
+
+function numberFromQuery(value: string | undefined, fallback = 0) {
+  const parsed = Number.parseFloat(value ?? '');
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function listFromQuery(value?: string) {
+  return value?.split('|').map((item) => item.trim()).filter(Boolean) ?? [];
+}
+
+function buildScenarioEvidenceReport(
+  prompt: string,
+  buyingGroupId: string | undefined,
+  marketId: string | undefined,
+  query: Awaited<GeneratedViewsPageProps['searchParams']>
+): AtlasGeneratedReport {
+  const buyingGroup = buyingGroupId
+    ? packet.buyingGroups.find((group) => group.id === buyingGroupId)
+    : packet.buyingGroups.find((group) => prompt.toLowerCase().includes(group.name.toLowerCase()));
+  const market = marketId
+    ? packet.markets.find((item) => item.id === marketId)
+    : buyingGroup?.primaryMarkets[0]
+      ? packet.markets.find((item) => item.id === buyingGroup.primaryMarkets[0])
+      : packet.markets.find((item) => prompt.toLowerCase().includes(item.name.toLowerCase()));
+  const exposure = buyingGroup?.financialExposure;
+  const source = buyingGroup?.source ?? market?.source ?? packet.documents[0].source;
+  const signal = packet.signals.find((item) => (
+    (buyingGroup?.id && item.affectedBuyingGroups.includes(buyingGroup.id))
+    || (market?.id && item.affectedMarkets.includes(market.id))
+  ));
+  const latestEvent = packet.latestTimelineEvents.find((event) => buyingGroup?.id && event.buyingGroupIds.includes(buyingGroup.id));
+  const scenarioName = query.scenarioName ?? 'Selected scenario';
+  const level = query.scenarioLevel?.replaceAll('_', ' ') ?? 'buying group';
+  const atlasScore = numberFromQuery(query.atlasScore, 72);
+  const likelihood = numberFromQuery(query.likelihood, 65);
+  const topRecommendedScenario = query.topRecommendedScenario ?? scenarioName;
+  const topRecommendedScore = numberFromQuery(query.topRecommendedScore, atlasScore);
+  const topRecommendedMemoryAdjustment = numberFromQuery(query.topRecommendedMemoryAdjustment, 0);
+  const topRecommendedReason = query.topRecommendedReason ?? `${topRecommendedScenario} is currently the top recommendation based on scenario score, buyer history, guardrail fit, and evidence strength.`;
+  const evidenceStrength = numberFromQuery(query.evidenceStrength, 70);
+  const realizationGap = exposure
+    ? Math.max(0.2, exposure.targetPriceRealization - exposure.expectedPriceRealization)
+    : market
+      ? Math.max(0.2, market.gapToPlan / Math.max(market.marginAtRisk, 1) * 10)
+      : 0.8;
+  const defaultNrImpact = exposure
+    ? exposure.revenueUnderNegotiation * (realizationGap / 100)
+    : market
+      ? market.gapToPlan
+      : 1200000;
+  const defaultGmImpact = exposure
+    ? Math.max(exposure.marginAtRisk * 0.18, defaultNrImpact * 0.38)
+    : market
+      ? market.marginAtRisk * 0.16
+      : 480000;
+  const defaultVolumeImpact = exposure
+    ? -Math.round(exposure.volumeExposure * Math.min(0.06, realizationGap / 100))
+    : -240000;
+  const defaultTradeImpact = exposure
+    ? -Math.round(exposure.tradeSpendExposure * 0.08)
+    : -320000;
+  const nrImpact = numberFromQuery(query.nrImpact, defaultNrImpact);
+  const gmImpact = numberFromQuery(query.gmImpact, defaultGmImpact);
+  const volumeImpact = numberFromQuery(query.volumeImpact, defaultVolumeImpact);
+  const tradeImpact = numberFromQuery(query.tradeImpact, defaultTradeImpact);
+  const riskAdjustedValue = numberFromQuery(query.riskAdjustedValue, exposure?.marginAtRisk ?? market?.marginAtRisk ?? 0);
+  const guardrailRisk = query.guardrailRisk ?? 'Inside corridor';
+  const relationshipRisk = query.relationshipRisk ?? 'Medium';
+  const buyerResponse = query.buyerResponse ?? (
+    buyingGroup
+      ? `${buyingGroup.name} is likely to counter below target first, then ask for trade support or volume protection before accepting the modeled move.`
+      : market
+        ? `${market.name} buyers are likely to challenge affordability and ask PepsiCo to justify why the market pressure should flow into price.`
+        : 'Buyer response prediction should be reviewed before using externally.'
+  );
+  const recommendedEdit = query.recommendedEdit ?? (
+    exposure
+      ? `Keep the modeled move tied to the ${realizationGap.toFixed(1)} point realization gap and use buyer history before offering trade support.`
+      : 'Review sources and confirm finance guardrails before taking this scenario into the room.'
+  );
+  const debriefMemory = query.debriefMemory;
+  const selectedEvidence = listFromQuery(query.selectedEvidence);
+  const reviewEvidence = listFromQuery(query.reviewEvidence);
+  const excludedEvidence = listFromQuery(query.excludedEvidence);
+  const skuCount = Number.parseInt(query.skuCount ?? '0', 10);
+  const customLeverCount = Number.parseInt(query.customLeverCount ?? '0', 10);
+
+  return {
+    title: `${buyingGroup?.name ?? market?.name ?? 'ATLAS'} scenario evidence`,
+    subtitle: `${scenarioName} / ${level} model / ${source.sourceDate}`,
+    audience: 'CNO scenario decisioning',
+    sourceMode: 'offline_placeholder',
+    model: null,
+    generatedAt: new Date().toISOString(),
+    summary: `${scenarioName} scores ${atlasScore}/100 with ${likelihood}% modeled landing likelihood. ATLAS currently recommends testing ${topRecommendedScenario} next. Expected buyer response: ${buyerResponse}`,
+    metrics: [
+      { label: 'ATLAS score', value: `${atlasScore}/100`, note: `${guardrailRisk} · ${relationshipRisk} relationship risk` },
+      { label: 'Top next test', value: topRecommendedScenario, note: `${topRecommendedScore}/100 · memory ${topRecommendedMemoryAdjustment >= 0 ? '+' : ''}${topRecommendedMemoryAdjustment}` },
+      { label: 'Likelihood to land', value: `${likelihood}%`, note: 'Predicted from buyer history, current assumptions, and source strength' },
+      { label: 'Risk-adjusted value', value: euros(riskAdjustedValue), note: `Evidence strength ${evidenceStrength}%` },
+      { label: 'GM impact', value: euros(gmImpact), note: `NR ${euros(nrImpact)} · Trade ${euros(tradeImpact)}` }
+    ],
+    sections: [
+      {
+        title: 'Scenario decision',
+        body: `${scenarioName} is the current modeled move for ${buyingGroup?.name ?? market?.name ?? 'this scope'}. Use it if the team accepts the guardrail state and can defend the buyer response with source-backed evidence.`,
+        bullets: [
+          `Scenario level: ${level}`,
+          `Landing likelihood: ${likelihood}%`,
+          `Guardrail state: ${guardrailRisk}`,
+          `Relationship risk: ${relationshipRisk}`
+        ]
+      },
+      {
+        title: 'Memory-adjusted recommendation',
+        body: `ATLAS recommends testing ${topRecommendedScenario} next based on the latest scenario score and buyer memory.`,
+        bullets: [
+          `Top scenario score: ${topRecommendedScore}/100`,
+          `Debrief memory adjustment: ${topRecommendedMemoryAdjustment >= 0 ? '+' : ''}${topRecommendedMemoryAdjustment}`,
+          topRecommendedReason,
+          topRecommendedScenario === scenarioName
+            ? 'The exported scenario is also the current top next test.'
+            : `The exported scenario is not the top next test; review ${topRecommendedScenario} before using this output as the main room evidence.`
+        ]
+      },
+      {
+        title: 'Modeled financial effect',
+        body: `The scenario changes net revenue, gross margin, volume, and trade spend simultaneously; do not read any one metric alone.`,
+        bullets: [
+          `Net revenue impact: ${euros(nrImpact)}`,
+          `Gross margin impact: ${euros(gmImpact)}`,
+          `Volume impact: ${euros(volumeImpact)}`,
+          `Trade spend impact: ${euros(tradeImpact)}`
+        ]
+      },
+      {
+        title: 'Expected buyer response',
+        body: buyerResponse,
+        bullets: [
+          recommendedEdit,
+          debriefMemory ?? (latestEvent ? `${latestEvent.title}: ${latestEvent.summary}` : 'No debrief memory is attached yet. Capture one after the next round.'),
+          signal ? `${signal.title}: ${signal.negotiationImplication}` : 'No active external signal is attached to this scenario.'
+        ]
+      },
+      {
+        title: 'Selected evidence set',
+        body: selectedEvidence.length
+          ? 'This evidence is currently included in the exported scenario readout and should be used to explain the modeled move.'
+          : 'No evidence has been explicitly included yet; review the buyer workspace before using this output.',
+        bullets: selectedEvidence.length
+          ? [
+            ...selectedEvidence,
+            ...(reviewEvidence.length ? [`Needs review before use: ${reviewEvidence.join('; ')}`] : []),
+            ...(excludedEvidence.length ? [`Excluded from this output: ${excludedEvidence.join('; ')}`] : [])
+          ]
+          : [
+            ...(reviewEvidence.length ? [`Needs review before use: ${reviewEvidence.join('; ')}`] : []),
+            ...(excludedEvidence.length ? [`Excluded from this output: ${excludedEvidence.join('; ')}`] : []),
+            'Return to the buyer workspace and include source-backed evidence before sharing.'
+          ]
+      },
+      {
+        title: 'Modeling scope and levers',
+        body: `This output reflects a ${level} scenario. SKU and custom-lever detail should be used only when those levers materially change buyer response or financial exposure.`,
+        bullets: [
+          `SKU rows considered: ${Number.isFinite(skuCount) ? skuCount : 0}`,
+          `Custom levers considered: ${Number.isFinite(customLeverCount) ? customLeverCount : 0}`,
+          exposure ? `${euros(exposure.marginAtRisk)} margin at risk on ${euros(exposure.revenueUnderNegotiation)} revenue under negotiation.` : `${market?.name ?? 'Market'} scenario scope.`,
+          `Source confidence: ${source.confidence}`
+        ]
+      },
+      {
+        title: 'Recommended next move',
+        body: recommendedEdit,
+        bullets: [
+          'Save this scenario to buyer memory if it should influence future predictions.',
+          'Add a debrief after the next round so the buyer-counter model learns from the outcome.',
+          'Download this report only after confirming Finance/NRM guardrails and source freshness.'
+        ]
+      }
+    ],
+    sources: [
+      { label: source.sourceName, detail: `${source.sourceType.replaceAll('_', ' ')} / ${source.sourceDate} / ${source.confidence} confidence` },
+      { label: 'ATLAS Scenario Lab', detail: `${scenarioName} generated from current scenario assumptions` },
+      { label: signal?.source.sourceName ?? 'Buyer history memory', detail: debriefMemory ?? latestEvent?.title ?? 'No debrief attached' }
+    ],
+    caveats: [
+      'Prototype scenario output based on synthetic ATLAS source records and user-modeled assumptions.',
+      'Confirm Finance/NRM guardrails before using this as an external negotiation artifact.'
+    ]
+  };
+}
+
+function shouldUseScenarioEvidenceTemplate({
+  buyingGroupId,
+  marketId,
+  mode,
+  prompt,
+  query
+}: {
+  buyingGroupId?: string;
+  marketId?: string;
+  mode: GeneratedViewMode;
+  prompt: string;
+  query: Awaited<GeneratedViewsPageProps['searchParams']>;
+}) {
+  if (query.reportType === 'scenario_evidence') return true;
+  if (/scenario evidence|financial scenario output|scenario output|buyer counter|predict|what if|model|scenario|counter|sku|lever/i.test(prompt)) return true;
+  if (mode !== 'retrieved' && (buyingGroupId || marketId)) return true;
+  return false;
 }
 
 function fallbackSource(document?: DocumentArtifact, buyingGroupId?: string, marketId?: string): SourceMeta {
@@ -147,9 +470,15 @@ export default async function GeneratedViewsPage({ searchParams }: GeneratedView
           : 'new_draft';
   const reportOnly = query.reportOnly === '1';
   const editable = !reportOnly && query.editable !== '0';
-  const report = mode === 'retrieved' && sourceDocument
-    ? buildRetrievedReport(prompt, sourceDocument)
-    : await generateAtlasReport(prompt, { buyingGroupId, marketId });
+  const isPricingJustification = /pricing justification|price justification|pricing corridor|guardrail|do-not-cross|defend.*price/i.test(prompt);
+  const isScenarioEvidence = shouldUseScenarioEvidenceTemplate({ buyingGroupId, marketId, mode, prompt, query });
+  const report = isScenarioEvidence
+    ? buildScenarioEvidenceReport(prompt, buyingGroupId, marketId, query)
+    : isPricingJustification
+    ? buildPricingJustificationReport(prompt, buyingGroupId, marketId)
+    : mode === 'retrieved' && sourceDocument
+      ? buildRetrievedReport(prompt, sourceDocument)
+      : await generateAtlasReport(prompt, { buyingGroupId, marketId });
 
   return (
     <GeneratedViewClient

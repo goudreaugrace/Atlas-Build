@@ -1,4 +1,4 @@
-import AtlasNegotiationPlanBuilder from '../../../atlas-negotiation-plan-builder';
+import AtlasIntelligenceHub from '../../../atlas-intelligence-hub';
 
 type StrategyPageProps = {
   params: Promise<{ buyingGroupId: string }>;
@@ -6,5 +6,5 @@ type StrategyPageProps = {
 
 export default async function BuyingGroupStrategyPage({ params }: StrategyPageProps) {
   const { buyingGroupId } = await params;
-  return <AtlasNegotiationPlanBuilder buyingGroupId={buyingGroupId} />;
+  return <AtlasIntelligenceHub view="buyingGroup" buyingGroupId={buyingGroupId} initialBuyingGroupView="strategy" />;
 }
