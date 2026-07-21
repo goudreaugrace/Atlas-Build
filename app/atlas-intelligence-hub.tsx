@@ -77,7 +77,8 @@ type HubView =
   | 'database'
   | 'howItWorks'
   | 'scenarioModels'
-  | 'scenarioCompare';
+  | 'scenarioCompare'
+  | 'assistant';
 
 type AtlasIntelligenceHubProps = {
   view: HubView;
@@ -857,6 +858,7 @@ function isNavItemActive(href: string, view: HubView) {
   if (href.startsWith('/buying-groups') && (view === 'buyingGroups' || view === 'buyingGroup')) return true;
   if (href.startsWith('/scenario-lab') && (view === 'scenarioModels' || view === 'scenarioCompare' || view === 'financialImpact')) return true;
   if (href.startsWith('/intelligence') && (view === 'database' || view === 'documents' || view === 'timeline' || view === 'signals' || view === 'competitors' || view === 'markets' || view === 'market')) return true;
+  if (href.startsWith('/assistant') && view === 'assistant') return true;
   return false;
 }
 
@@ -951,16 +953,18 @@ function hubCommandConfig({
   };
 }
 
-function AppShell({
+export function AppShell({
   buyingGroupId,
   children,
   commandPrompt,
+  hideCommandSurface,
   marketId,
   view
 }: {
   buyingGroupId?: string;
   children: React.ReactNode;
   commandPrompt?: string;
+  hideCommandSurface?: boolean;
   marketId?: string;
   view: HubView;
 }) {
@@ -979,7 +983,7 @@ function AppShell({
     { label: 'Scenarios', href: '/scenario-lab' },
     { label: 'Buyers', href: '/buying-groups' },
     { label: 'Library', href: '/intelligence' },
-    { label: 'AI Assistant', href: '/brand/lay-s/assistant' }
+    { label: 'AI Assistant', href: '/assistant' }
   ];
   const buyingGroupMenu = [...packet.buyingGroups]
     .sort((a, b) => riskRank(b.riskLevel) - riskRank(a.riskLevel) || b.financialExposure.marginAtRisk - a.financialExposure.marginAtRisk);
@@ -993,8 +997,8 @@ function AppShell({
   }, []);
 
   return (
-    <main className="atlas-hub-shell">
-      <section className="atlas-hub-main">
+    <main className={`atlas-hub-shell atlas-hub-shell--${view}`}>
+      <section className={`atlas-hub-main atlas-hub-main--${view}`}>
         <header className={`atlas-hub-header${isNavCompact ? ' is-compact' : ''}`}>
           <a className="atlas-hub-brand" href="/">
             <img src="/atlas-logo.png" alt="Atlas" />
@@ -1040,13 +1044,15 @@ function AppShell({
           </div>
         </header>
         {children}
-        <AtlasCommandSurface
-          basePath={commandConfig.basePath}
-          className="atlas-global-command-surface"
-          examples={commandConfig.examples}
-          initialPrompt={commandPrompt}
-          placeholder={commandConfig.placeholder}
-        />
+        {!hideCommandSurface && (
+          <AtlasCommandSurface
+            basePath={commandConfig.basePath}
+            className="atlas-global-command-surface"
+            examples={commandConfig.examples}
+            initialPrompt={commandPrompt}
+            placeholder={commandConfig.placeholder}
+          />
+        )}
       </section>
     </main>
   );
@@ -1351,18 +1357,18 @@ function AtlasCommandSurface({
     if (!trimmed || isThinking) return;
     const href = scopedGeneratedViewHref(outputHrefForCommand(trimmed));
     const isOutput = href.startsWith('/generated-views') || href.startsWith('/atlas-output');
-    const pendingOutputTab = isOutput ? window.open('about:blank', '_blank') : null;
-    setIsThinking(true);
-    setQuickAnswer(null);
-    setStatus(isOutput ? 'ATLAS is checking the database and preparing the scenario output...' : 'ATLAS is checking the data and source memory...');
-    if (pendingOutputTab) {
-      pendingOutputTab.document.write('<!doctype html><title>ATLAS is preparing</title><body style="margin:0;font-family:Inter,Arial,sans-serif;background:#fff;color:#0b1f33;display:grid;min-height:100vh;place-items:center;"><div style="text-align:center;"><strong style="font-size:18px;">ATLAS is preparing your scenario output</strong><p style="color:#5f6f80;font-size:13px;">Checking the database and opening the evidence readout...</p></div></body>');
-      pendingOutputTab.document.close();
-    }
 
-    window.setTimeout(() => {
-      const answer = buildAtlasQuickAnswer(trimmed, basePath);
-      if (isOutput) {
+    // Report-generating commands → open generated-views in new tab (existing behavior)
+    if (isOutput) {
+      const pendingOutputTab = window.open('about:blank', '_blank');
+      setIsThinking(true);
+      setQuickAnswer(null);
+      setStatus('ATLAS is checking the database and preparing the scenario output...');
+      if (pendingOutputTab) {
+        pendingOutputTab.document.write('<!doctype html><title>ATLAS is preparing</title><body style="margin:0;font-family:Inter,Arial,sans-serif;background:#fff;color:#0b1f33;display:grid;min-height:100vh;place-items:center;"><div style="text-align:center;"><strong style="font-size:18px;">ATLAS is preparing your scenario output</strong><p style="color:#5f6f80;font-size:13px;">Checking the database and opening the evidence readout...</p></div></body>');
+        pendingOutputTab.document.close();
+      }
+      window.setTimeout(() => {
         setIsThinking(false);
         if (pendingOutputTab) {
           pendingOutputTab.location.href = href;
@@ -1371,12 +1377,12 @@ function AtlasCommandSurface({
         }
         setStatus('Popup blocked. Opening here...');
         window.location.href = href;
-        return;
-      }
-      setQuickAnswer(answer);
-      setIsThinking(false);
-      setStatus('Answer ready. Open the linked view for the full data.');
-    }, 650);
+      }, 650);
+      return;
+    }
+
+    // Conversational queries → navigate to /assistant with pre-filled prompt
+    window.location.href = `/assistant?prompt=${encodeURIComponent(trimmed)}`;
   }
 
   function stageExample(example: string) {
@@ -2398,7 +2404,7 @@ function TriageCommandCenter({
           </nav>
         </aside>
 
-        <section className="atlas-triage-main-pane">
+        <section className="atlas-triage-main-pane" key={activeScope.id}>
           <header className="atlas-triage-feed-header">
             <div className="atlas-triage-feed-header-left">
               <div className="atlas-triage-feed-header-title-row">
@@ -2471,25 +2477,27 @@ function TriageCommandCenter({
                 </div>
 
                 {/* Expanded: AI work cards */}
-                {isExpanded ? (
-                  <section className="atlas-triage-alert-detail">
-                    <div className="atlas-triage-alert-detail-copy">
-                      <div>
-                        <span>Why it matters</span>
-                        <p>{alert.possibleEffect}</p>
+                <div className="atlas-triage-alert-detail-wrapper">
+                  <div className="atlas-triage-alert-detail-inner">
+                    <section className="atlas-triage-alert-detail">
+                      <div className="atlas-triage-alert-detail-copy">
+                        <div>
+                          <span>Why it matters</span>
+                          <p>{alert.possibleEffect}</p>
+                        </div>
+                        <div>
+                          <span>Dig deeper</span>
+                          <p>{sourceDisplayName(alert.source)} · {formatAtlasDate(alert.source.sourceDate, { includeYear: true })} · {alert.source.confidence} confidence</p>
+                        </div>
                       </div>
-                      <div>
-                        <span>Dig deeper</span>
-                        <p>{sourceDisplayName(alert.source)} · {formatAtlasDate(alert.source.sourceDate, { includeYear: true })} · {alert.source.confidence} confidence</p>
+                      <div className="atlas-triage-completed-actions" aria-label="ATLAS completed work">
+                        {triageCompletedActionsForAlert(alert).map((snapshot) => (
+                          <TriageScenarioSnapshotCard key={`${alert.id}-${snapshot.status}-${snapshot.title}`} snapshot={snapshot} />
+                        ))}
                       </div>
-                    </div>
-                    <div className="atlas-triage-completed-actions" aria-label="ATLAS completed work">
-                      {triageCompletedActionsForAlert(alert).map((snapshot) => (
-                        <TriageScenarioSnapshotCard key={`${alert.id}-${snapshot.status}-${snapshot.title}`} snapshot={snapshot} />
-                      ))}
-                    </div>
-                  </section>
-                ) : null}
+                    </section>
+                  </div>
+                </div>
               </article>
             );
           }) : (
@@ -4305,6 +4313,48 @@ function PepsiCoImpactWorkspace() {
   );
 }
 
+function AnimatedStatCounter({ target, suffix = '' }: { target: number; suffix?: string }) {
+  const [count, setCount] = useState(0);
+  const [isVisible, setIsVisible] = useState(false);
+  const ref = useRef<HTMLSpanElement>(null);
+
+  useEffect(() => {
+    const element = ref.current;
+    if (!element) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.1 }
+    );
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!isVisible) return;
+    let startTimestamp: number | null = null;
+    const duration = 1000;
+    const step = (timestamp: number) => {
+      if (!startTimestamp) startTimestamp = timestamp;
+      const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+      const easeProgress = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress);
+      setCount(Math.floor(easeProgress * target));
+      if (progress < 1) {
+        requestAnimationFrame(step);
+      } else {
+        setCount(target);
+      }
+    };
+    requestAnimationFrame(step);
+  }, [isVisible, target]);
+
+  return <span ref={ref}>{count}{suffix}</span>;
+}
+
 function OverviewBriefingCanvas({ generatedView, initialPrompt }: { generatedView: string; initialPrompt?: string }) {
   const generatedReadIsRequested = Boolean(initialPrompt && generatedView !== 'focus');
   const externalAlertSignals = packet.signals
@@ -4343,7 +4393,7 @@ function OverviewBriefingCanvas({ generatedView, initialPrompt }: { generatedVie
         <div className="atlas-triage-library-inner">
           <div className="atlas-triage-library-left">
             <span className="atlas-triage-library-eyebrow">Intelligence Library</span>
-            <h2>64+ records to validate sources, approve memory, and audit prediction confidence.</h2>
+            <h2><AnimatedStatCounter target={64} suffix="+" /> records to validate sources, approve memory, and audit prediction confidence.</h2>
             <a href="/intelligence" className="atlas-triage-view-buyers-btn">
               <span>Go to Intelligence Library</span>
               <ArrowRight size={14} />
@@ -4351,15 +4401,15 @@ function OverviewBriefingCanvas({ generatedView, initialPrompt }: { generatedVie
           </div>
           <div className="atlas-triage-library-right">
             <div className="atlas-triage-stat-card">
-              <strong>64</strong>
+              <h2><AnimatedStatCounter target={64} /></h2>
               <span>Records</span>
             </div>
             <div className="atlas-triage-stat-card">
-              <strong>11</strong>
+              <h2><AnimatedStatCounter target={11} /></h2>
               <span>high confidence records.</span>
             </div>
             <div className="atlas-triage-stat-card">
-              <strong>27</strong>
+              <h2><AnimatedStatCounter target={27} /></h2>
               <span>Source Watchouts</span>
             </div>
           </div>
