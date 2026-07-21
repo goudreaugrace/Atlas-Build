@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { FocusEvent } from 'react';
-import { ArrowLeft, Copy, Download, FileText, Mic, Pencil, Save, Send, ShieldCheck, X } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, Copy, Download, FileText, Mic, Pencil, Save, Send, ShieldCheck, X } from 'lucide-react';
 import type { AtlasGeneratedReport, AtlasGeneratedSection, AtlasGeneratedTable } from '@/src/lib/atlas/llm-report';
 import { buildAtlasIntelligencePacket } from '@/src/lib/atlas-intelligence/kernel';
 import type { DocumentArtifact, SourceMeta } from '@/src/lib/atlas-intelligence/types';
@@ -120,16 +120,30 @@ function GeneratedSourceTrustBar({ source }: { source: SourceMeta }) {
   return (
     <>
       <section className="atlas-generated-view-trust">
-        <ShieldCheck size={17} />
-        <span className={`atlas-source-type-pill ${sourceTypeClass(source)}`}>{sourceTypeLabel(source)}</span>
-        <strong>{source.sourceName}</strong>
-        <span>{sourceTrustDecision(source)}</span>
-        <span>{source.sourceDate}</span>
-        <span>Updated {source.lastUpdated}</span>
-        <span className={`confidence-${source.confidence}`}>Confidence {source.confidence}</span>
-        <span className={generatedSourceStatusClass(source.status)}>{source.status.replaceAll('_', ' ')}</span>
-        {source.url ? <a href={source.url} rel="noreferrer" target="_blank">Open source</a> : null}
-        <button type="button" onClick={() => setOpen(true)}>Inspect source</button>
+        <div className="atlas-trust-content">
+          <div className="atlas-trust-line-1">
+            <ShieldCheck size={16} className="atlas-trust-shield" />
+            <span className={`atlas-source-type-pill ${sourceTypeClass(source)}`}>{sourceTypeLabel(source)}</span>
+            <strong className="atlas-trust-source-name">{source.sourceName}</strong>
+            <span className="atlas-trust-decision">{sourceTrustDecision(source)}</span>
+            <button type="button" className="atlas-btn-ai-secondary" onClick={() => setOpen(true)}>Inspect source</button>
+          </div>
+          <div className="atlas-trust-line-2">
+            <span>{source.sourceDate}</span>
+            <span className="atlas-trust-bullet">•</span>
+            <span>Updated {source.lastUpdated}</span>
+            <span className="atlas-trust-bullet">•</span>
+            <span className={`confidence-${source.confidence}`}>Confidence {source.confidence}</span>
+            <span className="atlas-trust-bullet">•</span>
+            <span className={generatedSourceStatusClass(source.status)}>{source.status.replaceAll('_', ' ')}</span>
+            {source.url ? (
+              <>
+                <span className="atlas-trust-bullet">•</span>
+                <a href={source.url} rel="noreferrer" target="_blank">Open source</a>
+              </>
+            ) : null}
+          </div>
+        </div>
       </section>
       {open ? (
         <div className="atlas-source-drawer-backdrop" role="presentation" onClick={() => setOpen(false)}>
@@ -183,9 +197,9 @@ function lifecycleLabel(lifecycleState: GeneratedViewLifecycle) {
 function entityLabel(buyingGroupId?: string, marketId?: string) {
   const group = buyingGroupId ? packet.buyingGroups.find((item) => item.id === buyingGroupId) : undefined;
   const market = marketId ? packet.markets.find((item) => item.id === marketId) : undefined;
-  if (group) return { destination: 'buyer_profile' as const, label: 'Save to scenario memory', detail: `${group.name} scenario workspace`, href: `/buying-groups/${group.id}?view=strategy` };
-  if (market) return { destination: 'market_profile' as const, label: 'Save to scenario memory', detail: `${market.name} market context`, href: `/scenario-lab?market=${market.id}` };
-  return { destination: 'atlas_database' as const, label: 'Save to Intelligence Library', detail: 'source and memory library', href: '/intelligence' };
+  if (group) return { destination: 'buyer_profile' as const, label: 'Save to Memory', detail: `${group.name} scenario workspace`, href: `/buying-groups/${group.id}?view=strategy` };
+  if (market) return { destination: 'market_profile' as const, label: 'Save to Memory', detail: `${market.name} market context`, href: `/scenario-lab?market=${market.id}` };
+  return { destination: 'atlas_database' as const, label: 'Save to Library', detail: 'source and memory library', href: '/intelligence' };
 }
 
 function sourceDecisionForMode(mode: GeneratedViewMode) {
@@ -223,24 +237,39 @@ function GeneratedTable({ table }: { table: AtlasGeneratedTable }) {
 
 function GeneratedReportVisuals({
   metrics,
-  sections
+  sections,
+  source,
+  attachment
 }: {
   metrics: AtlasGeneratedReport['metrics'];
   sections: AtlasGeneratedSection[];
+  source: SourceMeta;
+  attachment: ReturnType<typeof entityLabel>;
 }) {
-  if (!metrics.length) return null;
   const actionSection = sections.find((section) => /action|recommend/i.test(section.title)) ?? sections[0];
+
+  const gridTiles: Array<{ label: string; value: string; note?: string }> = [
+    { label: 'Scope', value: attachment.detail },
+    { label: 'Origin', value: sourceTypeLabel(source) },
+    { label: 'Source', value: cleanGeneratedSourceLabel(source.sourceName) },
+    { label: 'Confidence', value: `${source.confidence} · ${source.status.replaceAll('_', ' ')}` },
+    { label: 'Updated', value: source.sourceDate },
+    ...metrics.map((m) => ({ label: m.label, value: m.value, note: m.note })),
+    { label: 'Governance', value: source.governance?.canonicalUseAllowed?.replaceAll('_', ' ') ?? 'Approved' },
+    { label: 'Audience', value: 'Internal CNO' },
+    { label: 'Engine', value: 'ATLAS LLM Kernel' }
+  ].slice(0, 9);
 
   return (
     <section className="atlas-generated-report-visuals" aria-label="Generated scenario output template">
       <article className="atlas-generated-report-primary">
-        <span>Scenario output</span>
-        <div className="atlas-generated-metric-strip" aria-label="Report key metrics">
-          {metrics.slice(0, 4).map((metric) => (
-            <div className="atlas-generated-metric-tile" key={`${metric.label}-${metric.value}`}>
-              <span>{metric.label}</span>
-              <strong>{metric.value}</strong>
-              {metric.note ? <em>{metric.note}</em> : null}
+        <span>Scenario Scope &amp; Key Metrics</span>
+        <div className="atlas-generated-report-grid-3x3" aria-label="Scenario metrics 3x3 grid">
+          {gridTiles.map((tile, idx) => (
+            <div className="atlas-generated-grid-tile" key={`${tile.label}-${idx}`}>
+              <span>{tile.label}</span>
+              <strong>{tile.value}</strong>
+              {tile.note ? <em>{tile.note}</em> : null}
             </div>
           ))}
         </div>
@@ -300,14 +329,15 @@ function ScenarioOutputLoop({
         <span>Scenario evidence loop</span>
         <h2>Use this output only if the prediction, evidence, and memory destination are clear.</h2>
       </header>
-      <div>
+      <div className="atlas-scenario-loop-rows">
         {rows.map((row) => (
-          <article key={row.label}>
-            <span>{row.label}</span>
-            <strong>{row.text}</strong>
-          </article>
+          <div className="atlas-scenario-loop-row" key={row.label}>
+            <span className="atlas-scenario-loop-label">{row.label}</span>
+            <p className="atlas-scenario-loop-text">{row.text}</p>
+          </div>
         ))}
       </div>
+      <GeneratedSourceTrustBar source={source} />
     </section>
   );
 }
@@ -399,7 +429,7 @@ function GeneratedSectionVisual({
   return (
     <div className="atlas-generated-section-visual readout" aria-label={`${section.title} readout visualization`}>
       <span>{intent}</span>
-      <strong>{metric?.value ?? source.confidence}</strong>
+      <h3>{metric?.value ?? source.confidence}</h3>
       <em>{metric?.label ?? 'Source confidence'}</em>
       {metric?.note ? <small>{metric.note}</small> : <small>{source.sourceName} · {source.sourceDate}</small>}
       <dl>
@@ -528,6 +558,9 @@ export default function GeneratedViewClient({
   const [summary, setSummary] = useState(report.summary || report.subtitle || prompt);
   const [sections, setSections] = useState<AtlasGeneratedSection[]>(initialSections);
   const [chatPrompt, setChatPrompt] = useState('');
+  const [isFocused, setIsFocused] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
   const [status, setStatus] = useState('');
   const [revisionCount, setRevisionCount] = useState(0);
   const [lifecycleState, setLifecycleState] = useState<GeneratedViewLifecycle>(mode === 'retrieved' && !initialEditable ? 'retrieved' : 'draft');
@@ -637,12 +670,9 @@ export default function GeneratedViewClient({
       <header className="atlas-generated-view-topbar">
         <a href={attachment.href} target="_self"><ArrowLeft size={15} /> Back to {attachment.detail}</a>
         <nav aria-label="Scenario output actions">
-              <button type="button" onClick={() => window.print()}><Download size={15} /> Download scenario PDF</button>
+          <button type="button" className="atlas-icon-button" aria-label="Download as PDF" title="Download as PDF" onClick={() => window.print()}><Download size={16} /></button>
           {reportOnly ? null : (
-            <>
-              <a href={duplicateHref}><Copy size={15} /> Duplicate / edit</a>
-              <button type="button" onClick={saveDraft}><Save size={15} /> Save draft</button>
-            </>
+            <a href={duplicateHref}><Copy size={15} /> Remix Scenario</a>
           )}
           {addToWorkspaceHref ? <a href={addToWorkspaceHref}><Pencil size={15} /> Use in scenario workspace</a> : null}
           <button type="button" className="primary" onClick={attachView}><FileText size={15} /> {attachment.label}</button>
@@ -651,33 +681,42 @@ export default function GeneratedViewClient({
 
       <article className="atlas-generated-view-document">
         <section className="atlas-generated-view-hero">
+          <div className="atlas-generated-provenance-callout">
+            <AlertTriangle size={15} />
+            <span>{lifecycleLabel(lifecycleState)}</span>
+            <strong>{provenanceDecision(mode, source, lifecycleState)} — {sourceDecision}</strong>
+          </div>
           <div className="atlas-generated-view-title-row">
             <div>
               <span>{modeLabel(mode, editable)}</span>
-              <h1
-                aria-label="Edit scenario output title"
-                {...editableProps(editable, (value) => setTitle(value || title))}
-              >
-                {title}
-              </h1>
+              <div className="atlas-title-input-container">
+                <h1
+                  aria-label="Edit scenario output title"
+                  {...editableProps(editable, (value) => setTitle(value || title))}
+                >
+                  {title}
+                </h1>
+                <Pencil size={18} className="atlas-edit-icon title-icon" />
+              </div>
             </div>
             <div className="atlas-generated-view-utility-actions">
               {reportOnly ? null : mode === 'retrieved' && !editable && sourceDocument ? (
                 <>
-                  <a href={duplicateHref}><Copy size={14} /> Duplicate and edit</a>
+                  <a href={duplicateHref}><Copy size={14} /> Remix Scenario</a>
                   <button type="button" onClick={() => {
                     setEditable(true);
                     setLifecycleState('edited');
                     setStatus('Retrieved view is now an editable working copy.');
                   }}><Pencil size={14} /> Edit pulled view</button>
                 </>
-              ) : (
-                <button type="button" onClick={saveDraft}><Save size={14} /> {status.startsWith('Draft saved') ? 'Saved' : 'Save draft'}</button>
-              )}
+              ) : null}
             </div>
           </div>
           <div className="atlas-generated-view-summary-card">
-            <span>Scenario decision summary</span>
+            <div className="atlas-generated-view-summary-head">
+              <h5>Scenario decision summary</h5>
+              <Pencil size={14} className="atlas-edit-icon" />
+            </div>
             <p
               aria-label="Edit scenario output summary"
               {...editableProps(editable, (value) => setSummary(value || summary))}
@@ -685,29 +724,14 @@ export default function GeneratedViewClient({
               {summary}
             </p>
           </div>
-          <dl>
-            <div><dt>Scope</dt><dd>{attachment.detail}</dd></div>
-            <div><dt>Origin</dt><dd>{sourceTypeLabel(source)}</dd></div>
-            <div><dt>Source</dt><dd>{cleanGeneratedSourceLabel(source.sourceName)}</dd></div>
-            <div><dt>Confidence</dt><dd>{source.confidence} · {source.status.replaceAll('_', ' ')}</dd></div>
-            <div><dt>Updated</dt><dd>{source.sourceDate}</dd></div>
-          </dl>
-          <div className="atlas-generated-provenance-callout">
-            <span>{lifecycleLabel(lifecycleState)}</span>
-            <strong>{provenanceDecision(mode, source, lifecycleState)}</strong>
-            <em>{sourceDecision}</em>
-          </div>
         </section>
 
-      <GeneratedReportVisuals metrics={report.metrics} sections={sections} />
+      <GeneratedReportVisuals metrics={report.metrics} sections={sections} source={source} attachment={attachment} />
 
         <ScenarioOutputLoop attachment={attachment} sections={sections} source={source} />
 
-        <GeneratedSourceTrustBar source={source} />
-
         <section className="atlas-generated-view-template-head">
-          <span>Scenario readout</span>
-          <strong>Working scenario output</strong>
+          <h2>Working scenario output</h2>
           <p>Each section should clarify the selected move, assumptions, predicted buyer response, evidence, and source trail before saving or downloading.</p>
         </section>
 
@@ -718,33 +742,76 @@ export default function GeneratedViewClient({
             ))}
           </section>
           {reportOnly ? null : (
-          <aside className="atlas-generated-view-chat">
-            <div>
-              <strong>Review with ATLAS</strong>
-              <span>Revise the scenario output, then save it to memory.</span>
-            </div>
-            <form onSubmit={(event) => {
-              event.preventDefault();
-              refineWithChat();
-            }}>
-              <button type="button" className="voice" onClick={() => setStatus('Voice refinement ready. Typed refinement uses the same path.')}><Mic size={14} /> Voice</button>
-              <input value={chatPrompt} onChange={(event) => setChatPrompt(event.target.value)} placeholder="Make this CNO-ready..." />
-              <button type="submit" className="send" disabled={!chatPrompt.trim()}><Send size={14} /> Send</button>
-            </form>
-            <div className="atlas-command-surface-examples">
-              {['Add buyer history', 'Add scenario evidence', 'Show source gaps', 'Create buyer-counter variant'].map((example) => (
-                <button key={example} type="button" onClick={() => {
-                  addRevisionFromText(example);
-                }}>{example}</button>
-              ))}
-            </div>
-            {status ? (
-              <p className="atlas-generated-view-status">
-                {status}
-                {lifecycleState === 'attached' ? <> <a href={attachment.href}>Open destination</a></> : null}
-              </p>
-            ) : null}
-          </aside>
+            <aside
+              className={`atlas-command-surface atlas-global-command-surface state-${isFocused ? 'focused' : isHovered ? 'hover' : 'default'}`}
+              aria-label="Revise with ATLAS"
+              onMouseEnter={() => setIsHovered(true)}
+              onMouseLeave={() => setIsHovered(false)}
+              onClick={(e) => {
+                const target = e.target as HTMLElement;
+                if (!target.closest('button') && !target.closest('a')) {
+                  inputRef.current?.focus();
+                }
+              }}
+            >
+              <form onSubmit={(event) => {
+                event.preventDefault();
+                refineWithChat();
+              }}>
+                <div className={`atlas-command-input-wrapper${isFocused ? ' focused' : ''}`}>
+                  <input
+                    ref={inputRef}
+                    value={chatPrompt}
+                    onChange={(event) => setChatPrompt(event.target.value)}
+                    onFocus={() => setIsFocused(true)}
+                    onBlur={() => setIsFocused(false)}
+                    placeholder="Revise the scenario output, then save it to memory."
+                    aria-label="Revise scenario output with ATLAS"
+                  />
+                  <button 
+                    type="button" 
+                    className="voice" 
+                    onClick={() => setStatus('Voice capture ready. Typed refinement uses the same path.')} 
+                    aria-label="Voice input"
+                  >
+                    <Mic size={16} />
+                  </button>
+                </div>
+                
+                <button 
+                  type="submit" 
+                  className="send" 
+                  disabled={!chatPrompt.trim()}
+                  aria-label="Send refinement"
+                >
+                  <Send size={14} />
+                </button>
+              </form>
+
+              {isFocused && (
+                <div className="atlas-command-surface-examples">
+                  {['Add buyer history', 'Add scenario evidence', 'Show source gaps', 'Create buyer-counter variant'].map((example) => (
+                    <button 
+                      key={example} 
+                      type="button" 
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        addRevisionFromText(example);
+                      }}
+                    >
+                      {example}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {status ? (
+                <p className="atlas-command-status">
+                  {status}
+                  {lifecycleState === 'attached' ? <> <a href={attachment.href}>Open destination</a></> : null}
+                </p>
+              ) : null}
+            </aside>
           )}
         </div>
       </article>
