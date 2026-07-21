@@ -12359,52 +12359,7 @@ function ScenarioModelsView({
 	      : scenario.evidenceStrength < 84
 	        ? 'Evidence is usable, but lead with the prior outcome or market signal first.'
 	        : 'Evidence is strong enough to support this path; keep the source trail available if challenged.';
-	    const compareScenario = selectedApproaches.find((approach) => approach.id === fullScenarioCompareId && approach.id !== scenario.id);
-	    const compareScenarioStatus = compareScenario ? scenarioDecisionStatusFor({
-	      guardrailRisk: compareScenario.guardrailRisk,
-	      isRecommended: compareScenario.id === scenarioCase?.recommendedApproachId,
-	      likelihood: compareScenario.likelihood,
-	      marginImpact: compareScenario.outputs.marginImpact,
-	      relationshipRisk: compareScenario.relationshipRisk
-	    }) : null;
-	    const compareScenarioRead = compareScenario ? (() => {
-	      const buyerPreferred = compareScenario.likelihood > activeAcceptance ? compareScenario : scenario;
-	      const buyerOther = buyerPreferred.id === scenario.id ? compareScenario : scenario;
-	      const marginPreferred = compareScenario.outputs.marginImpact > activeScenarioOutputs.marginImpact ? compareScenario : scenario;
-	      const marginOther = marginPreferred.id === scenario.id ? compareScenario : scenario;
-	      const landDifference = Math.abs(compareScenario.likelihood - activeAcceptance);
-	      const marginDifference = Math.abs(compareScenario.outputs.marginImpact - activeScenarioOutputs.marginImpact);
-	      const riskText = compareScenario.relationshipRisk === activeRelationshipRisk
-	        ? `Both scenarios carry ${activeRelationshipRisk.toLowerCase()} relationship risk.`
-	        : `${scenario.name} is ${activeRelationshipRisk.toLowerCase()} relationship risk; ${compareScenario.name} is ${compareScenario.relationshipRisk.toLowerCase()}.`;
-	      const actionText = buyerPreferred.id === marginPreferred.id
-	        ? `ATLAS would lead with ${buyerPreferred.name}; it is stronger on buyer response and margin protection.`
-	        : `ATLAS would lead with ${buyerPreferred.name} for buyer response and keep ${marginPreferred.name} as the value-protection alternative.`;
-	      return {
-	        actionText,
-	        buyerText: `${scenarioNegotiator.name} is modeled to respond better to ${buyerPreferred.name}; it is ${landDifference.toFixed(0)} pts stronger on likelihood than ${buyerOther.name}.`,
-	        marginText: `${marginPreferred.name} protects about ${euros(marginDifference)} more margin than ${marginOther.name}.`,
-	        riskText
-	      };
-	    })() : null;
-	    const activeReadItems = compareScenarioRead ? [
-	      {
-	        label: 'Better buyer response',
-	        text: compareScenarioRead.buyerText
-	      },
-	      {
-	        label: 'Better margin path',
-	        text: compareScenarioRead.marginText
-	      },
-	      {
-	        label: 'ATLAS read',
-	        text: compareScenarioRead.actionText
-	      },
-	      {
-	        label: 'Watch',
-	        text: compareScenarioRead.riskText
-	      }
-	    ] : [
+	    const activeReadItems = [
 	      {
 	        label: scenario.id === scenarioCase?.recommendedApproachId ? 'Why ATLAS recommends it' : 'Why this path matters',
 	        text: activeApproachRead.text
@@ -12619,27 +12574,6 @@ function ScenarioModelsView({
 	        ? 'Counter stays below the modeled floor unless PepsiCo trades volume or service commitments.'
 	        : `Counter pressure clusters around ${pct(Math.max(0, activeScenarioInputs.expectedRealizationPercent - 0.5))}-${pct(activeScenarioInputs.expectedRealizationPercent)} realization.`
 	    ];
-	    const buyerResponseLead = compareScenarioRead
-	      ? compareScenarioRead.buyerText
-	      : buyerLikelyMove;
-	    const buyerResponseEvidenceItems = compareScenarioRead ? [
-	      {
-	        label: 'Buyer response',
-	        text: compareScenarioRead.buyerText
-	      },
-	      {
-	        label: 'Margin tradeoff',
-	        text: compareScenarioRead.marginText
-	      },
-	      {
-	        label: 'Risk read',
-	        text: compareScenarioRead.riskText
-	      }
-	    ] : buyerResponseEvidence;
-	    const buyerResponseActionItems = compareScenarioRead ? [
-	      compareScenarioRead.actionText,
-	      buyerResponseRecommendation
-	    ] : buyerResponseActions;
 	    const setupLevers = [
 	      {
 	        fill: Math.min(100, Math.max(0, (activeScenarioInputs.priceIncreasePercent / 6) * 100)),
@@ -12768,18 +12702,6 @@ function ScenarioModelsView({
 	        <section className="atlas-scenario-approach-board" aria-label="Compare modeled approaches">
 	          <header>
 	            <span>Compare scenarios</span>
-	            <label className="atlas-scenario-compare-picker">
-	              <span>Compare with</span>
-	              <select
-	                onChange={(event) => setFullScenarioCompareId(event.currentTarget.value)}
-	                value={compareScenario?.id ?? ''}
-	              >
-	                <option value="">None</option>
-	                {selectedApproaches.filter((approach) => approach.id !== scenario.id).map((approach) => (
-	                  <option key={approach.id} value={approach.id}>{approach.name}</option>
-	                ))}
-	              </select>
-	            </label>
 	          </header>
 	          <div className="atlas-scenario-approach-compare-layout">
 	            <div className="atlas-scenario-approach-grid-table" role="table" aria-label="Modeled approach comparison">
@@ -12807,7 +12729,6 @@ function ScenarioModelsView({
 	                const approachHref = scenarioCase ? scenarioCaseDetailHref(scenarioCase.id, approach.id) : scenarioDetailHref(approach.id);
 	                const selectApproach = () => {
 	                  setSelectedScenarioId(approach.id);
-	                  setFullScenarioCompareId((current) => current === approach.id ? '' : current);
 	                  setFullScenarioAdjusting(false);
 	                  setFullScenarioDraftInputs(null);
 	                  setFullScenarioExtraLevers([]);
@@ -12821,7 +12742,6 @@ function ScenarioModelsView({
 	                    className={[
 	                      'atlas-scenario-approach-grid-row',
 	                      isActive ? 'active' : '',
-	                      compareScenario?.id === approach.id ? 'compare' : '',
 	                      isRecommended ? 'recommended' : ''
 	                    ].filter(Boolean).join(' ')}
 	                    key={approach.id}
@@ -12831,7 +12751,6 @@ function ScenarioModelsView({
 	                    <span className="atlas-scenario-approach-title-cell">
 	                      <strong>{approach.name}</strong>
 	                      <span>{approachRoleLabel(approach)}</span>
-	                      {compareScenario?.id === approach.id ? <em>Compared</em> : null}
 	                      <small>{pct(rowInputs.priceIncreasePercent)} ask · {pct(rowInputs.expectedRealizationPercent)} realization · {scenarioDeltaLabel(rowOutputs.revenueImpact)} NR</small>
 	                    </span>
 	                    <span className={rowOutputs.marginImpact >= 0 ? 'is-positive' : 'is-negative'}>{scenarioDeltaLabel(rowOutputs.marginImpact)}</span>
@@ -12887,20 +12806,6 @@ function ScenarioModelsView({
 	                <strong>{livePredictionRead}</strong>
 	              </article>
 	            </div>
-	            {compareScenario ? (
-	              <div className="atlas-scenario-two-up-read" aria-label="Selected scenario compared with another scenario">
-	                <article>
-	                  <span>Selected</span>
-	                  <strong>{scenario.name}</strong>
-	                  <p>{pct(activeScenarioInputs.priceIncreasePercent)} ask · {pct(activeScenarioInputs.expectedRealizationPercent)} realization · {activeAcceptance}% land</p>
-	                </article>
-	                <article>
-	                  <span>Compared</span>
-	                  <strong>{compareScenario.name}</strong>
-	                  <p>{pct(compareScenario.inputs.priceIncreasePercent)} ask · {pct(compareScenario.inputs.expectedRealizationPercent)} realization · {compareScenario.likelihood}% land</p>
-	                </article>
-	              </div>
-	            ) : null}
 	            <div className="atlas-scenario-lever-list">
 	              {setupLevers.map((lever) => (
 	                <div className="atlas-scenario-lever-row" key={lever.label}>
@@ -13071,7 +12976,6 @@ function ScenarioModelsView({
 	              style: scenarioNegotiator.style
 	            }}
 	            compact
-	            compareOptionId={compareScenario?.id}
 	            comparisonOptions={selectedApproaches}
 	            inputs={activeScenarioInputs}
 	            relationshipRisk={activeRelationshipRisk}
@@ -13084,14 +12988,14 @@ function ScenarioModelsView({
 	          <section className="atlas-scenario-buyer-response-card atlas-scenario-buyer-response-card--closed-loop">
 	            <header>
 	              <span>ATLAS predicted buyer response</span>
-	              <em>{activeAcceptance.toFixed(0)}% confidence</em>
+	              <em>{activeAcceptance.toFixed(0)}% response likelihood</em>
 	            </header>
-	            <p className="atlas-scenario-buyer-response-lead">{buyerResponseLead}</p>
+	            <p className="atlas-scenario-buyer-response-lead">{buyerLikelyMove}</p>
 	            <div className="atlas-buyer-response-intelligence" aria-label="Buyer response intelligence">
 	              <article className="atlas-buyer-response-intelligence-card atlas-buyer-response-intelligence-card--wide">
 	                <span>Why ATLAS thinks this</span>
 	                <div>
-	                  {buyerResponseEvidenceItems.map((item) => (
+	                  {buyerResponseEvidence.map((item) => (
 	                    <p key={item.label}><strong>{item.label}</strong>{item.text}</p>
 	                  ))}
 	                </div>
@@ -13099,7 +13003,7 @@ function ScenarioModelsView({
 	              <article className="atlas-buyer-response-intelligence-card">
 	                <span>CNO move</span>
 	                <div>
-	                  {buyerResponseActionItems.map((item) => (
+	                  {buyerResponseActions.map((item) => (
 	                    <p key={item}>{item}</p>
 	                  ))}
 	                </div>
@@ -13118,15 +13022,6 @@ function ScenarioModelsView({
 
 	        <nav className="atlas-scenario-full-actions-row" aria-label="Scenario actions">
 	          <a href={scenarioReportHrefFor(scenario)}>Download report</a>
-	          <button
-	            onClick={() => {
-	              setFullScenarioAdjusting(true);
-	              setFullScenarioDraftInputs((current) => current ?? scenario.inputs);
-	            }}
-	            type="button"
-	          >
-	            Edit scenario
-	          </button>
 	          {scenarioContext.buyingGroupId ? (
 	            <a href={`/buying-groups/${scenarioContext.buyingGroupId}?view=current`}>Save to buying group</a>
 	          ) : null}
