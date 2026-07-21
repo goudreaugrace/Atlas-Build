@@ -718,7 +718,7 @@ export default function GeneratedViewClient({
             ))}
           </section>
           {reportOnly ? null : (
-          <aside className="atlas-generated-view-chat atlas-command-surface atlas-global-command-surface">
+          <aside className="atlas-generated-view-chat">
             <div>
               <strong>Review with ATLAS</strong>
               <span>Revise the scenario output, then save it to memory.</span>

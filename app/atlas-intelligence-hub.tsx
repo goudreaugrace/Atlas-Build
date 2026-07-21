@@ -2,6 +2,7 @@
 
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import {
+  AlertCircle,
   AlertTriangle,
   ArrowRight,
   BarChart3,
@@ -25,6 +26,7 @@ import {
   Send,
   ShieldCheck,
   Sparkles,
+  Square,
   Target,
   TrendingUp,
   X
@@ -75,7 +77,8 @@ type HubView =
   | 'database'
   | 'howItWorks'
   | 'scenarioModels'
-  | 'scenarioCompare';
+  | 'scenarioCompare'
+  | 'assistant';
 
 type AtlasIntelligenceHubProps = {
   view: HubView;
@@ -855,6 +858,7 @@ function isNavItemActive(href: string, view: HubView) {
   if (href.startsWith('/buying-groups') && (view === 'buyingGroups' || view === 'buyingGroup')) return true;
   if (href.startsWith('/scenario-lab') && (view === 'scenarioModels' || view === 'scenarioCompare' || view === 'financialImpact')) return true;
   if (href.startsWith('/intelligence') && (view === 'database' || view === 'documents' || view === 'timeline' || view === 'signals' || view === 'competitors' || view === 'markets' || view === 'market')) return true;
+  if (href.startsWith('/assistant') && view === 'assistant') return true;
   return false;
 }
 
@@ -949,26 +953,37 @@ function hubCommandConfig({
   };
 }
 
-function AppShell({
+export function AppShell({
   buyingGroupId,
   children,
   commandPrompt,
+  hideCommandSurface,
   marketId,
   view
 }: {
   buyingGroupId?: string;
   children: React.ReactNode;
   commandPrompt?: string;
+  hideCommandSurface?: boolean;
   marketId?: string;
   view: HubView;
 }) {
   const [isNavCompact, setIsNavCompact] = useState(false);
   const commandConfig = hubCommandConfig({ buyingGroupId, marketId, view });
+  
+  const totalAlertsCount = useMemo(() => {
+    const externalAlertsCount = packet.signals.length;
+    const scenarioAlertsCount = packet.scenarioModels.length;
+    const patternAlertsCount = packet.crossMarketPatterns.length;
+    return externalAlertsCount + scenarioAlertsCount + patternAlertsCount;
+  }, []);
+
   const primaryNav = [
     { label: 'Triage', href: '/' },
-    { label: 'Scenario Lab', href: '/scenario-lab' },
-    { label: 'Buying Groups', href: '/buying-groups' },
-    { label: 'Intelligence Library', href: '/intelligence' }
+    { label: 'Scenarios', href: '/scenario-lab' },
+    { label: 'Buyers', href: '/buying-groups' },
+    { label: 'Library', href: '/intelligence' },
+    { label: 'AI Assistant', href: '/assistant' }
   ];
   const buyingGroupMenu = [...packet.buyingGroups]
     .sort((a, b) => riskRank(b.riskLevel) - riskRank(a.riskLevel) || b.financialExposure.marginAtRisk - a.financialExposure.marginAtRisk);
@@ -982,8 +997,8 @@ function AppShell({
   }, []);
 
   return (
-    <main className="atlas-hub-shell">
-      <section className="atlas-hub-main">
+    <main className={`atlas-hub-shell atlas-hub-shell--${view}`}>
+      <section className={`atlas-hub-main atlas-hub-main--${view}`}>
         <header className={`atlas-hub-header${isNavCompact ? ' is-compact' : ''}`}>
           <a className="atlas-hub-brand" href="/">
             <img src="/atlas-logo.png" alt="Atlas" />
@@ -1021,17 +1036,23 @@ function AppShell({
             })}
           </nav>
           <div className="atlas-hub-context">
-            <span className="atlas-user-orb" aria-hidden="true" />
+            <a href="/" className="atlas-nav-alert-badge" aria-label="Active alerts count">
+              <AlertCircle size={20} />
+              <span>{totalAlertsCount}</span>
+            </a>
+            <img src="/user-avatar.png" alt="User Avatar" className="atlas-user-avatar" />
           </div>
         </header>
         {children}
-        <AtlasCommandSurface
-          basePath={commandConfig.basePath}
-          className="atlas-global-command-surface"
-          examples={commandConfig.examples}
-          initialPrompt={commandPrompt}
-          placeholder={commandConfig.placeholder}
-        />
+        {!hideCommandSurface && (
+          <AtlasCommandSurface
+            basePath={commandConfig.basePath}
+            className="atlas-global-command-surface"
+            examples={commandConfig.examples}
+            initialPrompt={commandPrompt}
+            placeholder={commandConfig.placeholder}
+          />
+        )}
       </section>
     </main>
   );
@@ -1296,6 +1317,8 @@ function AtlasCommandSurface({
   const [status, setStatus] = useState('');
   const [isThinking, setIsThinking] = useState(false);
   const [quickAnswer, setQuickAnswer] = useState<AtlasQuickAnswer | null>(null);
+  const [isFocused, setIsFocused] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   function resetCommandSurface() {
@@ -1334,18 +1357,18 @@ function AtlasCommandSurface({
     if (!trimmed || isThinking) return;
     const href = scopedGeneratedViewHref(outputHrefForCommand(trimmed));
     const isOutput = href.startsWith('/generated-views') || href.startsWith('/atlas-output');
-    const pendingOutputTab = isOutput ? window.open('about:blank', '_blank') : null;
-    setIsThinking(true);
-    setQuickAnswer(null);
-    setStatus(isOutput ? 'ATLAS is checking the database and preparing the scenario output...' : 'ATLAS is checking the data and source memory...');
-    if (pendingOutputTab) {
-      pendingOutputTab.document.write('<!doctype html><title>ATLAS is preparing</title><body style="margin:0;font-family:Inter,Arial,sans-serif;background:#fff;color:#0b1f33;display:grid;min-height:100vh;place-items:center;"><div style="text-align:center;"><strong style="font-size:18px;">ATLAS is preparing your scenario output</strong><p style="color:#5f6f80;font-size:13px;">Checking the database and opening the evidence readout...</p></div></body>');
-      pendingOutputTab.document.close();
-    }
 
-    window.setTimeout(() => {
-      const answer = buildAtlasQuickAnswer(trimmed, basePath);
-      if (isOutput) {
+    // Report-generating commands → open generated-views in new tab (existing behavior)
+    if (isOutput) {
+      const pendingOutputTab = window.open('about:blank', '_blank');
+      setIsThinking(true);
+      setQuickAnswer(null);
+      setStatus('ATLAS is checking the database and preparing the scenario output...');
+      if (pendingOutputTab) {
+        pendingOutputTab.document.write('<!doctype html><title>ATLAS is preparing</title><body style="margin:0;font-family:Inter,Arial,sans-serif;background:#fff;color:#0b1f33;display:grid;min-height:100vh;place-items:center;"><div style="text-align:center;"><strong style="font-size:18px;">ATLAS is preparing your scenario output</strong><p style="color:#5f6f80;font-size:13px;">Checking the database and opening the evidence readout...</p></div></body>');
+        pendingOutputTab.document.close();
+      }
+      window.setTimeout(() => {
         setIsThinking(false);
         if (pendingOutputTab) {
           pendingOutputTab.location.href = href;
@@ -1354,46 +1377,81 @@ function AtlasCommandSurface({
         }
         setStatus('Popup blocked. Opening here...');
         window.location.href = href;
-        return;
-      }
-      setQuickAnswer(answer);
-      setIsThinking(false);
-      setStatus('Answer ready. Open the linked view for the full data.');
-    }, 650);
+      }, 650);
+      return;
+    }
+
+    // Conversational queries → navigate to /assistant with pre-filled prompt
+    window.location.href = `/assistant?prompt=${encodeURIComponent(trimmed)}`;
   }
 
   function stageExample(example: string) {
     if (isThinking) return;
     setPrompt(example);
-    setStatus('Prompt added. Adjust it or send when ready.');
+    setStatus('');
     inputRef.current?.focus();
   }
 
+  let activeState: 'Default' | 'Hover' | 'Focused' | 'Processing' = 'Default';
+  if (isThinking) {
+    activeState = 'Processing';
+  } else if (isFocused) {
+    activeState = 'Focused';
+  } else if (isHovered) {
+    activeState = 'Hover';
+  }
+
+  const showSuggestions = isFocused && !isThinking && examples.length > 0;
+
   return (
-    <section className={`atlas-command-surface${className ? ` ${className}` : ''}`} aria-label="Ask ATLAS">
-      <div>
-        <Sparkles size={16} />
-        <strong>Ask ATLAS</strong>
-        <span>Pull a scenario output, buyer read, source, or evidence packet from this page.</span>
-      </div>
+    <section 
+      className={`atlas-command-surface atlas-global-command-surface state-${activeState.toLowerCase()}${className ? ` ${className}` : ''}`} 
+      aria-label="Ask ATLAS"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      onClick={(e) => {
+        const target = e.target as HTMLElement;
+        if (!target.closest('button') && !target.closest('a')) {
+          inputRef.current?.focus();
+        }
+      }}
+    >
       <form onSubmit={(event) => {
         event.preventDefault();
         submit();
       }}>
-        <button type="button" className="voice" onClick={() => setStatus('Voice capture ready. Typed commands create the same scenario outputs in this POC.')} disabled={isThinking}><Mic size={14} /> Voice</button>
-        <input
-          ref={inputRef}
-          value={prompt}
-          onChange={(event) => setPrompt(event.target.value)}
-          placeholder={placeholder}
-          aria-label="Ask ATLAS for a scenario output"
-          disabled={isThinking}
-        />
-        <button type="submit" className="send" disabled={isThinking || !prompt.trim()}>
-          {isThinking ? <Loader2 size={14} /> : <Send size={14} />}
-          {isThinking ? 'Thinking' : 'Send'}
+        <div className={`atlas-command-input-wrapper${isFocused ? ' focused' : ''}`}>
+          <input
+            ref={inputRef}
+            value={prompt}
+            onChange={(event) => setPrompt(event.target.value)}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
+            placeholder={placeholder}
+            aria-label="Ask ATLAS for a scenario output"
+            disabled={isThinking}
+          />
+          <button 
+            type="button" 
+            className="voice" 
+            onClick={() => setStatus('Voice capture ready. Typed commands create the same scenario outputs in this POC.')} 
+            disabled={isThinking}
+            aria-label="Voice input"
+          >
+            <Mic size={16} />
+          </button>
+        </div>
+        
+        <button 
+          type="submit" 
+          className="send" 
+          disabled={isThinking || !prompt.trim()}
+          aria-label={isThinking ? 'Processing' : 'Send'}
+        >
+          {isThinking ? <Square size={14} className="stop-icon" /> : <Send size={14} />}
         </button>
       </form>
+      
       {quickAnswer ? (
         <article className="atlas-command-answer">
           <span>Answer</span>
@@ -1403,12 +1461,26 @@ function AtlasCommandSurface({
           <a href={quickAnswer.href} {...generatedOutputLinkProps(quickAnswer.href)}>{quickAnswer.actionLabel} <ArrowRight size={13} /></a>
         </article>
       ) : null}
-      <div className="atlas-command-surface-examples">
-        {examples.map((example) => (
-          <button type="button" key={example} onClick={() => stageExample(example)} disabled={isThinking}>{example}</button>
-        ))}
-      </div>
-      {status ? <p>{status}</p> : null}
+      
+      {showSuggestions && (
+        <div className="atlas-command-surface-examples">
+          {examples.map((example) => (
+            <button 
+              type="button" 
+              key={example} 
+              onMouseDown={(e) => {
+                e.preventDefault();
+                stageExample(example);
+              }}
+              disabled={isThinking}
+            >
+              {example}
+            </button>
+          ))}
+        </div>
+      )}
+      
+      {status ? <p className="atlas-command-status">{status}</p> : null}
     </section>
   );
 }
@@ -1755,10 +1827,9 @@ function scenarioSnapshotForAlert(alert: AtlasActiveAlert): TriageScenarioSnapsh
       href: scenarioHrefWithId(alert.modelHref, matchedScenario.id),
       metrics: [
         { label: 'Land', value: `${Math.round(matchedScenario.inputs.buyerAcceptanceProbability)}%` },
-        { label: 'NR', value: euros(matchedScenario.outputs.revenueImpact) },
-        { label: 'Guardrail', value: matchedScenario.outputs.riskLevel === 'high' ? 'Review' : 'Inside' }
+        { label: 'NR', value: euros(matchedScenario.outputs.revenueImpact) }
       ],
-      status: alert.alertTypeLabel === 'Scenario modeled' ? 'Scenario already modeled' : 'ATLAS ran scenario from alert',
+      status: 'AI-Scenario',
       title: matchedScenario.name,
       description: matchedScenario.outputs.recommendation
     };
@@ -1768,63 +1839,80 @@ function scenarioSnapshotForAlert(alert: AtlasActiveAlert): TriageScenarioSnapsh
     href: alert.modelHref,
     metrics: [
       { label: 'Land', value: alert.tone === 'critical' ? '58%' : alert.tone === 'watch' ? '64%' : '71%' },
-      { label: 'Value at stake', value: alert.value },
-      { label: 'Guardrail', value: alert.tone === 'critical' ? 'Review' : 'Inside' }
+      { label: 'NR', value: alert.value }
     ],
-    status: 'ATLAS ran scenario from alert',
-    title: alert.tone === 'critical' ? 'Counterstrategy needed' : 'Scenario impact modeled',
+    status: 'AI-Scenario',
+    title: alert.tone === 'critical' ? 'Counterstrategy Needed' : 'Scenario Impact Modeled',
     description: alert.action
   };
 }
 
 function TriageScenarioSnapshotCard({ snapshot }: { snapshot: TriageScenarioSnapshot }) {
   return (
-    <a className="atlas-triage-scenario-snapshot" href={snapshot.href}>
-      <span>{snapshot.status}</span>
-      <strong>{snapshot.title}</strong>
-      {snapshot.description ? <p>{snapshot.description}</p> : null}
-      <dl>
+    <div className="atlas-triage-scenario-snapshot">
+      <div className="atlas-triage-scenario-snapshot-head">
+        <span className="atlas-triage-snapshot-category">{snapshot.status.toUpperCase()}</span>
+      </div>
+      <div className="atlas-triage-snapshot-body">
+        <strong className="atlas-triage-snapshot-title">{snapshot.title}</strong>
+        {snapshot.description ? (
+          <p className="atlas-triage-snapshot-desc">{snapshot.description}</p>
+        ) : null}
+      </div>
+      <div className="atlas-triage-snapshot-kv-list">
         {snapshot.metrics.map((metric) => (
-          <div key={`${snapshot.title}-${metric.label}`}>
-            <dt>{metric.label}</dt>
-            <dd>{metric.value}</dd>
+          <div className="atlas-triage-snapshot-kv" key={`${snapshot.title}-${metric.label}`}>
+            <span>{metric.label}</span>
+            <span>{metric.value}</span>
           </div>
         ))}
-      </dl>
-      <em>Open modeled run <ArrowRight size={12} /></em>
-    </a>
+      </div>
+      <a className="atlas-triage-run-scenario-btn" href={snapshot.href}>
+        <Sparkles size={14} />
+        <span>Run Scenario</span>
+      </a>
+    </div>
   );
 }
 
 function triageCompletedActionsForAlert(alert: AtlasActiveAlert): TriageScenarioSnapshot[] {
-  const scenarioSnapshot = scenarioSnapshotForAlert(alert);
-  const scenarioActions = scenarioSnapshot ? [scenarioSnapshot] : [];
+  const scenarioSnapshot = scenarioSnapshotForAlert(alert) ?? {
+    href: alert.modelHref ?? `/scenario-lab?buyingGroup=${triageBuyingGroupIdForAlert(alert) ?? ''}`,
+    metrics: [
+      { label: 'Land', value: alert.tone === 'critical' ? '58%' : alert.tone === 'watch' ? '64%' : '71%' },
+      { label: 'NR', value: alert.value }
+    ],
+    status: 'AI-Scenario',
+    title: alert.tone === 'critical' ? 'Counterstrategy Needed' : 'Scenario Impact Modeled',
+    description: alert.action
+  };
+
   const buyerCountMetric = alert.metrics.find((metric) => /buyer/i.test(metric.label));
   const marketCountMetric = alert.metrics.find((metric) => /market/i.test(metric.label));
 
   return [
-    ...scenarioActions,
+    scenarioSnapshot,
     {
-      description: `ATLAS routed the trigger into the current ${alert.effectLabel?.toLowerCase() ?? 'scenario'} read so the team can see what changed before changing priority.`,
+      description: 'Atlas routed the trigger into the current scenario assumptions and updated the workspace.',
       href: alert.modelHref ?? alert.href,
       metrics: [
-        { label: 'Trigger', value: alert.trigger },
-        { label: buyerCountMetric?.label ?? 'Affected', value: buyerCountMetric?.value ?? alert.affected.split('·')[0]?.trim() ?? 'Review' }
+        { label: 'Trigger', value: alert.trigger.toLowerCase() },
+        { label: 'Buyers affected', value: buyerCountMetric?.value ?? alert.affected.split('·')[0]?.trim() ?? '1' }
       ],
-      status: 'Impact mapped',
-      title: 'Connected alert to negotiation impact'
+      status: 'Impact mapping',
+      title: 'Connected Alert to Negotiation Impact'
     },
     {
-      description: 'ATLAS checked the source trail and linked the alert to the evidence the CNO would need before acting.',
+      description: 'Atlas checked the source trail and linked the alert to the verified evidence ledger.',
       href: alert.href,
       metrics: [
         { label: 'Source', value: sourceDisplayName(alert.source) },
-        { label: marketCountMetric?.label ?? 'Confidence', value: marketCountMetric?.value ?? alert.source.confidence }
+        { label: 'Markets affected', value: marketCountMetric?.value ?? '1' }
       ],
       status: 'Evidence checked',
-      title: 'Prepared evidence trail'
+      title: 'Prepared Evidence Trail'
     }
-  ].slice(0, 3);
+  ];
 }
 
 function alertScopeForMarkets(marketIds: string[]) {
@@ -2286,6 +2374,7 @@ function TriageCommandCenter({
   return (
     <section className="atlas-triage-command-center atlas-triage-command-center-v2" aria-label="Negotiation command center">
       <header className="atlas-triage-page-header">
+        <div className="home-hero" aria-hidden="true" />
         <h1>Negotiation Command Center</h1>
         <p>Start with changes that could alter a buying group scenario: news, modeled risk, market patterns, and buyer memory.</p>
       </header>
@@ -2305,37 +2394,32 @@ function TriageCommandCenter({
                 }}
                 type="button"
               >
-                <strong>{scope.label}</strong>
-                <small>{scope.meta}</small>
+                <div>
+                  <strong>{scope.label}</strong>
+                  <small>{scope.meta}</small>
+                </div>
                 <em>{scope.alerts.length}</em>
               </button>
             ))}
           </nav>
         </aside>
 
-        <section className="atlas-triage-main-pane">
+        <section className="atlas-triage-main-pane" key={activeScope.id}>
           <header className="atlas-triage-feed-header">
-            <span>{activeScope.id === 'holistic' ? 'Holistic view' : activeScope.label}</span>
-          <strong className="atlas-triage-alert-count">{visibleAlerts.length} alerts</strong>
-          <p>{activeScope.id === 'holistic'
-            ? 'All buying group alerts ranked by scenario impact.'
-            : 'Review the alerts, history, and modeled risks that could change this buying group scenario.'}</p>
-        </header>
-
-        <div className="atlas-triage-brief-strip" aria-label="Triage summary">
-          <div>
-            <span>Needs action</span>
-            <strong>{criticalCount || visibleAlerts.length}</strong>
-          </div>
-          <div>
-            <span>Modeled exposure</span>
-            <strong>{euros(totalModeledValue)}</strong>
-          </div>
-          <div>
-            <span>Primary move</span>
-            <strong>Run scenario</strong>
-          </div>
-        </div>
+            <div className="atlas-triage-feed-header-left">
+              <div className="atlas-triage-feed-header-title-row">
+                <AlertCircle size={20} className="atlas-triage-alert-icon" />
+                <h2 className="atlas-triage-alert-count">{visibleAlerts.length} Alerts</h2>
+              </div>
+              <p>{activeScope.id === 'holistic'
+                ? 'All buying group alerts ranked by scenario impact.'
+                : 'Review the alerts, history, and modeled risks that could change this buying group scenario.'}</p>
+            </div>
+            <a href="/buying-groups" className="atlas-triage-view-buyers-btn">
+              <span>View Buying Groups</span>
+              <ArrowRight size={14} />
+            </a>
+          </header>
 
         <div className="atlas-triage-alert-list atlas-triage-alert-list-v2">
           {visibleAlerts.length ? visibleAlerts.map((alert, index) => {
@@ -2345,14 +2429,14 @@ function TriageCommandCenter({
             const buyingGroupId = triageBuyingGroupIdForAlert(alert);
             const buyingGroup = buyingGroupId ? getBuyingGroup(buyingGroupId) : undefined;
           return (
-              <article className={`atlas-triage-alert-row atlas-triage-alert-row-v2 tone-${alert.tone}`} key={alert.id}>
+              <article className={`atlas-triage-alert-row atlas-triage-alert-row-v2 tone-${alert.tone}${isExpanded ? ' is-expanded' : ''}`} key={alert.id}>
+                {/* Upper block: alert summary */}
                 <div className="atlas-triage-alert-main">
                   <div className="atlas-triage-alert-copy">
-                    <div className="atlas-triage-alert-eyebrow">
-                      <span>{String(index + 1).padStart(2, '0')}</span>
-                      <strong>{alert.alertTypeLabel}</strong>
+                    <div className="atlas-triage-alert-title-block">
+                      <p className="atlas-triage-alert-eyebrow-label">{alert.alertTypeLabel}</p>
+                      <h3>{alert.title}</h3>
                     </div>
-                    <h3>{alert.title}</h3>
                     <dl className="atlas-triage-row-metrics">
                       {alert.metrics.slice(0, 3).map((metric) => (
                         <div key={`${alert.id}-${metric.label}`}>
@@ -2361,56 +2445,59 @@ function TriageCommandCenter({
                         </div>
                       ))}
                     </dl>
-                    <div className="atlas-triage-alert-reaction">
-                      <span>How ATLAS reacted</span>
-                      <strong>{alert.action}</strong>
-                    </div>
-                    <div className="atlas-triage-alert-cta-row" aria-label={`${alert.title} actions`}>
-                      <a className="atlas-triage-alert-primary-cta" href={atlasAction.href}>
-                        {atlasAction.label} <ArrowRight size={13} />
-                      </a>
-                      <a className="atlas-triage-alert-secondary-cta" href={buyingGroupId ? `/buying-groups/${buyingGroupId}?view=current` : '/buying-groups'}>
-                        {buyingGroup ? `Open ${buyingGroup.name}` : 'Open buying groups'} <ArrowRight size={13} />
-                      </a>
+                  </div>
+                  <button
+                    className="atlas-triage-chevron-btn"
+                    aria-label={`${isExpanded ? 'Collapse' : 'Expand'} ${alert.title}`}
+                    aria-expanded={isExpanded}
+                    onClick={() => setExpandedAlertId(isExpanded ? null : alert.id)}
+                    type="button"
+                  >
+                    {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                  </button>
+                </div>
+
+                {/* Lower block: Atlas reaction row (always visible) */}
+                <div className="atlas-triage-alert-footer-row">
+                  <div className="atlas-triage-alert-reaction-info">
+                    <img src="/images/backgrounds/isotope_orbs 1.png" alt="Atlas" className="atlas-triage-reaction-logo" />
+                    <div className="atlas-triage-reaction-text">
+                      <span>Atlas Reaction:</span>
+                      <span>{alert.action}</span>
                     </div>
                   </div>
-                  <div className="atlas-triage-alert-actions">
-                    <button
-                      aria-label={`${isExpanded ? 'Collapse' : 'Expand'} ${alert.title}`}
-                      aria-expanded={isExpanded}
-                      onClick={() => setExpandedAlertId(isExpanded ? null : alert.id)}
-                      type="button"
-                    >
-                      <ChevronDown size={20} />
-                    </button>
+                  <div className="atlas-triage-alert-cta-row">
+                    <a className="atlas-triage-alert-secondary-cta" href={buyingGroupId ? `/buying-groups/${buyingGroupId}?view=current` : '/buying-groups'}>
+                      {buyingGroup ? `Open ${buyingGroup.name}` : 'Open buying groups'}
+                    </a>
+                    <a className="atlas-triage-alert-primary-cta" href={atlasAction.href}>
+                      {atlasAction.label} <ArrowRight size={13} />
+                    </a>
                   </div>
                 </div>
-                {isExpanded ? (
-                  <section className="atlas-triage-alert-detail">
-                    <div className="atlas-triage-alert-detail-copy">
-                      <div>
-                        <span>Why it matters</span>
-                        <p>{alert.possibleEffect}</p>
+
+                {/* Expanded: AI work cards */}
+                <div className="atlas-triage-alert-detail-wrapper">
+                  <div className="atlas-triage-alert-detail-inner">
+                    <section className="atlas-triage-alert-detail">
+                      <div className="atlas-triage-alert-detail-copy">
+                        <div>
+                          <span>Why it matters</span>
+                          <p>{alert.possibleEffect}</p>
+                        </div>
+                        <div>
+                          <span>Dig deeper</span>
+                          <p>{sourceDisplayName(alert.source)} · {formatAtlasDate(alert.source.sourceDate, { includeYear: true })} · {alert.source.confidence} confidence</p>
+                        </div>
                       </div>
-                      <div>
-                        <span>Dig deeper</span>
-                        <p>{sourceDisplayName(alert.source)} · {formatAtlasDate(alert.source.sourceDate, { includeYear: true })} · {alert.source.confidence} confidence</p>
-                      </div>
-                    </div>
-                    <div className="atlas-triage-completed-actions" aria-label="ATLAS completed work">
-                      <span>ATLAS completed</span>
-                      <div>
+                      <div className="atlas-triage-completed-actions" aria-label="ATLAS completed work">
                         {triageCompletedActionsForAlert(alert).map((snapshot) => (
                           <TriageScenarioSnapshotCard key={`${alert.id}-${snapshot.status}-${snapshot.title}`} snapshot={snapshot} />
                         ))}
                       </div>
-                    </div>
-                  </section>
-                ) : null}
-                <footer className="atlas-triage-alert-footer">
-                  <span>{sourceDisplayName(alert.source)}</span>
-                  {!scenarioSnapshot ? <a href={alert.modelHref ?? alert.href}>Run scenario <ArrowRight size={13} /></a> : null}
-                </footer>
+                    </section>
+                  </div>
+                </div>
               </article>
             );
           }) : (
@@ -4226,6 +4313,48 @@ function PepsiCoImpactWorkspace() {
   );
 }
 
+function AnimatedStatCounter({ target, suffix = '' }: { target: number; suffix?: string }) {
+  const [count, setCount] = useState(0);
+  const [isVisible, setIsVisible] = useState(false);
+  const ref = useRef<HTMLSpanElement>(null);
+
+  useEffect(() => {
+    const element = ref.current;
+    if (!element) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.1 }
+    );
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!isVisible) return;
+    let startTimestamp: number | null = null;
+    const duration = 1000;
+    const step = (timestamp: number) => {
+      if (!startTimestamp) startTimestamp = timestamp;
+      const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+      const easeProgress = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress);
+      setCount(Math.floor(easeProgress * target));
+      if (progress < 1) {
+        requestAnimationFrame(step);
+      } else {
+        setCount(target);
+      }
+    };
+    requestAnimationFrame(step);
+  }, [isVisible, target]);
+
+  return <span ref={ref}>{count}{suffix}</span>;
+}
+
 function OverviewBriefingCanvas({ generatedView, initialPrompt }: { generatedView: string; initialPrompt?: string }) {
   const generatedReadIsRequested = Boolean(initialPrompt && generatedView !== 'focus');
   const externalAlertSignals = packet.signals
@@ -4253,11 +4382,40 @@ function OverviewBriefingCanvas({ generatedView, initialPrompt }: { generatedVie
       why: alert.possibleEffect
   }));
   return (
-    <section className="atlas-overview-v3" aria-label="Europe overview briefing">
-      <TriageCommandCenter alerts={overviewAlerts} items={overviewScenarioEntries} />
+    <>
+      <section className="atlas-overview-v3" aria-label="Europe overview briefing">
+        <TriageCommandCenter alerts={overviewAlerts} items={overviewScenarioEntries} />
 
-      {generatedReadIsRequested ? <OverviewGeneratedRead ask={initialPrompt} view={generatedView} /> : null}
-    </section>
+        {generatedReadIsRequested ? <OverviewGeneratedRead ask={initialPrompt} view={generatedView} /> : null}
+      </section>
+
+      <footer className="atlas-triage-intelligence-library-footer" aria-label="Intelligence library summary">
+        <div className="atlas-triage-library-inner">
+          <div className="atlas-triage-library-left">
+            <span className="atlas-triage-library-eyebrow">Intelligence Library</span>
+            <h2><AnimatedStatCounter target={64} suffix="+" /> records to validate sources, approve memory, and audit prediction confidence.</h2>
+            <a href="/intelligence" className="atlas-triage-view-buyers-btn">
+              <span>Go to Intelligence Library</span>
+              <ArrowRight size={14} />
+            </a>
+          </div>
+          <div className="atlas-triage-library-right">
+            <div className="atlas-triage-stat-card">
+              <h2><AnimatedStatCounter target={64} /></h2>
+              <span>Records</span>
+            </div>
+            <div className="atlas-triage-stat-card">
+              <h2><AnimatedStatCounter target={11} /></h2>
+              <span>high confidence records.</span>
+            </div>
+            <div className="atlas-triage-stat-card">
+              <h2><AnimatedStatCounter target={27} /></h2>
+              <span>Source Watchouts</span>
+            </div>
+          </div>
+        </div>
+      </footer>
+    </>
   );
 }
 
@@ -4550,19 +4708,7 @@ function EuropeOverview({ initialGeneratedView, initialMonitorTab, initialPrompt
   const generatedView = initialGeneratedView || inferGeneratedView(initialPrompt || initialMonitorTab, 'focus');
 
   return (
-    <>
-      <OverviewBriefingCanvas generatedView={generatedView} initialPrompt={initialPrompt} />
-      <AtlasCommandSurface
-        basePath="/"
-        examples={[
-          'What changed across Europe this week?',
-          'Which alerts should I model first?',
-          'What scenario risk changed?'
-        ]}
-        initialPrompt={initialPrompt}
-        placeholder="Ask for alert impact, scenario risk, source gap, or a modeled read..."
-      />
-    </>
+    <OverviewBriefingCanvas generatedView={generatedView} initialPrompt={initialPrompt} />
   );
 }
 
@@ -5471,38 +5617,14 @@ function MarketsView({
 
   if (market) {
     return (
-      <>
-        <AtlasCommandSurface
-          basePath={`/markets/${market.id}`}
-          examples={[
-            `Where is ${market.name} losing money?`,
-            `Which buyers in ${market.name} need attention?`,
-            `Show ${market.name} competitor pressure`
-          ]}
-          initialPrompt={initialPrompt}
-          placeholder={`Ask for ${market.name} buyer risk, margin exposure, offset potential, or external pressure...`}
-        />
-        <MarketDetailRead initialPrompt={initialPrompt} market={market} view={initialGeneratedView} />
-      </>
+      <MarketDetailRead initialPrompt={initialPrompt} market={market} view={initialGeneratedView} />
     );
   }
 
   const markets = filterMarketsForAsk(sortMarkets(packet.markets, initialSort), initialPrompt);
 
   return (
-    <>
-      <MarketsBriefingCanvas activeSort={initialSort} initialPrompt={initialPrompt} markets={markets} />
-      <AtlasCommandSurface
-        basePath="/markets"
-        examples={[
-          'Where am I losing money by market?',
-          'Which market can absorb pressure?',
-          'Show markets with high trade spend exposure'
-        ]}
-        initialPrompt={initialPrompt}
-        placeholder="Ask for market pressure, offset potential, margin risk, or trade spend exposure..."
-      />
-    </>
+    <MarketsBriefingCanvas activeSort={initialSort} initialPrompt={initialPrompt} markets={markets} />
   );
 }
 
@@ -12181,16 +12303,6 @@ function DocumentsView({ initialPrompt }: { initialPrompt?: string }) {
           { label: 'Generated artifacts', value: String(generated.length) }
         ]}
       />
-      <AtlasCommandSurface
-        basePath="/intelligence"
-        examples={[
-          'Retrieve prior-year EDEKA debrief',
-          'Show stale prep documents',
-          'Find documents for Carrefour'
-        ]}
-        initialPrompt={initialPrompt}
-        placeholder="Ask to retrieve debriefs, prep documents, source gaps, or scenario outputs..."
-      />
       <MemoryDecisionPanel documents={packet.documents} events={packet.latestTimelineEvents} />
       <section className="atlas-hub-section">
         <SectionTitle title="Document library" />
@@ -12218,16 +12330,6 @@ function TimelineView({ initialPrompt }: { initialPrompt?: string }) {
           { label: 'Validation watchouts', value: String(validationEvents.length), tone: 'watch' }
         ]}
       />
-      <AtlasCommandSurface
-        basePath="/intelligence"
-        examples={[
-          'Show debriefs needing validation',
-          'Show recent live outputs',
-          'Find Carrefour history'
-        ]}
-        initialPrompt={initialPrompt}
-        placeholder="Ask for debriefs, stale assumptions, scenario decisions, or buying-group history..."
-      />
       <TimelineDecisionPanel events={packet.latestTimelineEvents} />
       <section className="atlas-hub-section">
         <SectionTitle title="Source-of-truth event memory" />
@@ -12250,16 +12352,6 @@ function SignalsView({ initialPrompt }: { initialPrompt?: string }) {
           { label: 'Affected markets', value: String(new Set(packet.signals.flatMap((signal) => signal.affectedMarkets)).size) },
           { label: 'Affected buyers', value: String(new Set(packet.signals.flatMap((signal) => signal.affectedBuyingGroups)).size) }
         ]}
-      />
-      <AtlasCommandSurface
-        basePath="/signals"
-        examples={[
-          'What changed across Europe this week?',
-          'Show signals affecting Carrefour',
-          'Which signals affect margin risk?'
-        ]}
-        initialPrompt={initialPrompt}
-        placeholder="Ask for signal impact, affected buyers, source freshness, or financial implication..."
       />
       <ActiveAlertsPanel
         alerts={packet.signals.map(signalToAlert)}
@@ -12284,16 +12376,6 @@ function CompetitorsView({ initialPrompt }: { initialPrompt?: string }) {
           { label: 'Competitor moves', value: String(packet.competitorMoves.length) },
           { label: 'Affected buyers', value: String(new Set(packet.competitorMoves.flatMap((move) => move.affectedBuyingGroups)).size) }
         ]}
-      />
-      <AtlasCommandSurface
-        basePath="/signals"
-        examples={[
-          'Find competitor moves affecting Carrefour',
-          'Show private label leverage',
-          'Which buyers can use competitor pressure?'
-        ]}
-        initialPrompt={initialPrompt}
-        placeholder="Ask for competitor leverage, affected buyers, or PepsiCo financial implication..."
       />
       <ActiveAlertsPanel
         alerts={packet.competitorMoves.map(competitorToAlert)}
@@ -12533,16 +12615,6 @@ function SourceDatabaseView({ initialPrompt }: { initialPrompt?: string }) {
           { label: 'High confidence', value: String(highConfidenceRows.length), tone: 'good' },
           { label: 'Source watchouts', value: String(sourceWatchouts.length), tone: 'watch' }
         ]}
-      />
-      <AtlasCommandSurface
-        basePath="/intelligence"
-        examples={[
-          'Show stale source records',
-          'Find source links for Carrefour',
-          'Show prediction accuracy records'
-        ]}
-        initialPrompt={initialPrompt}
-        placeholder="Ask for memory, debriefs, prediction accuracy, sources, confidence, or approval status..."
       />
       <MemoryDecisionPanel documents={packet.documents} events={packet.latestTimelineEvents} title="Library control read" />
       <section className="atlas-source-governance-summary" aria-label="Source governance summary">
