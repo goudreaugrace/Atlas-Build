@@ -69212,6 +69212,9 @@ html body main.atlas-hub-shell .atlas-hub-main .atlas-triage-workspace {
 
 /* Sidebar — Panel/Regular, bg #dfe8f2 */
 html body main.atlas-hub-shell .atlas-hub-main .atlas-triage-side-nav {
+  position: sticky !important;
+  top: 96px !important;
+  z-index: 10 !important;
   background-color: #dfe8f2 !important;
   border: 1px solid #d9dadb !important;
   border-radius: 24px !important;
@@ -69675,6 +69678,29 @@ html body main.atlas-hub-shell .atlas-hub-main .atlas-triage-alert-primary-cta {
   padding: 8px 16px !important;
   text-decoration: none !important;
   white-space: nowrap !important;
+  position: relative !important;
+  z-index: 1 !important;
+  overflow: hidden !important;
+  transition: box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s ease !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-triage-alert-primary-cta::before {
+  content: "" !important;
+  position: absolute !important;
+  inset: 0 !important;
+  background: linear-gradient(189deg, #0A63C2 57.58%, #88B429 123.75%) !important;
+  z-index: -1 !important;
+  opacity: 0 !important;
+  transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-triage-alert-primary-cta:hover {
+  box-shadow: 0 0 16px rgba(10, 99, 194, 0.6) !important;
+  transform: translateY(-1px) !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-triage-alert-primary-cta:hover::before {
+  opacity: 1 !important;
 }
 
 /* Expanded detail section — Gradient-01 bg with 3 AI panels */
@@ -69867,9 +69893,32 @@ html body main.atlas-hub-shell .atlas-hub-main .atlas-triage-run-scenario-btn {
   line-height: 22px !important;
   padding: 8px 16px !important;
   text-decoration: none !important;
-  transition: background-color .14s ease !important;
   white-space: nowrap !important;
   margin-top: auto !important;
+  position: relative !important;
+  z-index: 1 !important;
+  overflow: hidden !important;
+  transition: box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s ease, color 0.3s ease, transform 0.2s ease !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-triage-run-scenario-btn::before {
+  content: "" !important;
+  position: absolute !important;
+  inset: 0 !important;
+  background: linear-gradient(135deg, rgba(235, 159, 10, 0.08) 0%, rgba(235, 159, 10, 0.02) 100%) !important;
+  z-index: -1 !important;
+  opacity: 0 !important;
+  transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-triage-run-scenario-btn:hover {
+  box-shadow: 0 0 12px rgba(235, 159, 10, 0.4) !important;
+  border-color: #eb9f0a !important;
+  transform: translateY(-1px) !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-triage-run-scenario-btn:hover::before {
+  opacity: 1 !important;
 }
 
 /* Responsive breakpoints for Triage */

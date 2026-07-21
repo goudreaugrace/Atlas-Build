@@ -972,10 +972,7 @@ export function AppShell({
   const commandConfig = hubCommandConfig({ buyingGroupId, marketId, view });
   
   const totalAlertsCount = useMemo(() => {
-    const externalAlertsCount = packet.signals.length;
-    const scenarioAlertsCount = packet.scenarioModels.length;
-    const patternAlertsCount = packet.crossMarketPatterns.length;
-    return externalAlertsCount + scenarioAlertsCount + patternAlertsCount;
+    return computeTotalTriageAlertsCount();
   }, []);
 
   const primaryNav = [
@@ -2291,12 +2288,30 @@ function triageAlertsForBuyingGroup(group: BuyingGroup) {
     .slice(0, 1)
     .map(patternToAlert);
 
-  return [
+  const rawAlerts = [
     buyingGroupToAlert(group),
     ...groupSignals,
     ...groupScenarios,
     ...groupPatterns
   ];
+
+  return rawAlerts.map((alert) => ({
+    ...alert,
+    id: `${group.id}-${alert.id}`
+  }));
+}
+
+function computeTotalTriageAlertsCount() {
+  const mvpBuyingGroups = [...packet.buyingGroups]
+    .sort((a, b) => riskRank(b.riskLevel) - riskRank(a.riskLevel) || b.financialExposure.marginAtRisk - a.financialExposure.marginAtRisk)
+    .slice(0, 4);
+
+  const groupScopes = mvpBuyingGroups.map((group) => ({
+    alerts: triageAlertsForBuyingGroup(group)
+  }));
+
+  const holisticAlerts = groupScopes.flatMap((scope) => scope.alerts);
+  return holisticAlerts.length;
 }
 
 function ScenarioEntryQueue({
@@ -2349,19 +2364,24 @@ function TriageCommandCenter({
   const mvpBuyingGroups = [...packet.buyingGroups]
     .sort((a, b) => riskRank(b.riskLevel) - riskRank(a.riskLevel) || b.financialExposure.marginAtRisk - a.financialExposure.marginAtRisk)
     .slice(0, 4);
+
+  const groupScopes = mvpBuyingGroups.map((group) => ({
+    id: group.id,
+    label: group.name,
+    meta: group.primaryMarkets.map((marketId) => getMarket(marketId)?.name ?? marketId).join(' / '),
+    alerts: triageAlertsForBuyingGroup(group)
+  }));
+
+  const holisticAlerts = groupScopes.flatMap((scope) => scope.alerts);
+
   const triageScopes = [
     {
       id: 'holistic',
       label: 'All alerts',
       meta: 'Holistic view',
-      alerts
+      alerts: holisticAlerts
     },
-    ...mvpBuyingGroups.map((group) => ({
-      id: group.id,
-      label: group.name,
-      meta: group.primaryMarkets.map((marketId) => getMarket(marketId)?.name ?? marketId).join(' / '),
-      alerts: triageAlertsForBuyingGroup(group)
-    }))
+    ...groupScopes
   ];
   const activeScope = triageScopes.find((scope) => scope.id === activeScopeId) ?? triageScopes[0];
   const visibleAlerts = activeScope.alerts.filter((alert) => !dismissedAlertIds.includes(alert.id));
@@ -2383,24 +2403,27 @@ function TriageCommandCenter({
         <aside className="atlas-triage-side-nav" aria-label="Triage views">
           <span>View by</span>
           <nav>
-            {triageScopes.map((scope) => (
-              <button
-                aria-current={scope.id === activeScope.id ? 'page' : undefined}
-                className={scope.id === activeScope.id ? 'is-active' : ''}
-                key={scope.id}
-                onClick={() => {
-                  setActiveScopeId(scope.id);
-                  setExpandedAlertId(null);
-                }}
-                type="button"
-              >
-                <div>
-                  <strong>{scope.label}</strong>
-                  <small>{scope.meta}</small>
-                </div>
-                <em>{scope.alerts.length}</em>
-              </button>
-            ))}
+            {triageScopes.map((scope) => {
+              const scopeVisibleCount = scope.alerts.filter((alert) => !dismissedAlertIds.includes(alert.id)).length;
+              return (
+                <button
+                  aria-current={scope.id === activeScope.id ? 'page' : undefined}
+                  className={scope.id === activeScope.id ? 'is-active' : ''}
+                  key={scope.id}
+                  onClick={() => {
+                    setActiveScopeId(scope.id);
+                    setExpandedAlertId(null);
+                  }}
+                  type="button"
+                >
+                  <div>
+                    <strong>{scope.label}</strong>
+                    <small>{scope.meta}</small>
+                  </div>
+                  <em>{scopeVisibleCount}</em>
+                </button>
+              );
+            })}
           </nav>
         </aside>
 
