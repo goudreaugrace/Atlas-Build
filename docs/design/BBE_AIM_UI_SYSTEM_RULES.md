@@ -32,9 +32,9 @@ Do not add parallel `--aim-*` runtime tokens unless the app later creates a form
 
 ## Typography
 
-- Display: Barlow Condensed, heavy, for page titles, slide titles, major numbers, and key verdicts.
-- Body: DM Sans for explanations, controls, proof, and metadata.
-- Mono: JetBrains Mono only for technical ids, manifests, source keys, or audit details.
+- Display: Libre Franklin for structural headings and page titles (H1-H4, page-heading).
+- Body: Inter for body paragraphs, data grids, inputs, metadata, controls, and eyebrow labels (H5).
+- Mono: SFMono-Regular / JetBrains Mono only for technical IDs, manifests, source keys, or audit details.
 
 Do not use hero-scale display type inside compact cards or proof drawers.
 

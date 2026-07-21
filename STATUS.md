@@ -1,6 +1,20 @@
 # STATUS.md
 
-## Current state
+2026-07-20 Atlas Command Surface Refactor & Polish:
+- Fixed overlapping component issue caused by duplicate `<AtlasCommandSurface>` elements rendered in child views (`EuropeOverview`, `MarketsView`, `MemoryView`, `TimelineView`, `SignalsView`, `CompetitorsView`, `CrossMarketPatternsView`) alongside the global layout wrapper shell; removed redundant child calls so only one instance is active.
+- Added smooth CSS3 cubic-bezier transitions (`background-color`, `border-color`, `box-shadow`, `transform`) between default and focused states on the command surface card and input wrapper.
+- Changed focused/expanded state to activate on click/focus rather than mouse hover; hover now exclusively adjusts background opacity to 85% without triggering container or suggestion chip expansion.
+- Fixed default state placeholder text overlap and cleaned up input wrapper styles.
+- Updated `GeneratedViewClient` chat aside to remain in-flow without jumping into the fixed global command bar.
+- Verification passed: Next.js Turbopack build succeeds with zero errors across all routes.
+- Integrated Figma design tokens from DESIGN.md and aligned colors, radiuses, gradients, and font families (Inter and Libre Franklin) globally.
+- Matched global navigation header copy, round avatar icon (`/user-avatar.png`), and badge counts to match the Figma mockup (`node-id=112-1571`), preserving the scroll-shrink effect.
+- Overhauled the `atlas-command-surface` input bar into a React-controlled Card container supporting Default, Hover, Focused, and Processing states, with dynamic actions and suggested chips aligned to figma styles (`node-id=56-3212`).
+- Rescaled the Home/Triage command center into a dual-column layout (321px sidebar on left, 1011px main feed on right), complete with Gradient-01 headers, absolute home-hero graphic, custom sidebar scoped list, and 'View Buying Groups' CTA button (`node-id=112-1462`).
+- Matched collapsible triage alert row accordions (`.atlas-triage-alert-row-v2`) with solid background, custom metrics row tables, and Gradient-01 details section matching Figma design specs (`node-id=119-670`).
+- Debugged Triage page whitespace and aligned page height, setting hero banner background at absolute top of viewport (`top: 0`).
+- Unified global floating glassmorphic navigation layouts across all views, cleaning up conflicting legacy height and link stretch properties to ensure vertical symmetry and locking link sizes to a consistent 12px font-size.
+- Verification passed: All routes and static pages compile successfully with Next.js Turbopack build and zero TypeScript errors.
 
 Package generated as a fresh Codex-ready starter.
 

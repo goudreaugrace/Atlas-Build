@@ -98,10 +98,15 @@
 - [x] Document the BBE/AIM UI migration PRD, plan, and runtime design rules before broader UI migration.
 - [x] Add the first BBE/AIM presentational primitive layer and migrate only the CMO Review Intelligence Asset to it with smart prompts, proof cards, punchline bands, and targeted micro-moments.
 - [x] Add the BBE/AIM UI adoption layer for future work: surface classification, primitive usage docs, barrel exports, font-loading rules, proof/caveat visibility requirements, and desktop/mobile browser QA checklist.
+- [x] Align global styling and CSS tokens with the DESIGN.md Figma SSOT visual identity guidelines, remap core variables, and establish panel/typography baseline classes without visual regressions.
 - [x] Migrate the Evidence Read / Insights Proof Pack as the first broader BBE/AIM work-surface test while preserving the existing evidence model and governance computation.
 - [x] Migrate the Treatment Read as the second broader BBE/AIM work-surface test while preserving the existing treatment model and recommendation computation.
 - [x] Migrate the Executive QBR as the third broader BBE/AIM work-surface test while preserving the existing QBR model and composition computation.
 - [x] Migrate the Brand Work Shelf as the fourth broader BBE/AIM work-surface test while preserving the existing Brand Work Item retrieval/persistence model.
+- [x] Align application visual shell layout, buttons, avatar, and navigation links with Figma Mockups (`node-id=112-1571`).
+- [x] Overhaul the AgentBox command surface (`atlas-command-surface`) to support active hover/focused states, 88% focus opacity, fixed single-instance layout, and dynamic chips (`node-id=56-3212`).
+- [x] Align Triage Command Center split view, Gradient-01 header, home-hero image overlay, and View Buying Groups CTA (`node-id=112-1462`).
+- [x] Integrate collapsed/expanded Figma designs for Triage Alert Row Accordions (`node-id=119-670`).
 - [x] Start BBE/AIM Phase 4 cleanup by consolidating repeated reading-artifact authority hero and fact-strip CSS after the pattern proved across QBR, Evidence Read, Treatment Read, CMO Review, and the Work Shelf.
 - [x] Add shared render-only work-detail helpers for repeated artifact sections, approved-view blocks, and governance disclosures across QBR, Evidence Read, and Treatment Read.
 - [x] Add the first asset-aware follow-up loop so work-detail pages pass `workId` into Jarvis/Assistant, the server reloads the active work item, and proof/revision/source-owner/Kate-Lydia follow-ups stay inside the asset proof contract.
