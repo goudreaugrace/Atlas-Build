@@ -7628,9 +7628,11 @@
   max-height: min(420px, calc(100vh - 110px));
   overflow-y: auto;
   padding: 8px;
-  border: 1px solid #dbe5ee;
+  border: 1px solid rgba(255, 255, 255, 0.6);
   border-radius: 14px;
-  background: #ffffff;
+  background: rgba(245, 245, 245, 0.72) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
   box-shadow: 0 20px 48px rgba(16, 42, 67, .16);
   opacity: 0;
   pointer-events: none;
@@ -63061,7 +63063,6 @@ summary {
   color: var(--md-sys-color-on-primary-container) !important;
 }
 
-.atlas-nav-dropdown,
 .atlas-source-drawer,
 .atlas-news-dismiss-modal {
   background: var(--md-sys-color-surface-container-lowest) !important;
@@ -69028,11 +69029,13 @@ html body main.atlas-hub-shell .atlas-hub-main {
 }
 
 /* Dropdown menus from nav */
-html body main.atlas-hub-shell .atlas-nav-dropdown {
-  background: rgba(245, 245, 245, 0.96) !important;
-  backdrop-filter: blur(16px) !important;
-  -webkit-backdrop-filter: blur(16px) !important;
-  border: 1px solid #e0e3e9 !important;
+html body main.atlas-hub-shell .atlas-nav-dropdown,
+html body .atlas-nav-dropdown,
+.atlas-nav-dropdown {
+  background: rgba(245, 245, 245, 0.72) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.6) !important;
   border-radius: 20px !important;
   box-shadow: 0 12px 32px rgba(60, 64, 67, .14) !important;
   display: none !important;
@@ -69052,7 +69055,7 @@ html body main.atlas-hub-shell .atlas-primary-nav-item.has-menu:focus-within .at
 }
 
 html body main.atlas-hub-shell .atlas-nav-dropdown a {
-  align-items: center !important;
+  align-items: flex-start !important;
   border-radius: 16px !important;
   color: #31373d !important;
   display: flex !important;
@@ -71696,5 +71699,71 @@ html body main.atlas-hub-shell .atlas-asst-input-text-container,
   left: 30%;
   animation: atlasAsstOrbPanTeal 25s cubic-bezier(0.4, 0, 0.2, 1) infinite;
   animation-delay: -8s;
+}
+
+/* Buyers Page Updates */
+html body main.atlas-hub-shell .atlas-hub-main .atlas-buyer-triage-table-wrap,
+.atlas-buyer-triage-table-wrap {
+  padding: 24px !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-buyer-list-head,
+html body main.atlas-hub-shell .atlas-hub-main .atlas-buyer-list-head-multi,
+html body main.atlas-hub-shell .atlas-hub-main .atlas-buyer-list-shell,
+.atlas-buyer-list-head,
+.atlas-buyer-list-head-multi,
+.atlas-buyer-list-shell {
+  max-width: 1380px !important;
+  width: 100% !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-buyer-list-shell,
+.atlas-buyer-list-shell {
+  padding-top: clamp(12px, 4vw, 12px) !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-buyer-list-head,
+html body main.atlas-hub-shell .atlas-hub-main .atlas-buyer-list-head-multi,
+.atlas-buyer-list-head,
+.atlas-buyer-list-head-multi {
+  background-color: #080f1a !important;
+  background-image: url('/images/backgrounds/home-hero.png'), linear-gradient(135deg, #0563C7 0%, #080F1A 100%) !important;
+  background-size: cover, cover !important;
+  background-position: center center !important;
+  background-repeat: no-repeat, no-repeat !important;
+  border-radius: 24px !important;
+  padding: 64px 36px !important;
+  margin-bottom: 24px !important;
+  color: #ffffff !important;
+  box-shadow: 0 12px 32px rgba(8, 15, 26, 0.16) !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-buyer-list-head h1,
+html body main.atlas-hub-shell .atlas-hub-main .atlas-buyer-list-head-multi h1,
+.atlas-buyer-list-head h1,
+.atlas-buyer-list-head-multi h1 {
+  color: #ffffff !important;
+  font-family: var(--font-display), "Libre Franklin", sans-serif !important;
+  font-weight: 500 !important;
+  letter-spacing: -0.8px !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-buyer-list-head p,
+html body main.atlas-hub-shell .atlas-hub-main .atlas-buyer-list-head-multi p,
+.atlas-buyer-list-head p,
+.atlas-buyer-list-head-multi p {
+  color: rgba(255, 255, 255, 0.88) !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-buyer-list-head .atlas-buyer-header-kicker,
+html body main.atlas-hub-shell .atlas-hub-main .atlas-buyer-list-head-multi .atlas-buyer-header-kicker,
+.atlas-buyer-list-head .atlas-buyer-header-kicker,
+.atlas-buyer-list-head-multi .atlas-buyer-header-kicker {
+  background: rgba(255, 255, 255, 0.16) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.25) !important;
+  backdrop-filter: blur(12px) !important;
 }
 

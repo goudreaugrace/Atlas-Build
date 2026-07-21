@@ -54,10 +54,10 @@ interface Conversation {
 // Seeded past conversations (pre-populated history)
 // ---------------------------------------------------------------------------
 
+const SEED_BASE_TIME = new Date('2026-07-21T12:00:00.000Z').getTime();
+
 function makeSeedDate(hoursAgo: number): Date {
-  const d = new Date();
-  d.setHours(d.getHours() - hoursAgo);
-  return d;
+  return new Date(SEED_BASE_TIME - hoursAgo * 3600000);
 }
 
 function makeSeedConv(id: string, userText: string, atlasText: string, hoursAgo: number, reportCard?: ReportCard): Conversation {
@@ -213,12 +213,15 @@ function generateId(): string {
 }
 
 function formatTime(date: Date): string {
-  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const hours = date.getUTCHours();
+  const minutes = String(date.getUTCMinutes()).padStart(2, '0');
+  const hour12 = hours % 12 || 12;
+  const period = hours >= 12 ? 'PM' : 'AM';
+  return `${hour12}:${minutes} ${period}`;
 }
 
 function formatConversationDate(date: Date): string {
-  const now = new Date();
-  const diff = now.getTime() - date.getTime();
+  const diff = SEED_BASE_TIME - date.getTime();
   const mins = Math.floor(diff / 60000);
   if (mins < 1) return 'Just now';
   if (mins < 60) return `${mins}m ago`;
@@ -227,7 +230,8 @@ function formatConversationDate(date: Date): string {
   const days = Math.floor(hrs / 24);
   if (days === 1) return 'Yesterday';
   if (days < 7) return `${days}d ago`;
-  return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  return `${monthNames[date.getUTCMonth()]} ${date.getUTCDate()}`;
 }
 
 function deriveConversationTitle(messages: Message[]): string {
@@ -327,8 +331,12 @@ function MessageBubble({ message }: { message: Message }) {
 }
 
 function DefaultState({ onPrompt }: { onPrompt: (p: string) => void }) {
-  const hour = new Date().getHours();
-  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+  const [greeting, setGreeting] = useState('Good afternoon');
+
+  useEffect(() => {
+    const hour = new Date().getHours();
+    setGreeting(hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening');
+  }, []);
 
   return (
     <div className="atlas-asst-default-state">
@@ -490,12 +498,12 @@ export function AssistantClient({ initialPrompt = '' }: { initialPrompt?: string
   }
 
   // Group conversations by recency
-  const todayConvs = conversations.filter((c) => new Date().getTime() - c.updatedAt.getTime() < 86400000);
+  const todayConvs = conversations.filter((c) => SEED_BASE_TIME - c.updatedAt.getTime() < 86400000);
   const yesterdayConvs = conversations.filter((c) => {
-    const diff = new Date().getTime() - c.updatedAt.getTime();
+    const diff = SEED_BASE_TIME - c.updatedAt.getTime();
     return diff >= 86400000 && diff < 172800000;
   });
-  const earlierConvs = conversations.filter((c) => new Date().getTime() - c.updatedAt.getTime() >= 172800000);
+  const earlierConvs = conversations.filter((c) => SEED_BASE_TIME - c.updatedAt.getTime() >= 172800000);
 
   return (
     <AppShell view="assistant" hideCommandSurface>
