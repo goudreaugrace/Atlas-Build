@@ -3,7 +3,10 @@ import AtlasIntelligenceHub from '../../atlas-intelligence-hub';
 type ScenarioComparePageProps = {
   searchParams: Promise<{
     buyingGroup?: string;
+    case?: string;
     market?: string;
+    returnLabel?: string;
+    returnTo?: string;
     scenario?: string | string[];
   }>;
 };
@@ -20,8 +23,12 @@ export default async function ScenarioComparePage({ searchParams }: ScenarioComp
     <AtlasIntelligenceHub
       buyingGroupId={query.buyingGroup ?? ''}
       initialGeneratedView={scenarioIds.join(',')}
+      initialScenarioCaseId={query.case ?? ''}
+      initialScenarioId={scenarioIds[0] ?? ''}
       marketId={query.market ?? ''}
-      view="scenarioCompare"
+      returnLabel={query.returnLabel ?? ''}
+      returnTo={query.returnTo ?? ''}
+      view="scenarioModels"
     />
   );
 }
