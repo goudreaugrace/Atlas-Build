@@ -6,11 +6,12 @@ export const metadata: Metadata = {
   description: 'Conversational AI assistant for brand equity diagnosis, scenario modeling, and treatment planning.'
 };
 
-export default function AssistantPage({
+export default async function AssistantPage({
   searchParams
 }: {
-  searchParams: { prompt?: string };
+  searchParams: Promise<{ prompt?: string }>;
 }) {
-  const initialPrompt = searchParams?.prompt ?? '';
+  const query = await searchParams;
+  const initialPrompt = query.prompt ?? '';
   return <AssistantClient initialPrompt={initialPrompt} />;
 }
