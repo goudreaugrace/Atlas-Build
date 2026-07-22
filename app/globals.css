@@ -81734,3 +81734,86 @@ html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-current-cycle-strip .at
   margin: 0 !important;
 }
 
+/* =========================================================
+   Recommended Next Move — grouped text block at top
+   ========================================================= */
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-room-action-copy {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+}
+
+/* =========================================================
+   Indicators / Prepare — merged tabbed panel
+   ========================================================= */
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-indicators-prepare-header {
+  align-items: flex-start !important;
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: wrap !important;
+  gap: 16px !important;
+  justify-content: space-between !important;
+  padding: 0 !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-indicators-prepare-title {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 6px !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-indicators-prepare .atlas-bg-indicators-prepare-header h2 {
+  font-size: clamp(18px, 1.6vw, 22px) !important;
+  line-height: 1.2 !important;
+  margin: 0 !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-indicators-prepare-tabs {
+  align-items: center !important;
+  background: #f0f1f2 !important;
+  border-radius: 999px !important;
+  display: inline-flex !important;
+  flex-shrink: 0 !important;
+  gap: 2px !important;
+  padding: 3px !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-indicators-tab {
+  align-items: center !important;
+  background: transparent !important;
+  border: none !important;
+  border-radius: 999px !important;
+  color: #707172 !important;
+  cursor: pointer !important;
+  display: inline-flex !important;
+  font-family: var(--font-body) !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  justify-content: center !important;
+  letter-spacing: 0 !important;
+  min-height: 28px !important;
+  outline: none !important;
+  padding: 0 14px !important;
+  transition: background 120ms ease, color 120ms ease !important;
+  white-space: nowrap !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-indicators-tab--active {
+  background: #0f2350 !important;
+  color: #ffffff !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-indicators-tab:not(.atlas-bg-indicators-tab--active):hover {
+  background: rgba(0, 0, 0, .06) !important;
+  color: #31373d !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-indicators-panel,
+html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-prepare-panel {
+  display: grid !important;
+  gap: 20px !important;
+}
+
+

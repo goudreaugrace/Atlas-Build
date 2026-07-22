@@ -9714,6 +9714,7 @@ function BuyingGroupCurrentNegotiationMiniView({
   profileRead: BuyerProfileRead;
   workspace: BuyingGroupWorkspacePacket;
 }) {
+  const [indicatorsTab, setIndicatorsTab] = useState<'indicators' | 'prepare'>('indicators');
   const exposure = profileRead.exposure;
   const currentState = profileRead.currentState;
   const scenarios = buyerScenarioRead(workspace);
@@ -9837,23 +9838,65 @@ function BuyingGroupCurrentNegotiationMiniView({
           </div>
         </div>
         <aside className="atlas-bg-current-room-action">
-          <span>Recommended next move</span>
-          <strong>{primaryScenario?.recommendedAction ?? guardrailStatus}</strong>
-          <p>{likelyObjection}</p>
+          <div className="atlas-bg-room-action-copy">
+            <span>Recommended next move</span>
+            <strong>{primaryScenario?.recommendedAction ?? guardrailStatus}</strong>
+            <p>{likelyObjection}</p>
+          </div>
           <a href={`/generated-views?${scenarioBriefParams.toString()}`}>Open room brief <ArrowRight size={13} /></a>
         </aside>
       </section>
 
-      <section className="atlas-bg-current-numbers">
-        <header>
-          <span>Numbers and guardrails</span>
-          <h2>Use the current corridor before changing the negotiation position.</h2>
-          <p>These are the sourced baseline numbers CNOs need before selecting a scenario or trading support.</p>
+      <section className="atlas-bg-current-numbers atlas-bg-indicators-prepare">
+        <header className="atlas-bg-indicators-prepare-header">
+          <div className="atlas-bg-indicators-prepare-title">
+            <span>Room intelligence</span>
+            <h2>Numbers and preparation in one place.</h2>
+          </div>
+          <div className="atlas-bg-indicators-prepare-tabs" role="tablist">
+            <button
+              aria-selected={indicatorsTab === 'indicators'}
+              className={`atlas-bg-indicators-tab${indicatorsTab === 'indicators' ? ' atlas-bg-indicators-tab--active' : ''}`}
+              onClick={() => setIndicatorsTab('indicators')}
+              role="tab"
+              type="button"
+            >
+              Indicators
+            </button>
+            <button
+              aria-selected={indicatorsTab === 'prepare'}
+              className={`atlas-bg-indicators-tab${indicatorsTab === 'prepare' ? ' atlas-bg-indicators-tab--active' : ''}`}
+              onClick={() => setIndicatorsTab('prepare')}
+              role="tab"
+              type="button"
+            >
+              Prepare
+            </button>
+          </div>
         </header>
-        <div className="atlas-bg-current-number-workspace">
-          <div className="atlas-bg-current-corridor-panel">
-            <div className="atlas-bg-current-number-grid atlas-bg-current-number-grid--corridor">
-              {numberCards.slice(0, 4).map((card) => (
+
+        {indicatorsTab === 'indicators' && (
+          <div className="atlas-bg-indicators-panel">
+            <div className="atlas-bg-current-number-workspace">
+              <div className="atlas-bg-current-corridor-panel">
+                <div className="atlas-bg-current-number-grid atlas-bg-current-number-grid--corridor">
+                  {numberCards.slice(0, 4).map((card) => (
+                    <article key={card.label}>
+                      <span>{card.label}</span>
+                      <strong>{card.value}</strong>
+                      <p>{card.detail}</p>
+                    </article>
+                  ))}
+                </div>
+              </div>
+              <aside className="atlas-bg-guardrail-note">
+                <span>Guardrail read</span>
+                <strong>{guardrailStatus}</strong>
+                <p>{firstApproval}</p>
+              </aside>
+            </div>
+            <div className="atlas-bg-current-exposure-row">
+              {numberCards.slice(4).map((card) => (
                 <article key={card.label}>
                   <span>{card.label}</span>
                   <strong>{card.value}</strong>
@@ -9861,48 +9904,31 @@ function BuyingGroupCurrentNegotiationMiniView({
                 </article>
               ))}
             </div>
+            <div className="atlas-bg-current-number-source">
+              <SourceTrustMini source={profileRead.source} />
+            </div>
           </div>
-          <aside className="atlas-bg-guardrail-note">
-            <span>Guardrail read</span>
-            <strong>{guardrailStatus}</strong>
-            <p>{firstApproval}</p>
-          </aside>
-        </div>
-        <div className="atlas-bg-current-exposure-row">
-          {numberCards.slice(4).map((card) => (
-            <article key={card.label}>
-              <span>{card.label}</span>
-              <strong>{card.value}</strong>
-              <p>{card.detail}</p>
-            </article>
-          ))}
-        </div>
-        <div className="atlas-bg-current-number-source">
-          <SourceTrustMini source={profileRead.source} />
-        </div>
-      </section>
+        )}
 
-      <section className="atlas-bg-prep-section">
-        <header>
-          <span>Prepare for the room</span>
-          <h2>ATLAS has prepared the assets the CNO should review before responding.</h2>
-          <p>The heavy lifting is already done: response draft, modeled scenarios, evidence trail, and buyer behavior read.</p>
-        </header>
-        <div className="atlas-bg-prep-grid">
-          {preparationCards.map((card) => (
-            <article key={card.label}>
-              <span>{card.label}</span>
-              <h3>{card.title}</h3>
-              <p>{card.detail}</p>
-              <div className="atlas-bg-prep-row-source">
-                <SourceTrustMini linked={false} source={card.source} />
-              </div>
-              <footer>
-                <a href={card.actionHref}>{card.actionLabel} <ArrowRight size={13} /></a>
-              </footer>
-            </article>
-          ))}
-        </div>
+        {indicatorsTab === 'prepare' && (
+          <div className="atlas-bg-prepare-panel">
+            <div className="atlas-bg-prep-grid">
+              {preparationCards.map((card) => (
+                <article key={card.label}>
+                  <span>{card.label}</span>
+                  <h3>{card.title}</h3>
+                  <p>{card.detail}</p>
+                  <div className="atlas-bg-prep-row-source">
+                    <SourceTrustMini linked={false} source={card.source} />
+                  </div>
+                  <footer>
+                    <a href={card.actionHref}>{card.actionLabel} <ArrowRight size={13} /></a>
+                  </footer>
+                </article>
+              ))}
+            </div>
+          </div>
+        )}
       </section>
 
       <section className="atlas-bg-scenario-section">
