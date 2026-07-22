@@ -74939,7 +74939,7 @@ grid-template-columns: 1fr !important;
 }
 
 html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-current-view-v2 {
-gap: clamp(96px, 10vw, 144px) !important;
+gap: 24px !important;
 }
 
 html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-current-view-v2 .atlas-bg-cycle-read,
@@ -74977,7 +74977,7 @@ background: transparent !important;
   border: 0 !important;
   border-radius: 0 !important;
   box-shadow: none !important;
-  gap: clamp(56px, 6.5vw, 92px) !important;
+  gap: 24px !important;
   padding: 0 !important;
 }
 
@@ -75386,7 +75386,7 @@ grid-template-columns: 1fr !important;
 
 html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-current-view-v2 {
 background: #ffffff !important;
-  gap: clamp(52px, 5.4vw, 80px) !important;
+  gap: 24px !important;
   width: 100% !important;
 }
 
@@ -75811,7 +75811,7 @@ grid-template-columns: 1fr !important;
 
 @media (max-width: 760px) {
 html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-current-view-v2 {
-gap: 44px !important;
+gap: 24px !important;
 }
 
 html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-current-view-v2 .atlas-bg-current-read-grid,
@@ -75835,7 +75835,7 @@ border-radius: 22px !important;
 
 html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-timeline-view-v2 {
 background: #ffffff !important;
-  gap: clamp(44px, 5vw, 72px) !important;
+  gap: 24px !important;
   width: 100% !important;
 }
 
@@ -76643,7 +76643,7 @@ html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-hero-meta .atlas-bg-her
 html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-hero .atlas-bg-hero-metrics {
   align-content: start !important;
   display: grid !important;
-  gap: clamp(16px, 2.2vw, 26px) clamp(28px, 4vw, 56px) !important;
+  gap: clamp(16px, 2.2vw, 26px) 24px !important;
   grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   margin: 0 !important;
 }
@@ -77641,11 +77641,11 @@ html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-hero-action-panel a svg
 
 /* Buyer profile hierarchy and chip alignment refinement. */
 html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-workspace {
-  gap: 42px !important;
+  gap: 24px !important;
 }
 
 html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-mini-view {
-  gap: 42px !important;
+  gap: 24px !important;
 }
 
 html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-profile-topline {
@@ -77692,7 +77692,7 @@ html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-hero .atlas-bg-hero-met
 
 /* Buyer profile header rhythm adjustment. */
 html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-hero-main {
-  gap: clamp(36px, 4vw, 48px) !important;
+  gap: 24px !important;
 }
 
 html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-hero-copy {
@@ -79216,12 +79216,12 @@ html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-profile-pattern-section
 
 /* Buyer profile section rhythm. */
 html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-profile-command-read {
-  gap: 68px !important;
+  gap: 24px !important;
 }
 
 @media (max-width: 760px) {
   html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-profile-command-read {
-    gap: 48px !important;
+    gap: 24px !important;
   }
 }
 
@@ -79287,7 +79287,7 @@ html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-hero-back {
 
 /* Current negotiation tab: SSOT-aligned executive workspace. */
 html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-current-view-v2 {
-  gap: 68px !important;
+  gap: 24px !important;
 }
 
 html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-current-room-read {
@@ -79775,7 +79775,7 @@ html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-current-view-v2 .atlas-
 
 @media (max-width: 760px) {
   html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-current-view-v2 {
-    gap: 48px !important;
+    gap: 24px !important;
   }
 
   html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-current-room-copy,
@@ -80869,7 +80869,7 @@ html body main.atlas-hub-shell .atlas-hub-main section.atlas-bg-current-view-v2 
 /* Buyer timeline: simplified source ledger. */
 html body main.atlas-hub-shell .atlas-hub-main section.atlas-bg-timeline-view-v2 {
   display: grid !important;
-  gap: 48px !important;
+  gap: 24px !important;
 }
 
 html body main.atlas-hub-shell .atlas-hub-main section.atlas-bg-timeline-view-v2 .atlas-bg-timeline-current-read {
@@ -81233,7 +81233,7 @@ html body main.atlas-hub-shell .atlas-hub-main section.atlas-bg-timeline-view-v2
 
 /* Buyer timeline: familiar minimal timeline pattern. */
 html body main.atlas-hub-shell .atlas-hub-main section.atlas-bg-timeline-view-v2 {
-  gap: 42px !important;
+  gap: 24px !important;
 }
 
 html body main.atlas-hub-shell .atlas-hub-main section.atlas-bg-timeline-view-v2 .atlas-bg-timeline-ledger {
