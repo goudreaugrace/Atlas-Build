@@ -69694,7 +69694,7 @@ html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-modeler:has(.atla
 html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-modeler:has(.atlas-scenario-overview) .atlas-scenario-modeler-head {
   align-items: center !important;
   background-color: #6bbf1e !important;
-  background-image: linear-gradient(110deg, rgba(139, 198, 31, .98) 0%, rgba(139, 198, 31, .9) 44%, rgba(45, 151, 210, .92) 100%), url('/images/backgrounds/scenario-lab-landing.png') !important;
+  background-image: url('/images/backgrounds/scenario-lab-landing.png') !important;
   background-position: center center !important;
   background-repeat: no-repeat !important;
   background-size: cover !important;
