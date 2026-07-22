@@ -14261,10 +14261,14 @@
   visibility: visible;
 }
 
-.atlas-buyer-risk-table-pill.risk-critical,
+.atlas-buyer-risk-table-pill.risk-critical {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
 .atlas-buyer-risk-table-pill.risk-high {
-  background: #fff3f2;
-  color: #b42318;
+  background: #ffedd5;
+  color: #c2410c;
 }
 
 .atlas-buyer-risk-table-pill.risk-medium {
@@ -69607,7 +69611,7 @@ html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-modeler:has(.atla
   box-sizing: border-box !important;
   display: flex !important;
   flex-direction: column !important;
-  gap: 24px !important;
+  gap: 36px !important;
   margin: 36px auto 0 !important;
   max-width: 1380px !important;
   width: 100% !important;
@@ -69742,14 +69746,14 @@ html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-modeler:has(.atla
 
 html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-modeler:has(.atlas-scenario-overview) .atlas-scenario-filter-select > button {
   align-items: center !important;
-  background-color: #f7f7f7 !important;
+  background-color: #ffffff !important;
   border: 1px solid #707172 !important;
   border-radius: 20px !important;
   color: #31373d !important;
   cursor: pointer !important;
   display: flex !important;
   flex-shrink: 0 !important;
-  font-family: var(--font-display) !important;
+  font-family: var(--font-body) !important;
   font-size: 12px !important;
   font-weight: 500 !important;
   gap: 4px !important;
@@ -69757,9 +69761,9 @@ html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-modeler:has(.atla
   letter-spacing: -0.12px !important;
   line-height: 22px !important;
   min-height: 0 !important;
-  padding: 8px 16px !important;
+  padding: 6px 16px !important;
   position: relative !important;
-  transition: background-color .15s ease, color .15s ease, border-color .15s ease !important;
+  transition: background-color .16s ease, border-color .16s ease, box-shadow .16s ease, color .16s ease, transform .16s ease !important;
   white-space: nowrap !important;
 }
 
@@ -69782,6 +69786,7 @@ html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-modeler:has(.atla
   right: 16px !important;
   top: 50% !important;
   transform: translateY(-62%) rotate(45deg) !important;
+  transition: border-color .16s ease, transform .18s cubic-bezier(.2, .8, .2, 1) !important;
   width: 7px !important;
 }
 
@@ -69792,10 +69797,15 @@ html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-modeler:has(.atla
 html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-modeler:has(.atlas-scenario-overview) .atlas-scenario-filter-select > button:hover,
 html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-modeler:has(.atlas-scenario-overview) .atlas-scenario-filter-select > button:focus-visible,
 html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-modeler:has(.atlas-scenario-overview) .atlas-scenario-filter-select.open > button {
-  background-color: #f5f5f5 !important;
+  background-color: #ffffff !important;
   border-color: #0563c7 !important;
+  box-shadow: 0 3px 10px rgba(5, 99, 199, .12) !important;
   color: #31373d !important;
   outline: none !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-modeler:has(.atlas-scenario-overview) .atlas-scenario-filter-select.open > button {
+  transform: translateY(-1px) !important;
 }
 
 html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-modeler:has(.atlas-scenario-overview) .atlas-scenario-filter-select > button:hover i,
@@ -69805,22 +69815,37 @@ html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-modeler:has(.atla
 }
 
 html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-modeler:has(.atlas-scenario-overview) .atlas-scenario-filter-menu {
-  background: #f7f7f7 !important;
+  background: #ffffff !important;
   border: 1px solid #a8a8a8 !important;
-  border-radius: 20px !important;
-  box-shadow: 0 18px 34px rgba(8, 15, 26, .14) !important;
+  border-radius: 16px !important;
+  box-shadow: 0 12px 24px rgba(8, 15, 26, .12) !important;
   display: grid !important;
   gap: 0 !important;
   left: 0 !important;
-  margin-top: 2px !important;
-  max-height: 250px !important;
+  margin-top: 4px !important;
+  max-height: 196px !important;
   min-width: 100% !important;
+  opacity: 0 !important;
   overflow-y: auto !important;
-  padding: 10px !important;
+  padding: 6px !important;
+  pointer-events: none !important;
   position: absolute !important;
   top: 100% !important;
+  transform: translateY(-6px) scale(.97) !important;
+  transform-origin: top left !important;
+  transition: opacity .18s cubic-bezier(.2, .8, .2, 1), transform .18s cubic-bezier(.2, .8, .2, 1), visibility 0s linear .18s !important;
+  visibility: hidden !important;
   width: max-content !important;
+  will-change: opacity, transform !important;
   z-index: 30 !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-modeler:has(.atlas-scenario-overview) .atlas-scenario-filter-select.open .atlas-scenario-filter-menu {
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  transform: translateY(0) scale(1) !important;
+  transition-delay: 0s !important;
+  visibility: visible !important;
 }
 
 html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-modeler:has(.atlas-scenario-overview) .atlas-scenario-filter-menu button {
@@ -69830,13 +69855,14 @@ html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-modeler:has(.atla
   color: #31373d !important;
   cursor: pointer !important;
   display: block !important;
-  font-family: var(--font-display) !important;
-  font-size: 16px !important;
+  font-family: var(--font-body) !important;
+  font-size: 13px !important;
   font-weight: 400 !important;
-  line-height: 22px !important;
-  min-height: 36px !important;
-  padding: 7px 10px !important;
+  line-height: 19px !important;
+  min-height: 28px !important;
+  padding: 5px 9px !important;
   text-align: left !important;
+  transition: background-color .14s ease, color .14s ease, transform .14s ease !important;
   width: 100% !important;
 }
 
@@ -69844,6 +69870,10 @@ html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-modeler:has(.atla
 html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-modeler:has(.atlas-scenario-overview) .atlas-scenario-filter-menu button.selected {
   background: #a8cef5 !important;
   color: #31373d !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-modeler:has(.atlas-scenario-overview) .atlas-scenario-filter-menu button:hover {
+  transform: translateX(1px) !important;
 }
 
 html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-modeler:has(.atlas-scenario-overview) .atlas-scenario-selection-controls {
@@ -69866,7 +69896,7 @@ html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-modeler:has(.atla
   color: #237fe1 !important;
   cursor: pointer !important;
   display: inline-flex !important;
-  font-family: var(--font-display) !important;
+  font-family: var(--font-body) !important;
   font-size: 12px !important;
   font-weight: 500 !important;
   justify-content: center !important;
@@ -69920,14 +69950,14 @@ html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-modeler:has(.atla
 
 html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-modeler:has(.atlas-scenario-overview) .atlas-scenario-create-action {
   align-items: center !important;
-  background-color: #f5f5f5 !important;
+  background-color: #ffffff !important;
   border: 1px solid #237fe1 !important;
   border-radius: 20px !important;
   color: #237fe1 !important;
   cursor: pointer !important;
   display: inline-flex !important;
   flex-shrink: 0 !important;
-  font-family: var(--font-display) !important;
+  font-family: var(--font-body) !important;
   font-size: 12px !important;
   font-weight: 500 !important;
   gap: 4px !important;
@@ -69987,7 +70017,7 @@ html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-modeler:has(.atla
 }
 
 html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-modeler:has(.atlas-scenario-overview) .atlas-scenario-table-wrap {
-  overflow-x: auto !important;
+  overflow-x: hidden !important;
   width: 100% !important;
 }
 
@@ -69995,32 +70025,35 @@ html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-modeler:has(.atla
   border-collapse: separate !important;
   border-spacing: 0 !important;
   display: table !important;
-  min-width: 1120px !important;
+  font-family: var(--font-body) !important;
+  min-width: 0 !important;
+  table-layout: fixed !important;
   width: 100% !important;
 }
 
 html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-modeler:has(.atlas-scenario-overview) .atlas-scenario-review-table .scenario-col {
-  width: 32% !important;
+  width: 31% !important;
 }
 
 html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-modeler:has(.atlas-scenario-overview) .atlas-scenario-review-table .status-col {
-  width: 16% !important;
+  width: 18% !important;
 }
 
 html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-modeler:has(.atlas-scenario-overview) .atlas-scenario-review-table .type-col,
 html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-modeler:has(.atlas-scenario-overview) .atlas-scenario-review-table .buyer-col,
 html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-modeler:has(.atlas-scenario-overview) .atlas-scenario-review-table .market-col {
-  width: 13% !important;
+  width: 13.5% !important;
 }
 
 html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-modeler:has(.atlas-scenario-overview) .atlas-scenario-review-table .created-col {
-  width: 150px !important;
+  width: 10.5% !important;
 }
 
 html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-modeler:has(.atlas-scenario-overview) .atlas-scenario-review-table th {
   background: transparent !important;
   border-bottom: 1px solid #dfe3eb !important;
   color: #444746 !important;
+  font-family: var(--font-body) !important;
   font-size: 12px !important;
   font-weight: 600 !important;
   height: 48px !important;
@@ -70097,9 +70130,9 @@ html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-modeler:has(.atla
   color: #4f545b !important;
   cursor: pointer !important;
   display: inline-flex !important;
-  font-family: inherit !important;
+  font-family: var(--font-body) !important;
   font-size: 12px !important;
-  font-weight: 680 !important;
+  font-weight: 600 !important;
   justify-content: center !important;
   line-height: 1 !important;
   min-height: 32px !important;
@@ -70124,16 +70157,23 @@ html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-modeler:has(.atla
   background: transparent !important;
   border-bottom: 1px solid #dfe3eb !important;
   color: #1f1f1f !important;
+  font-family: var(--font-body) !important;
   font-size: 14px !important;
   font-weight: 460 !important;
+  height: 68px !important;
   line-height: 1.3 !important;
   min-height: 52px !important;
+  overflow: hidden !important;
   padding: 14px 16px !important;
   vertical-align: middle !important;
 }
 
 html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-modeler:has(.atlas-scenario-overview) .atlas-scenario-review-table td:nth-child(4) {
   white-space: nowrap !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-modeler:has(.atlas-scenario-overview) .atlas-scenario-review-table td:nth-child(6) {
+  overflow: visible !important;
 }
 
 html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-modeler:has(.atlas-scenario-overview) .atlas-scenario-review-table tbody tr {
@@ -70178,7 +70218,9 @@ html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-modeler:has(.atla
   color: inherit !important;
   display: block !important;
   min-width: 210px !important;
+  overflow: visible !important;
   text-decoration: none !important;
+  width: 100% !important;
 }
 
 html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-modeler:has(.atlas-scenario-overview) .atlas-scenario-table-name span,
@@ -70195,11 +70237,14 @@ html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-modeler:has(.atla
 html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-modeler:has(.atlas-scenario-overview) .atlas-scenario-review-table td > strong {
   color: var(--atlas-text-strong, #111820) !important;
   display: block !important;
-  font-size: 17px !important;
+  font-size: 16px !important;
   font-weight: 600 !important;
   letter-spacing: normal !important;
-  line-height: 1.3 !important;
-  margin: 2px 0 3px !important;
+  line-height: 1.25 !important;
+  margin: 0 !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  white-space: normal !important;
 }
 
 html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-modeler:has(.atlas-scenario-overview) .atlas-scenario-status-pill,
@@ -70211,9 +70256,9 @@ html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-modeler:has(.atla
   border-radius: 999px !important;
   color: #0b5cad !important;
   display: inline-flex !important;
-  font-family: inherit !important;
+  font-family: var(--font-body) !important;
   font-size: 13px !important;
-  font-weight: 620 !important;
+  font-weight: 600 !important;
   line-height: 1 !important;
   padding: 7px 9px !important;
   white-space: nowrap !important;
@@ -70224,9 +70269,78 @@ html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-modeler:has(.atla
   color: #1f1f1f !important;
   display: inline !important;
   font-size: inherit !important;
-  font-weight: inherit !important;
+  font-weight: 400 !important;
   line-height: inherit !important;
   white-space: nowrap !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-modeler:has(.atlas-scenario-overview) .atlas-scenario-review-table td:nth-child(3),
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-modeler:has(.atlas-scenario-overview) .atlas-scenario-review-table td:nth-child(4),
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-modeler:has(.atlas-scenario-overview) .atlas-scenario-review-table td:nth-child(5),
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-modeler:has(.atlas-scenario-overview) .atlas-scenario-review-table td:nth-child(6) {
+  font-weight: 400 !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-modeler:has(.atlas-scenario-overview) .atlas-scenario-market-badge {
+  align-items: center !important;
+  background: #f1f3f4 !important;
+  border: 1px solid #d7dbe0 !important;
+  border-radius: 999px !important;
+  box-sizing: border-box !important;
+  color: #4f545b !important;
+  display: inline-flex !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  line-height: 1 !important;
+  max-width: calc(100% - 2px) !important;
+  min-width: 0 !important;
+  padding: 6px 10px !important;
+  position: relative !important;
+  white-space: nowrap !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-modeler:has(.atlas-scenario-overview) .atlas-scenario-market-badge-label {
+  display: block !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-modeler:has(.atlas-scenario-overview) .atlas-scenario-market-badge:hover {
+  background: #e8eaed !important;
+  border-color: #c7ccd1 !important;
+  color: #31373d !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-modeler:has(.atlas-scenario-overview) .atlas-scenario-market-tooltip {
+  background: #31373d !important;
+  border-radius: 8px !important;
+  bottom: calc(100% + 8px) !important;
+  box-shadow: 0 12px 28px rgba(8, 15, 26, .18) !important;
+  color: #ffffff !important;
+  display: block !important;
+  font-size: 12px !important;
+  font-weight: 400 !important;
+  line-height: 1.3 !important;
+  max-width: 260px !important;
+  opacity: 0 !important;
+  padding: 8px 10px !important;
+  pointer-events: none !important;
+  position: absolute !important;
+  right: 0 !important;
+  text-align: left !important;
+  transform: translateY(4px) !important;
+  transition: opacity .14s ease, transform .14s ease !important;
+  white-space: normal !important;
+  width: max-content !important;
+  z-index: 10 !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-modeler:has(.atlas-scenario-overview) .atlas-scenario-market-badge:hover .atlas-scenario-market-tooltip {
+  opacity: 1 !important;
+  transform: translateY(0) !important;
 }
 
 html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-modeler:has(.atlas-scenario-overview) .atlas-scenario-status-pill.status-review {
@@ -70242,6 +70356,49 @@ html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-modeler:has(.atla
 
 html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-modeler:has(.atlas-scenario-overview) .atlas-scenario-status-pill.status-ready {
   background: #edf9f1 !important;
+  color: #247047 !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-modeler:has(.atlas-scenario-overview) .atlas-scenario-impact-read {
+  display: block !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  overflow: hidden !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-modeler:has(.atlas-scenario-overview) .atlas-scenario-impact-read strong {
+  color: #31373d !important;
+  display: block !important;
+  font-family: var(--font-body) !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  line-height: 1.25 !important;
+  margin: 0 0 3px !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-modeler:has(.atlas-scenario-overview) .atlas-scenario-review-table td .atlas-scenario-impact-read small {
+  color: #6f7377 !important;
+  display: block !important;
+  font-size: 12px !important;
+  font-weight: 400 !important;
+  line-height: 1.25 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-modeler:has(.atlas-scenario-overview) .atlas-scenario-impact-read.impact-high strong {
+  color: #9f3a00 !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-modeler:has(.atlas-scenario-overview) .atlas-scenario-impact-read.impact-medium strong {
+  color: #005eb8 !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-modeler:has(.atlas-scenario-overview) .atlas-scenario-impact-read.impact-low strong {
   color: #247047 !important;
 }
 
@@ -72634,6 +72791,97 @@ html body main.atlas-hub-shell .atlas-hub-main .atlas-buyer-list-head-multi .atl
   color: #ffffff !important;
   border: 1px solid rgba(255, 255, 255, 0.25) !important;
   backdrop-filter: blur(12px) !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-buyer-list-shell .atlas-buyer-table-sort::before,
+html body main.atlas-hub-shell .atlas-hub-main .atlas-buyer-list-shell .atlas-buyer-table-sort a {
+  font-family: var(--font-body) !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-buyer-list-shell .atlas-buyer-table-sort::before {
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  letter-spacing: normal !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-buyer-list-shell .atlas-buyer-table-sort a {
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  letter-spacing: normal !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-buyer-list-shell .atlas-buyer-triage-table {
+  font-family: var(--font-body) !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-buyer-list-shell .atlas-buyer-triage-table th,
+html body main.atlas-hub-shell .atlas-hub-main .atlas-buyer-list-shell .atlas-buyer-triage-table th a {
+  font-family: var(--font-body) !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  letter-spacing: normal !important;
+  line-height: normal !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-buyer-list-shell .atlas-buyer-triage-table td {
+  font-family: var(--font-body) !important;
+  font-size: 14px !important;
+  font-weight: 400 !important;
+  letter-spacing: normal !important;
+  line-height: 18.2px !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-buyer-list-shell .atlas-buyer-triage-table td:first-child strong {
+  font-family: var(--font-body) !important;
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  letter-spacing: normal !important;
+  line-height: 20px !important;
+  margin: 0 0 3px !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-buyer-list-shell .atlas-buyer-triage-table td:first-child small {
+  font-family: var(--font-body) !important;
+  font-size: 12px !important;
+  font-weight: 400 !important;
+  letter-spacing: normal !important;
+  line-height: 15px !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-buyer-list-shell .atlas-buyer-risk-table-pill {
+  font-family: var(--font-body) !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  line-height: 13px !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-buyer-list-shell .atlas-risk-tooltip {
+  font-family: var(--font-body) !important;
+  font-size: 12px !important;
+  font-weight: 400 !important;
+  line-height: 15.6px !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-buyer-list-shell .atlas-buyer-triage-table .metric-critical,
+html body main.atlas-hub-shell .atlas-hub-main .atlas-buyer-list-shell .atlas-buyer-triage-table .metric-warning,
+html body main.atlas-hub-shell .atlas-hub-main .atlas-buyer-list-shell .atlas-buyer-triage-table .metric-good {
+  font-weight: 400 !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-buyer-list-shell .atlas-buyer-scenario-route {
+  font-family: var(--font-body) !important;
+  font-size: 14px !important;
+  font-weight: 400 !important;
+  letter-spacing: normal !important;
+  line-height: 18.2px !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-buyer-list-shell .atlas-buyer-scenario-route em {
+  font-family: var(--font-body) !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  letter-spacing: normal !important;
+  line-height: 15px !important;
 }
 
 /* Global Heading Rule: Ensure h1, h2, h3, and h4 have letter-spacing: -0.8px across all pages */

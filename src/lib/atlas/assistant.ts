@@ -139,7 +139,7 @@ export function answerNegotiationQuestion(record: NegotiationRecord, prompt: str
   }
 
   if (/(another|extra|1%|one percent|what happens|scenario)/.test(normalized)) {
-    return `If Carrefour asks for another 1%, treat it as a draft scenario delta before changing the official plan. On ${activeScenario.name}, that likely reduces probability to land, costs roughly EUR 0.5M in modeled NR per point of give, and moves trade-margin pressure closer to red-line watch. Recommended move: offer phased timing or promo-calendar control before permanent concession.`;
+    return `If Carrefour asks for another 1%, treat it as a draft scenario delta before changing the official plan. On ${activeScenario.name}, that likely reduces probability to land, costs roughly €0.5M in modeled NR per point of give, and moves trade-margin pressure closer to red-line watch. Recommended move: offer phased timing or promo-calendar control before permanent concession.`;
   }
 
   if (/(say back|respond|pushback|objection|what should we say)/.test(normalized)) {
