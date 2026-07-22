@@ -676,21 +676,54 @@ function SourceDetailDrawer({ onClose, source }: { onClose: () => void; source: 
   );
 }
 
+const DEFAULT_SAVED_GENERATED_VIEWS: StoredGeneratedView[] = [
+  {
+    id: 'saved-view-europe-overview',
+    title: 'Europe Price Realization & Inflation Exposure Read',
+    prompt: 'What changed across Europe this week?',
+    summary: 'Cross-market analysis of price realization gaps, inflation pressure, and trade spend deltas across European accounts.',
+    mode: 'retrieved',
+    sourceName: 'Market Intelligence Pack',
+    sourceDate: '2026-07-21',
+    confidence: 'High confidence',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    lifecycleState: 'attached',
+    savedToProfileAt: new Date().toISOString()
+  },
+  {
+    id: 'saved-view-carrefour-strategy',
+    title: 'Carrefour Affordability & Concession Corridor Strategy',
+    prompt: 'Model Carrefour buyer counter & margin risk',
+    summary: 'Detailed posture breakdown, likely objections, and recommended concession strategy for upcoming negotiation.',
+    mode: 'retrieved',
+    sourceName: 'Buyer Memory',
+    sourceDate: '2026-07-20',
+    confidence: 'Verified',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    lifecycleState: 'attached',
+    savedToProfileAt: new Date().toISOString(),
+    buyingGroupId: 'carrefour'
+  }
+];
+
 function useStoredGeneratedViews(filter: { buyingGroupId?: string; marketId?: string }) {
-  const [views, setViews] = useState<StoredGeneratedView[]>([]);
+  const [views, setViews] = useState<StoredGeneratedView[]>(DEFAULT_SAVED_GENERATED_VIEWS);
 
   useEffect(() => {
     function loadViews() {
       try {
-        const parsed = JSON.parse(window.localStorage.getItem(GENERATED_VIEW_STORAGE_KEY) ?? '[]');
-        const allViews = Array.isArray(parsed) ? parsed as StoredGeneratedView[] : [];
+        const raw = window.localStorage.getItem(GENERATED_VIEW_STORAGE_KEY);
+        const parsed = raw ? JSON.parse(raw) : DEFAULT_SAVED_GENERATED_VIEWS;
+        const allViews = Array.isArray(parsed) && parsed.length > 0 ? (parsed as StoredGeneratedView[]) : DEFAULT_SAVED_GENERATED_VIEWS;
         setViews(allViews.filter((view) => {
           if (filter.buyingGroupId) return view.buyingGroupId === filter.buyingGroupId;
           if (filter.marketId) return view.marketId === filter.marketId;
           return true;
         }));
       } catch {
-        setViews([]);
+        setViews(DEFAULT_SAVED_GENERATED_VIEWS);
       }
     }
 
@@ -722,6 +755,14 @@ function saveStoredGeneratedView(view: StoredGeneratedView) {
 
 function SavedGeneratedViewsShelf({ buyingGroupId, marketId }: { buyingGroupId?: string; marketId?: string }) {
   const savedViews = useStoredGeneratedViews({ buyingGroupId, marketId });
+  const sectionRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    if (sectionRef.current) {
+      sectionRef.current.classList.add('atlas-panel-in-view');
+    }
+  }, [savedViews.length]);
+
   if (!savedViews.length) return null;
   const attachedCount = savedViews.filter((view) => (view.lifecycleState ?? (view.savedToProfileAt ? 'attached' : 'draft')) === 'attached').length;
   const shelfTitle = buyingGroupId
@@ -731,7 +772,7 @@ function SavedGeneratedViewsShelf({ buyingGroupId, marketId }: { buyingGroupId?:
       : 'Scenario outputs saved to ATLAS';
 
   return (
-    <section className="atlas-saved-generated-views" aria-label="Saved scenario outputs">
+    <section className="atlas-saved-generated-views atlas-panel-in-view" ref={sectionRef} aria-label="Saved scenario outputs">
       <header>
         <h3>{shelfTitle}</h3>
         <span>{attachedCount} attached / {savedViews.length} total</span>
@@ -739,12 +780,14 @@ function SavedGeneratedViewsShelf({ buyingGroupId, marketId }: { buyingGroupId?:
       <div>
         {savedViews.slice(0, 5).map((view) => (
           <a href={hrefForStoredGeneratedView(view)} key={view.id} rel="noreferrer" target="_blank">
-            <div>
-              <strong>{view.title}</strong>
-              <span>{view.summary ?? view.prompt}</span>
+            <div className="atlas-saved-view-row atlas-saved-view-row-1">
+              <h4>{view.title}</h4>
+              <em>{(view.lifecycleState ?? (view.savedToProfileAt ? 'attached' : 'draft')).replaceAll('_', ' ')}</em>
             </div>
-            <em>{(view.lifecycleState ?? (view.savedToProfileAt ? 'attached' : 'draft')).replaceAll('_', ' ')}</em>
-            <small>{sourceDisplayName({ sourceName: view.sourceName })} · {formatAtlasDate(view.updatedAt, { includeYear: true })} · {view.confidence}</small>
+            <div className="atlas-saved-view-row atlas-saved-view-row-2">
+              <span>{view.summary ?? view.prompt}</span>
+              <small>{sourceDisplayName({ sourceName: view.sourceName })} · {formatAtlasDate(view.updatedAt, { includeYear: true })} · {view.confidence}</small>
+            </div>
           </a>
         ))}
       </div>
@@ -1101,7 +1144,7 @@ function IntentBrief({
           {metrics.map((metric) => (
             <div className={metric.tone ? `tone-${metric.tone}` : ''} key={metric.label}>
               <dt>{metric.label}</dt>
-              <dd>{metric.value}</dd>
+              <dd><AnimatedNumberValue value={metric.value} /></dd>
             </div>
           ))}
         </dl>
@@ -1336,6 +1379,37 @@ function AtlasCommandSurface({
     window.addEventListener('pageshow', handlePageShow);
     return () => window.removeEventListener('pageshow', handlePageShow);
   }, [basePath, initialPrompt]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const selectors = [
+      '.atlas-intent-brief',
+      '.atlas-page-brief',
+      '.atlas-source-decision-governance-panel',
+      '.atlas-source-decision-panel',
+      '.atlas-source-governance-summary',
+      '.atlas-saved-generated-views',
+      '.atlas-source-database',
+      '.atlas-buyer-list-head',
+      '.atlas-buyer-triage-table-wrap',
+      '.atlas-buyer-report-shell',
+      '.atlas-generated-workspace-shell',
+      '.atlas-generated-report-primary'
+    ];
+    const panels = document.querySelectorAll(selectors.join(', '));
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('atlas-panel-in-view');
+          }
+        });
+      },
+      { threshold: 0.03 }
+    );
+    panels.forEach((p) => observer.observe(p));
+    return () => observer.disconnect();
+  }, [basePath]);
 
   function scopedGeneratedViewHref(href: string) {
     if (!href.startsWith('/generated-views')) return href;
@@ -4336,8 +4410,8 @@ function PepsiCoImpactWorkspace() {
   );
 }
 
-function AnimatedStatCounter({ target, suffix = '' }: { target: number; suffix?: string }) {
-  const [count, setCount] = useState(0);
+function AnimatedStatCounter({ target, decimals = 0, suffix = '' }: { target: number; decimals?: number; suffix?: string }) {
+  const [count, setCount] = useState<number>(0);
   const [isVisible, setIsVisible] = useState(false);
   const ref = useRef<HTMLSpanElement>(null);
 
@@ -4365,7 +4439,8 @@ function AnimatedStatCounter({ target, suffix = '' }: { target: number; suffix?:
       if (!startTimestamp) startTimestamp = timestamp;
       const progress = Math.min((timestamp - startTimestamp) / duration, 1);
       const easeProgress = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress);
-      setCount(Math.floor(easeProgress * target));
+      const val = easeProgress * target;
+      setCount(decimals > 0 ? parseFloat(val.toFixed(decimals)) : Math.floor(val));
       if (progress < 1) {
         requestAnimationFrame(step);
       } else {
@@ -4373,9 +4448,26 @@ function AnimatedStatCounter({ target, suffix = '' }: { target: number; suffix?:
       }
     };
     requestAnimationFrame(step);
-  }, [isVisible, target]);
+  }, [isVisible, target, decimals]);
 
-  return <span ref={ref}>{count}{suffix}</span>;
+  return <span ref={ref}>{decimals > 0 ? count.toFixed(decimals) : count}{suffix}</span>;
+}
+
+function AnimatedNumberValue({ value }: { value: string }) {
+  const match = value.match(/^([^\d-]*)(-?\d+(?:\.\d+)?)(.*)$/);
+  if (!match) return <span>{value}</span>;
+  const [, prefix, numStr, suffix] = match;
+  const num = parseFloat(numStr);
+  const isFloat = numStr.includes('.');
+  const decimals = isFloat ? (numStr.split('.')[1]?.length ?? 1) : 0;
+
+  return (
+    <span>
+      {prefix}
+      <AnimatedStatCounter decimals={decimals} target={num} />
+      {suffix}
+    </span>
+  );
 }
 
 function OverviewBriefingCanvas({ generatedView, initialPrompt }: { generatedView: string; initialPrompt?: string }) {
@@ -5765,7 +5857,7 @@ function BuyingGroupStatePanel({
               <div key={metric.label}>
                 <dt>{metric.label}</dt>
                 <dd>
-                  <strong>{metric.value}</strong>
+                  <strong><AnimatedNumberValue value={metric.value} /></strong>
                   <em className={`movement-${metric.tone}`}>{metric.movement}</em>
                 </dd>
               </div>
@@ -12237,17 +12329,17 @@ function MemoryDecisionPanel({
   return (
     <section className="atlas-source-decision-panel" aria-label={title}>
       <header>
-        <h2>{title}</h2>
+        <h3>{title}</h3>
         <span>{documents.length} documents / {events.length} memory events</span>
       </header>
       <div>
         {cards.map((card) => (
           <a className={`atlas-source-decision-card ${card.tone ?? ''}`} href={card.href} key={`${card.label}-${card.title}`}>
             <span>{card.label}</span>
-            <strong>{card.title}</strong>
+            <h4>{card.title}</h4>
             <p>{card.value}</p>
             {card.source ? <SourceTrustMini source={card.source} /> : null}
-            <em>{card.action} <ArrowRight size={13} /></em>
+            <button className="atlas-source-decision-btn" type="button">{card.action} <ArrowRight size={13} /></button>
           </a>
         ))}
       </div>
@@ -12639,22 +12731,24 @@ function SourceDatabaseView({ initialPrompt }: { initialPrompt?: string }) {
           { label: 'Source watchouts', value: String(sourceWatchouts.length), tone: 'watch' }
         ]}
       />
-      <MemoryDecisionPanel documents={packet.documents} events={packet.latestTimelineEvents} title="Library control read" />
-      <section className="atlas-source-governance-summary" aria-label="Source governance summary">
-        {governanceCards.map((card) => (
-          <article className={`tone-${card.tone}`} key={card.label}>
-            <span>{card.label}</span>
-            <strong>{card.value}</strong>
-            <p>{card.detail}</p>
-            <em>{card.action}</em>
-          </article>
-        ))}
-      </section>
+      <div className="atlas-source-decision-governance-panel">
+        <MemoryDecisionPanel documents={packet.documents} events={packet.latestTimelineEvents} title="Library control read" />
+        <section className="atlas-source-governance-summary" aria-label="Source governance summary">
+          {governanceCards.map((card) => (
+            <article className={`tone-${card.tone}`} key={card.label}>
+              <span>{card.label}</span>
+              <h4>{card.value}</h4>
+              <p>{card.detail}</p>
+              <em>{card.action}</em>
+            </article>
+          ))}
+        </section>
+      </div>
       <SavedGeneratedViewsShelf />
       <section className="atlas-source-database">
         <header>
           <div>
-            <h2>{initialPrompt ? 'Filtered source records' : 'All ATLAS source records'}</h2>
+            <h3>{initialPrompt ? 'Filtered source records' : 'All ATLAS source records'}</h3>
           </div>
           <p>{rows.length} shown / {allRows.length} total. {sourceWatchouts.length} source watchouts / {approvedRows.length} usable records.</p>
         </header>
@@ -12673,11 +12767,11 @@ function SourceDatabaseView({ initialPrompt }: { initialPrompt?: string }) {
             <article className="atlas-source-database-row" key={row.id} role="row">
               <div>
                 <em>{row.recordType}</em>
-                <strong>{row.recordName}</strong>
+                <span>{row.recordName}</span>
               </div>
               <div>
                 <em>{row.source.sourceType}</em>
-                <strong>{sourceDisplayName(row.source)}</strong>
+                <span>{sourceDisplayName(row.source)}</span>
               </div>
               <span>{row.source.sourceDate}</span>
               <div className="atlas-source-database-status">

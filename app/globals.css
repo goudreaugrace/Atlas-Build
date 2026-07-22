@@ -189,7 +189,6 @@
   font-family: var(--font-display) !important;
   font-size: clamp(36px, 4.5vw, 56px) !important;
   font-weight: 520 !important;
-  letter-spacing: 0 !important;
   line-height: 1.05 !important;
   text-transform: none !important;
 }
@@ -203,7 +202,6 @@
   font-family: var(--font-display) !important;
   font-size: clamp(24px, 2.4vw, 34px) !important;
   font-weight: 520 !important;
-  letter-spacing: 0 !important;
   line-height: 1.14 !important;
   text-transform: none !important;
 }
@@ -335,7 +333,6 @@
 .atlas-memory-prediction-ledger h3 {
   color: #050b14 !important;
   font-size: clamp(22px, 2.8vw, 34px) !important;
-  font-weight: 500 !important;
   letter-spacing: -.035em !important;
   line-height: 1.12 !important;
   margin: 0 !important;
@@ -385,8 +382,6 @@
 .atlas-buyer-scenario-command-center h3 {
   color: var(--md-sys-color-on-surface, #050b14) !important;
   font-size: clamp(24px, 3vw, 38px) !important;
-  font-weight: 500 !important;
-  letter-spacing: 0 !important;
   line-height: 1.1 !important;
   margin: 0 !important;
   max-width: 860px !important;
@@ -472,7 +467,6 @@
 .atlas-scenario-cockpit h3 {
   color: #050b14 !important;
   font-size: clamp(26px, 3.2vw, 42px) !important;
-  font-weight: 500 !important;
   letter-spacing: -.04em !important;
   line-height: 1.05 !important;
   margin: 0 !important;
@@ -6860,7 +6854,8 @@
   align-items: baseline;
 }
 
-.atlas-source-decision-panel h2 {
+.atlas-source-decision-panel h2,
+.atlas-source-decision-panel h3 {
   margin: 0;
   color: #080f1a;
   font-size: clamp(22px, 2vw, 30px);
@@ -6914,13 +6909,16 @@
   text-transform: uppercase;
 }
 
+.atlas-source-decision-card h4,
 .atlas-source-decision-card strong,
+.atlas-memory-decision-strip h4,
 .atlas-memory-decision-strip strong {
   color: #080f1a;
   font-size: 24px;
   font-weight: 660;
   letter-spacing: -.035em;
   line-height: 1.05;
+  margin: 0;
 }
 
 .atlas-source-decision-card p,
@@ -6931,15 +6929,36 @@
   line-height: 1.35;
 }
 
+.atlas-source-decision-card button,
+.atlas-source-decision-btn,
 .atlas-source-decision-card em {
   display: inline-flex;
-  gap: 5px;
+  gap: 4px;
   align-items: center;
+  justify-content: center;
   margin-top: auto;
-  color: var(--atlas-blue);
+  align-self: start;
+  padding: 8px 16px;
+  border-radius: 20px;
+  background: #f5f5f5;
+  border: 1px solid #237fe1;
+  color: #237fe1;
   font-size: 12px;
+  font-weight: 500;
+  letter-spacing: -0.12px;
+  line-height: 22px;
   font-style: normal;
-  font-weight: 650;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.atlas-source-decision-card:hover button,
+.atlas-source-decision-card:hover .atlas-source-decision-btn,
+.atlas-source-decision-card:hover em,
+.atlas-source-decision-btn:hover {
+  background: #237fe1;
+  border-color: #237fe1;
+  color: #ffffff;
 }
 
 .atlas-memory-decision-strip {
@@ -6968,9 +6987,13 @@
 
 .atlas-source-database {
   display: grid;
-  gap: 18px;
+  gap: 0;
   max-width: 1240px;
-  margin: 0 auto 42px;
+  margin: 24px auto 42px !important;
+  margin-top: 24px !important;
+  padding: 0 !important;
+  border-radius: 24px !important;
+  overflow: hidden !important;
 }
 
 .atlas-source-governance-summary {
@@ -7019,12 +7042,14 @@
   text-transform: uppercase;
 }
 
+.atlas-source-governance-summary h4,
 .atlas-source-governance-summary strong {
   color: #080f1a;
   font-size: 34px;
   font-weight: 660;
   letter-spacing: -.04em;
   line-height: 1;
+  margin: 0;
 }
 
 .atlas-source-governance-summary p {
@@ -7046,7 +7071,8 @@
   display: flex;
   justify-content: space-between;
   gap: 22px;
-  align-items: end;
+  align-items: flex-end;
+  padding: 24px !important;
 }
 
 .atlas-source-database > header span {
@@ -7057,12 +7083,10 @@
   text-transform: uppercase;
 }
 
-.atlas-source-database > header h2 {
+.atlas-source-database > header h2,
+.atlas-source-database > header h3 {
   margin: 6px 0 0;
-  color: #080f1a;
-  font-size: clamp(24px, 2.4vw, 34px);
   font-weight: 650;
-  letter-spacing: -.04em;
   line-height: 1;
 }
 
@@ -7077,7 +7101,7 @@
 
 .atlas-source-database-filter {
   width: fit-content;
-  margin: -6px 0 0;
+  margin: 0 24px 16px !important;
   border: 1px solid #dfe7ef;
   border-radius: 999px;
   padding: 7px 11px;
@@ -7089,9 +7113,13 @@
 
 .atlas-source-database-table {
   overflow: hidden;
-  border: 1px solid #e5ebf2;
-  border-radius: 28px;
+  border-top: 1px solid #e5ebf2 !important;
+  border-left: 0 !important;
+  border-right: 0 !important;
+  border-bottom: 0 !important;
+  border-radius: 0 0 24px 24px !important;
   background: #ffffff;
+  width: 100% !important;
 }
 
 .atlas-source-database-head,
@@ -7124,12 +7152,13 @@
   background: #fbfdff;
 }
 
-.atlas-source-database-row strong {
+.atlas-source-database-row strong,
+.atlas-source-database-row div > span {
   display: block;
   margin-top: 3px;
   color: #080f1a;
   font-size: 13px;
-  font-weight: 680;
+  font-weight: normal !important;
   line-height: 1.25;
 }
 
@@ -7630,7 +7659,7 @@
   padding: 8px;
   border: 1px solid rgba(255, 255, 255, 0.6);
   border-radius: 14px;
-  background: rgba(245, 245, 245, 0.72) !important;
+  background: #f5f5f5f7 !important;
   backdrop-filter: blur(20px) saturate(180%) !important;
   -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
   box-shadow: 0 20px 48px rgba(16, 42, 67, .16);
@@ -8512,50 +8541,62 @@
   gap: 34px;
   align-items: center;
   margin-bottom: 30px;
-  padding: 42px 54px;
-  border: 1px solid #e2e8f0;
-  border-radius: 46px;
-  background: #ffffff;
-  box-shadow: 0 22px 56px rgba(16, 42, 67, .055);
+  padding: 42px 54px !important;
+  border: 1px solid rgba(255, 255, 255, 0.22) !important;
+  border-radius: 28px !important;
+  background-image: url('/images/backgrounds/BG-01.png') !important;
+  background-position: center center !important;
+  background-size: cover !important;
+  background-repeat: no-repeat !important;
+  background-color: #ebebeb !important;
+  box-shadow: 0 22px 56px rgba(16, 42, 67, .08) !important;
+  color: #ffffff !important;
+  overflow: hidden !important;
 }
 
-.atlas-intent-brief > div:first-child > span,
-.atlas-generated-workspace > header span,
-.atlas-command-surface > div strong,
-.atlas-upload-source-tray header span {
-  color: var(--atlas-blue);
-  font-size: 11px;
-  font-weight: 650;
-  letter-spacing: .08em;
-  text-transform: uppercase;
+.atlas-intent-brief > div:first-child > span {
+  color: #ffffff !important;
+  font-family: var(--font-display), "Libre Franklin", sans-serif !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  letter-spacing: .08em !important;
+  text-transform: uppercase !important;
 }
 
 .atlas-intent-brief h1 {
   max-width: 760px;
   margin: 9px 0 12px;
-  color: var(--atlas-navy);
-  font-size: clamp(30px, 3.1vw, 46px);
-  line-height: 1.03;
-  letter-spacing: -.035em;
+  color: #ffffff !important;
+  font-family: var(--font-display), "Libre Franklin", sans-serif !important;
+  font-size: clamp(30px, 3.1vw, 44px) !important;
+  font-weight: 500 !important;
+  line-height: 1.06 !important;
+  letter-spacing: -0.8px !important;
 }
 
 .atlas-intent-brief p {
   max-width: 780px;
   margin: 0;
-  color: #526579;
-  font-size: 15px;
-  line-height: 1.52;
+  color: rgba(255, 255, 255, 0.88) !important;
+  font-family: var(--font-body), "Inter", sans-serif !important;
+  font-size: 15px !important;
+  line-height: 1.52 !important;
 }
 
 .atlas-intent-brief > strong {
   grid-column: 1 / -1;
   max-width: 920px;
-  border-radius: 999px;
-  padding: 10px 14px;
-  background: #f7fbff;
-  color: var(--atlas-navy);
-  font-size: 13px;
-  line-height: 1.4;
+  border-radius: 999px !important;
+  padding: 10px 18px !important;
+  background: rgba(255, 255, 255, 0.12) !important;
+  border: 1px solid rgba(255, 255, 255, 0.22) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  backdrop-filter: blur(20px) !important;
+  color: #ffffff !important;
+  font-family: var(--font-body), "Inter", sans-serif !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  line-height: 1.4 !important;
 }
 
 .atlas-intent-brief dl {
@@ -8571,38 +8612,38 @@
 
 .atlas-intent-brief dl div {
   min-height: 72px;
-  padding: 16px;
-  border: 1px solid #e6edf5;
-  border-radius: 18px;
-  background: #fbfdff;
+  padding: 18px 24px !important;
+  -webkit-backdrop-filter: blur(224px) !important;
+  backdrop-filter: blur(224px) !important;
+  background-color: rgba(255, 255, 255, 0.10) !important;
+  background: rgba(255, 255, 255, 0.10) !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  border-radius: 24px !important;
+  color: #ffffff !important;
 }
 
 .atlas-intent-brief dt {
-  color: #728095;
-  font-size: 10px;
-  font-weight: 650;
-  letter-spacing: .06em;
-  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.82) !important;
+  font-family: var(--font-body), "Inter", sans-serif !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  letter-spacing: .08em !important;
+  text-transform: uppercase !important;
 }
 
 .atlas-intent-brief dd {
   margin: 8px 0 0;
-  color: var(--atlas-navy);
-  font-size: 22px;
-  font-weight: 650;
-  line-height: 1.1;
+  color: #ffffff !important;
+  font-family: var(--font-display), "Libre Franklin", sans-serif !important;
+  font-size: 28px !important;
+  font-weight: 500 !important;
+  line-height: 1.1 !important;
 }
 
-.atlas-intent-brief .tone-risk dd {
-  color: var(--atlas-risk);
-}
-
-.atlas-intent-brief .tone-watch dd {
-  color: var(--atlas-warning);
-}
-
+.atlas-intent-brief .tone-risk dd,
+.atlas-intent-brief .tone-watch dd,
 .atlas-intent-brief .tone-good dd {
-  color: var(--atlas-green);
+  color: #ffffff !important;
 }
 
 .atlas-snapshot-strip {
@@ -23190,28 +23231,42 @@
 
 .atlas-saved-generated-views > div {
   display: grid;
-  gap: 8px;
+  gap: 10px;
 }
 
 .atlas-saved-generated-views a {
-  align-items: center;
-  border: 1px solid #e1e8ef;
+  align-items: stretch;
+  background: #f0f6ff !important;
+  border: 1px solid #d4e5f8 !important;
   border-radius: 16px;
   color: inherit;
-  display: grid;
-  gap: 12px;
-  grid-template-columns: minmax(0, 1fr) auto minmax(150px, .32fr);
-  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 18px;
   text-decoration: none;
+  transition: background 0.15s ease, border-color 0.15s ease;
 }
 
 .atlas-saved-generated-views a:hover {
-  background: #f7fbff;
+  background: #e4f0ff !important;
+  border-color: #bad7f8 !important;
 }
 
+.atlas-saved-generated-views .atlas-saved-view-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+}
+
+.atlas-saved-generated-views h4,
 .atlas-saved-generated-views strong {
   color: #071f3a;
   font-size: 13px;
+  font-weight: 650;
+  margin: 0;
 }
 
 .atlas-saved-generated-views span,
@@ -23223,10 +23278,10 @@
 
 .atlas-saved-generated-views em {
   justify-self: start;
-  border: 1px solid #dce7f2;
+  border: 1px solid #cce0f5;
   border-radius: 999px;
-  padding: 4px 8px;
-  background: #f7fbff;
+  padding: 3px 9px;
+  background: #ffffff;
   color: #005eb8;
   font-size: 11px;
   font-style: normal;
@@ -63174,7 +63229,6 @@ summary {
 }
 
 .atlas-page-brief,
-.atlas-intent-brief,
 .atlas-active-alerts-panel,
 .atlas-predictive-module,
 .atlas-predictive-toolbar,
@@ -63207,7 +63261,6 @@ summary {
 }
 
 .atlas-page-brief,
-.atlas-intent-brief,
 .atlas-predictive-module,
 .atlas-workspace-customizer,
 .atlas-buying-group-hero,
@@ -63215,15 +63268,13 @@ summary {
 .atlas-source-database,
 .atlas-set-numbers-card,
 .atlas-custom-report-tab {
-  padding: clamp(20px, 3vw, 32px) !important;
+  padding: 0 !important;
 }
 
 .atlas-hub-shell :where(h1, h2, h3, h4),
 .atlas-generated-view-page :where(h1, h2, h3, h4) {
   color: var(--md-sys-color-on-surface) !important;
   font-family: var(--md-sys-type-brand) !important;
-  font-weight: 500 !important;
-  letter-spacing: 0 !important;
 }
 
 .atlas-hub-shell :where(p, li, dd, small, em),
@@ -66639,15 +66690,12 @@ html body main.atlas-hub-shell .atlas-global-command-surface *,
 html body .atlas-generated-workspace *,
 html body .atlas-output-page * {
   font-family: var(--font-body) !important;
-  letter-spacing: 0 !important;
 }
 
 html body main.atlas-hub-shell .atlas-hub-main h1,
 html body .atlas-generated-workspace h1,
 html body .atlas-output-page h1 {
   font-size: 48px !important;
-  font-weight: 500 !important;
-  letter-spacing: 0 !important;
   line-height: 1.08 !important;
 }
 
@@ -66655,8 +66703,6 @@ html body main.atlas-hub-shell .atlas-hub-main h2,
 html body .atlas-generated-workspace h2,
 html body .atlas-output-page h2 {
   font-size: 30px !important;
-  font-weight: 500 !important;
-  letter-spacing: 0 !important;
   line-height: 1.16 !important;
 }
 
@@ -66664,8 +66710,6 @@ html body main.atlas-hub-shell .atlas-hub-main h3,
 html body .atlas-generated-workspace h3,
 html body .atlas-output-page h3 {
   font-size: 22px !important;
-  font-weight: 500 !important;
-  letter-spacing: 0 !important;
   line-height: 1.22 !important;
 }
 
@@ -69128,18 +69172,23 @@ html body main.atlas-hub-shell .atlas-hub-main {
   padding-top: 110px !important;
 }
 
-/* Dropdown menus from nav */
+html body main.atlas-hub-shell.atlas-hub-shell--buyingGroups > .atlas-hub-main,
+html body main.atlas-hub-shell--buyingGroups > .atlas-hub-main,
+.atlas-hub-shell--buyingGroups > .atlas-hub-main {
+  padding-top: 80px !important;
+}
+
+/* Dropdown menus from nav — use opacity/pointer-events (NOT display:none) so backdrop-filter works */
 html body main.atlas-hub-shell .atlas-nav-dropdown,
 html body .atlas-nav-dropdown,
 .atlas-nav-dropdown {
-  background: rgba(245, 245, 245, 0.72) !important;
+  background: #f5f5f5f7 !important;
   backdrop-filter: blur(20px) saturate(180%) !important;
   -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
   border: 1px solid rgba(255, 255, 255, 0.6) !important;
   border-radius: 20px !important;
   box-shadow: 0 12px 32px rgba(60, 64, 67, .14) !important;
-  display: none !important;
-  flex-direction: column !important;
+  display: grid !important;
   gap: 2px !important;
   min-width: 240px !important;
   padding: 8px !important;
@@ -69147,36 +69196,47 @@ html body .atlas-nav-dropdown,
   top: calc(100% + 8px) !important;
   left: 0 !important;
   z-index: 200 !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transform: translateY(-4px) !important;
+  transition: opacity .14s ease, transform .14s ease !important;
 }
 
 html body main.atlas-hub-shell .atlas-primary-nav-item.has-menu:hover .atlas-nav-dropdown,
-html body main.atlas-hub-shell .atlas-primary-nav-item.has-menu:focus-within .atlas-nav-dropdown {
-  display: flex !important;
+html body main.atlas-hub-shell .atlas-primary-nav-item.has-menu:focus-within .atlas-nav-dropdown,
+html body .atlas-primary-nav-item.has-menu:hover .atlas-nav-dropdown,
+html body .atlas-primary-nav-item.has-menu:focus-within .atlas-nav-dropdown,
+.atlas-primary-nav-item.has-menu:hover .atlas-nav-dropdown,
+.atlas-primary-nav-item.has-menu:focus-within .atlas-nav-dropdown {
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  transform: translateY(0) !important;
 }
 
-html body main.atlas-hub-shell .atlas-nav-dropdown a {
+html body .atlas-nav-dropdown a {
   align-items: flex-start !important;
-  border-radius: 16px !important;
+  border-radius: 10px !important;
   color: #31373d !important;
   display: flex !important;
   flex-direction: column !important;
   gap: 2px !important;
-  padding: 10px 16px !important;
+  padding: 8px 12px !important;
   text-decoration: none !important;
   transition: background-color .14s ease !important;
 }
 
-html body main.atlas-hub-shell .atlas-nav-dropdown a:hover {
+html body .atlas-nav-dropdown a:hover {
   background-color: rgba(35, 127, 225, 0.06) !important;
 }
 
-html body main.atlas-hub-shell .atlas-nav-dropdown a span {
+html body .atlas-nav-dropdown a span {
   font-family: var(--font-body) !important;
   font-size: 13px !important;
   font-weight: 700 !important;
+  color: var(--atlas-navy, #1a2a3a) !important;
 }
 
-html body main.atlas-hub-shell .atlas-nav-dropdown a em {
+html body .atlas-nav-dropdown a em {
   font-family: var(--font-body) !important;
   font-size: 11px !important;
   font-weight: 400 !important;
@@ -71874,3 +71934,161 @@ html body main.atlas-hub-shell .atlas-hub-main .atlas-buyer-list-head-multi .atl
   backdrop-filter: blur(12px) !important;
 }
 
+/* Global Heading Rule: Ensure h1, h2, h3, and h4 have letter-spacing: -0.8px across all pages */
+h1, h2, h3, h4,
+.atlas-hub-shell h1, .atlas-hub-shell h2, .atlas-hub-shell h3, .atlas-hub-shell h4,
+.atlas-generated-view-page h1, .atlas-generated-view-page h2, .atlas-generated-view-page h3, .atlas-generated-view-page h4,
+html body h1, html body h2, html body h3, html body h4 {
+  letter-spacing: -0.8px !important;
+}
+
+/* Hero Banner Background & Styling Override */
+html body main.atlas-hub-shell .atlas-hub-main .atlas-intent-brief,
+html body .atlas-intent-brief,
+.atlas-intent-brief {
+  background-image: url('/images/backgrounds/BG-01.png') !important;
+  background-position: center center !important;
+  background-size: cover !important;
+  background-repeat: no-repeat !important;
+  color: #ffffff !important;
+}
+
+/* Reinforced atlas-source-database-table padding */
+html body main.atlas-hub-shell .atlas-hub-main .atlas-source-database-table,
+html body .atlas-source-database-table,
+.atlas-source-database-table {
+  padding: 0 !important;
+}
+
+/* Explicit override for atlas-source-mini: remove background, border, and border-radius */
+html body .atlas-source-mini,
+.atlas-source-mini {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+/* Single panel grouping for atlas-source-decision-panel & atlas-source-governance-summary */
+.atlas-source-decision-governance-panel {
+  max-width: 1380px !important;
+  margin-top: 24px !important;
+  margin-bottom: 40px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  background: #ffffff !important;
+  border: 1px solid var(--md-sys-color-outline-variant, #e4ebf3) !important;
+  border-radius: var(--md-sys-shape-corner-xl, 24px) !important;
+  padding: 24px !important;
+  display: grid !important;
+  gap: 24px !important;
+  box-shadow: 0 1px 3px rgba(16, 42, 67, 0.03) !important;
+}
+
+.atlas-source-decision-governance-panel .atlas-source-decision-panel,
+.atlas-source-decision-governance-panel .atlas-source-governance-summary {
+  margin: 0 !important;
+  max-width: 100% !important;
+}
+
+/* Standardize all main panels width to 1380px centered */
+html body main.atlas-hub-shell .atlas-hub-main .atlas-intent-brief,
+html body .atlas-intent-brief,
+.atlas-intent-brief,
+.atlas-page-brief,
+.atlas-source-decision-governance-panel,
+.atlas-source-decision-panel,
+.atlas-source-governance-summary,
+.atlas-saved-generated-views-shelf,
+.atlas-source-database,
+.atlas-memory-decision-strip,
+.atlas-triage-page-header,
+.atlas-overview-v3,
+.atlas-generated-workspace-shell,
+.atlas-generated-report-primary {
+  max-width: 1380px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+/* Remove font-weight from atlas-source-database-row strong and div > span */
+html body .atlas-source-database-row strong,
+html body .atlas-source-database-row div > span,
+.atlas-source-database-row strong,
+.atlas-source-database-row div > span {
+  font-weight: normal !important;
+}
+
+/* Buying group column: font-weight 600 on buyer group name only (em) */
+.atlas-buying-group-col em,
+.atlas-buyer-group-col em,
+.atlas-buying-group-column em,
+.atlas-buyer-group-name em,
+.buying-group-col em,
+[data-col="buying-group"] em,
+html body .atlas-buying-group-col em,
+html body [data-col="buying-group"] em {
+  font-weight: 600 !important;
+}
+
+/* Make atlas-saved-generated-views a white panel matching atlas-source-decision-governance-panel with 24px margin-bottom */
+html body .atlas-saved-generated-views,
+.atlas-saved-generated-views {
+  background: #ffffff !important;
+  max-width: 1380px !important;
+  margin-top: 24px !important;
+  margin-bottom: 24px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  padding: 24px !important;
+  border: 1px solid var(--md-sys-color-outline-variant, #e4ebf3) !important;
+  border-radius: var(--md-sys-shape-corner-xl, 24px) !important;
+  box-shadow: 0 1px 3px rgba(16, 42, 67, 0.03) !important;
+  box-sizing: border-box !important;
+}
+
+/* Smooth panel entrance & scroll reveal transitions */
+.atlas-intent-brief,
+.atlas-page-brief,
+.atlas-source-decision-governance-panel,
+.atlas-source-decision-panel,
+.atlas-source-governance-summary,
+.atlas-saved-generated-views,
+.atlas-source-database,
+.atlas-buyer-list-head,
+.atlas-buyer-triage-table-wrap,
+.atlas-buyer-report-shell,
+.atlas-generated-workspace-shell {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.65s cubic-bezier(0.16, 1, 0.3, 1), transform 0.65s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+
+.atlas-panel-in-view,
+html body .atlas-panel-in-view,
+html body .atlas-generated-report-visuals,
+html body .atlas-generated-report-primary {
+  opacity: 1 !important;
+  transform: translateY(0) !important;
+}
+
+
+/* ============================================================
+   GLOBAL HEADING STANDARDIZATION
+   font-weight: 400 for all h1, h2, h3 — nothing overrides this
+   ============================================================ */
+html h1,
+html h2,
+html h3,
+html body h1,
+html body h2,
+html body h3,
+html body * h1,
+html body * h2,
+html body * h3 {
+  font-weight: 400 !important;
+}

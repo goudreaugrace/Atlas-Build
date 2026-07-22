@@ -124,7 +124,7 @@ function GeneratedSourceTrustBar({ source }: { source: SourceMeta }) {
           <div className="atlas-trust-line-1">
             <ShieldCheck size={16} className="atlas-trust-shield" />
             <span className={`atlas-source-type-pill ${sourceTypeClass(source)}`}>{sourceTypeLabel(source)}</span>
-            <strong className="atlas-trust-source-name">{source.sourceName}</strong>
+            <h4 className="atlas-trust-source-name">{source.sourceName}</h4>
             <span className="atlas-trust-decision">{sourceTrustDecision(source)}</span>
             <button type="button" className="atlas-btn-ai-secondary" onClick={() => setOpen(true)}>Inspect source</button>
           </div>
@@ -261,8 +261,8 @@ function GeneratedReportVisuals({
   ].slice(0, 9);
 
   return (
-    <section className="atlas-generated-report-visuals" aria-label="Generated scenario output template">
-      <article className="atlas-generated-report-primary">
+    <section className="atlas-generated-report-visuals atlas-panel-in-view" aria-label="Generated scenario output template">
+      <article className="atlas-generated-report-primary atlas-panel-in-view">
         <span>Scenario Scope &amp; Key Metrics</span>
         <div className="atlas-generated-report-grid-3x3" aria-label="Scenario metrics 3x3 grid">
           {gridTiles.map((tile, idx) => (
