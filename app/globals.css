@@ -2783,7 +2783,7 @@ html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-hero-action-panel a {
 
 /* ATLAS rendering cleanup: final cascade for active intelligence-hub UI. */
 .atlas-hub-main {
-  padding-bottom: 168px !important;
+  padding-bottom: 0 !important;
 }
 
 .atlas-market-detail-read,
@@ -51767,7 +51767,7 @@ summary {
 
 /* ATLAS rendering cleanup: final cascade for active intelligence-hub UI. */
 .atlas-hub-main {
-  padding-bottom: 168px !important;
+  padding-bottom: 0 !important;
 }
 
 .atlas-market-detail-read,
@@ -82553,4 +82553,11 @@ html body main.atlas-hub-shell .atlas-hub-main section.atlas-bg-current-view-v2 
 
 html body main.atlas-hub-shell .atlas-hub-main section.atlas-bg-current-view-v2 section.atlas-bg-scenarios-tabbed .atlas-bg-scenario-source-trust {
   margin-left: auto !important;
+}
+
+/* Zero padding-bottom for .atlas-hub-main */
+html body main.atlas-hub-shell .atlas-hub-main,
+main.atlas-hub-shell .atlas-hub-main,
+.atlas-hub-main {
+  padding-bottom: 0 !important;
 }
