@@ -76242,12 +76242,12 @@ html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-workspace {
   color: var(--atlas-buyer-text) !important;
   display: grid !important;
   font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
-  gap: 32px !important;
+  gap: 24px !important;
   margin: 0 auto !important;
-  max-width: 1278px !important;
+  max-width: 1380px !important;
   min-height: 100vh !important;
   padding: 6px 0 160px !important;
-  width: min(calc(100% - 48px), 1278px) !important;
+  width: min(calc(100% - 48px), 1380px) !important;
 }
 
 html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-back-row {
@@ -76883,11 +76883,13 @@ html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-profile-topline {
   align-items: stretch !important;
   display: grid !important;
   gap: 20px !important;
-  grid-template-columns: minmax(0, 2.45fr) minmax(320px, 1fr) !important;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) !important;
+  width: 100% !important;
 }
 
 html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-profile-view-v2 .atlas-bg-profile-topline {
-  grid-template-columns: minmax(0, 2.45fr) minmax(320px, 1fr) !important;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) !important;
+  width: 100% !important;
 }
 
 html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-profile-lead,
@@ -81503,7 +81505,7 @@ html body main.atlas-hub-shell .atlas-hub-main section.atlas-bg-timeline-view-v2
 html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-body-grid {
   align-items: start !important;
   display: grid !important;
-  gap: 48px !important;
+  gap: 20px !important;
   grid-template-columns: 321px minmax(0, 1fr) !important;
   margin: 0 auto !important;
   max-width: 1380px !important;
