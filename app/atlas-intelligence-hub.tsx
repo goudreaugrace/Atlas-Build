@@ -9724,9 +9724,13 @@ function BuyingGroupCurrentNegotiationMiniView({
   workspace: BuyingGroupWorkspacePacket;
 }) {
   const [indicatorsTab, setIndicatorsTab] = useState<'indicators' | 'prepare'>('indicators');
+  const [activeScenarioId, setActiveScenarioId] = useState<string>('');
   const exposure = profileRead.exposure;
   const currentState = profileRead.currentState;
   const scenarios = buyerScenarioRead(workspace);
+  const selectedScenarioId = activeScenarioId || scenarios[0]?.id || '';
+  const activeScenario = scenarios.find((s) => s.id === selectedScenarioId) ?? scenarios[0];
+
   const latestEvent = workspace.timelineEvents[0];
   const primarySignal = workspace.signals[0];
   const competitor = workspace.competitorMoves[0];
@@ -10009,42 +10013,115 @@ function BuyingGroupCurrentNegotiationMiniView({
 
       </section>
 
-      <section className="atlas-bg-scenario-section">
-        <header>
-          <h2>Scenarios to keep ready before responding</h2>
-          <p>Each scenario connects the current numbers to expected buyer response, financial impact, and the recommended CNO move.</p>
+      <section className="atlas-bg-scenario-section atlas-bg-scenarios-tabbed">
+        <header className="atlas-bg-scenarios-header">
+          <div className="atlas-bg-scenarios-title">
+            <h2>Scenarios for this profile</h2>
+            <p>Modeled buyer responses, financial impacts, and CNO recommended actions.</p>
+          </div>
+          <div className="atlas-bg-scenarios-tabs" role="tablist">
+            {scenarios.map((scenario, index) => {
+              const label =
+                index === 0
+                  ? 'Recommended'
+                  : index === 1
+                  ? 'Likely Buyer Counter'
+                  : 'Watch out';
+              const isActive = (activeScenario?.id ?? scenarios[0]?.id) === scenario.id;
+              return (
+                <button
+                  aria-selected={isActive}
+                  className={`atlas-bg-scenario-tab${isActive ? ' atlas-bg-scenario-tab--active' : ''}`}
+                  key={scenario.id}
+                  onClick={() => setActiveScenarioId(scenario.id)}
+                  role="tab"
+                  type="button"
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
         </header>
-        <div className="atlas-bg-scenario-list">
-          {scenarios.map((scenario) => (
-            <article key={scenario.id}>
-              <div className="atlas-bg-scenario-summary">
-                <span>{scenario.priority}</span>
-                <h3>{scenario.name}</h3>
-                <p>Based on {scenario.basis}, ATLAS modeled {pct(scenario.inputs.priceIncreasePercent)} ask / {pct(scenario.inputs.expectedRealizationPercent)} expected realization.</p>
+
+        {activeScenario && (
+          <div className="atlas-bg-scenario-single-panel">
+            {/* Scenario headline strip */}
+            <div className="atlas-bg-scenario-main-header">
+              <div className="atlas-bg-scenario-name-row">
+                <span className="atlas-bg-scenario-badge">{activeScenario.priority}</span>
+                <h3>{activeScenario.name}</h3>
               </div>
-              <dl>
-                <div><dt>Land</dt><dd>{scenario.likelihood}%</dd></div>
-                <div><dt>NR</dt><dd>{euros(scenario.outputs.revenueImpact)}</dd></div>
-                <div><dt>GM</dt><dd>{euros(scenario.outputs.marginImpact)}</dd></div>
-                <div><dt>Trade</dt><dd>{euros(scenario.outputs.tradeSpendImpact)}</dd></div>
-              </dl>
-              <div className="atlas-bg-scenario-read">
-                <section>
-                  <span>Buyer response</span>
-                  <p>{scenario.response}</p>
-                </section>
-                <section>
-                  <span>CNO action</span>
-                  <strong>{scenario.recommendedAction}</strong>
-                </section>
+              <p className="atlas-bg-scenario-basis-note">
+                <ScanSearch size={14} /> Based on {activeScenario.basis}, ATLAS modeled {pct(activeScenario.inputs.priceIncreasePercent)} ask / {pct(activeScenario.inputs.expectedRealizationPercent)} expected realization.
+              </p>
+            </div>
+
+            {/* Flat icon metric cards */}
+            <div className="atlas-bg-scenario-metrics-strip">
+              <div className="atlas-bg-scenario-metric-card">
+                <span className="atlas-bg-scenario-metric-icon"><Target size={15} /></span>
+                <div className="atlas-bg-scenario-metric-copy">
+                  <span className="atlas-bg-scenario-metric-label">Land likelihood</span>
+                  <strong className="atlas-bg-scenario-metric-value">{activeScenario.likelihood}%</strong>
+                </div>
               </div>
-              <footer>
-                <a href={currentNegotiationScenarioHref(scenario.id)}>Open scenario <ArrowRight size={13} /></a>
-                <SourceTrustMini source={scenario.source} />
-              </footer>
-            </article>
-          ))}
-        </div>
+
+              <div className="atlas-bg-scenario-metric-card">
+                <span className="atlas-bg-scenario-metric-icon"><TrendingUp size={15} /></span>
+                <div className="atlas-bg-scenario-metric-copy">
+                  <span className="atlas-bg-scenario-metric-label">Net revenue (NR)</span>
+                  <strong className="atlas-bg-scenario-metric-value">{euros(activeScenario.outputs.revenueImpact)}</strong>
+                </div>
+              </div>
+
+              <div className="atlas-bg-scenario-metric-card">
+                <span className="atlas-bg-scenario-metric-icon"><BarChart3 size={15} /></span>
+                <div className="atlas-bg-scenario-metric-copy">
+                  <span className="atlas-bg-scenario-metric-label">Gross margin (GM)</span>
+                  <strong className="atlas-bg-scenario-metric-value">{euros(activeScenario.outputs.marginImpact)}</strong>
+                </div>
+              </div>
+
+              <div className="atlas-bg-scenario-metric-card">
+                <span className="atlas-bg-scenario-metric-icon"><PieChart size={15} /></span>
+                <div className="atlas-bg-scenario-metric-copy">
+                  <span className="atlas-bg-scenario-metric-label">Trade spend</span>
+                  <strong className="atlas-bg-scenario-metric-value">{euros(activeScenario.outputs.tradeSpendImpact)}</strong>
+                </div>
+              </div>
+            </div>
+
+            {/* Read sections (Buyer response & CNO action) */}
+            <div className="atlas-bg-scenario-reads-grid">
+              <div className="atlas-bg-scenario-read-card">
+                <span className="atlas-bg-scenario-read-icon"><User size={15} /></span>
+                <div className="atlas-bg-scenario-read-body">
+                  <span className="atlas-bg-scenario-read-label">Expected buyer response</span>
+                  <p>{activeScenario.response}</p>
+                </div>
+              </div>
+
+              <div className="atlas-bg-scenario-read-card atlas-bg-scenario-read-card--action">
+                <span className="atlas-bg-scenario-read-icon atlas-bg-scenario-read-icon--action"><ShieldCheck size={15} /></span>
+                <div className="atlas-bg-scenario-read-body">
+                  <span className="atlas-bg-scenario-read-label">CNO recommended action</span>
+                  <strong>{activeScenario.recommendedAction}</strong>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer action & source trust badge */}
+            <footer className="atlas-bg-scenario-panel-footer">
+              <a className="atlas-bg-scenario-action-btn" href={currentNegotiationScenarioHref(activeScenario.id)}>
+                Open scenario in Scenario Lab <ArrowRight size={13} />
+              </a>
+              <div className="atlas-bg-scenario-source-trust">
+                <SourceTrustMini source={activeScenario.source} />
+              </div>
+            </footer>
+          </div>
+        )}
       </section>
     </section>
   );
