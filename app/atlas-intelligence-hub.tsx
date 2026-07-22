@@ -14,6 +14,7 @@ import {
   CircleDollarSign,
   Clock3,
   Download,
+  Flag,
   FileSearch,
   Filter,
   Globe2,
@@ -21,7 +22,9 @@ import {
   LineChart,
   Loader2,
   Mic,
+  MoveRight,
   Newspaper,
+  RefreshCw,
   Search,
   Send,
   ShieldCheck,
@@ -9813,13 +9816,24 @@ function BuyingGroupCurrentNegotiationMiniView({
           <h2>{workspace.buyingGroup.name} is in {currentState.negotiationRound.toLowerCase()} with a {askGap.toFixed(1)} pt ask gap.</h2>
           <p>Use this read to decide whether to hold the current position, trade support, or move into a fallback scenario before the next room.</p>
           <div className="atlas-bg-current-cycle-strip">
-            {cycleCards.map((card) => (
-              <article key={card.label}>
-                <span>{card.label}</span>
-                <strong>{card.value}</strong>
-                <p>{card.detail}</p>
-              </article>
-            ))}
+            <article className="atlas-bg-cycle-stat" key="cycle-state">
+              <span className="atlas-bg-cycle-stat-icon"><RefreshCw size={15} /></span>
+              <span className="atlas-bg-cycle-stat-label">{cycleCards[0].label}</span>
+              <strong className="atlas-bg-cycle-stat-value">{cycleCards[0].value}</strong>
+              <p className="atlas-bg-cycle-stat-detail">{cycleCards[0].detail}</p>
+            </article>
+            <article className="atlas-bg-cycle-stat" key="last-buyer-move">
+              <span className="atlas-bg-cycle-stat-icon"><MoveRight size={15} /></span>
+              <span className="atlas-bg-cycle-stat-label">{cycleCards[1].label}</span>
+              <strong className="atlas-bg-cycle-stat-value">{cycleCards[1].value}</strong>
+              <p className="atlas-bg-cycle-stat-detail">{cycleCards[1].detail}</p>
+            </article>
+            <article className="atlas-bg-cycle-stat" key="next-milestone">
+              <span className="atlas-bg-cycle-stat-icon"><Flag size={15} /></span>
+              <span className="atlas-bg-cycle-stat-label">{cycleCards[2].label}</span>
+              <strong className="atlas-bg-cycle-stat-value">{cycleCards[2].value}</strong>
+              <p className="atlas-bg-cycle-stat-detail">{cycleCards[2].detail}</p>
+            </article>
           </div>
         </div>
         <aside className="atlas-bg-current-room-action">

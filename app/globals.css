@@ -77641,11 +77641,11 @@ html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-hero-action-panel a svg
 
 /* Buyer profile hierarchy and chip alignment refinement. */
 html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-workspace {
-  gap: 24px !important;
+  gap: 0 !important;
 }
 
 html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-mini-view {
-  gap: 24px !important;
+  gap: 0 !important;
 }
 
 html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-profile-topline {
@@ -77686,7 +77686,7 @@ html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-hero .atlas-bg-hero-met
 @media (max-width: 760px) {
   html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-workspace,
   html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-mini-view {
-    gap: 30px !important;
+    gap: 0 !important;
   }
 }
 
@@ -81650,3 +81650,87 @@ html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-content-pane .atlas-bg-
     flex: 0 0 auto !important;
   }
 }
+
+/* =========================================================
+   Current Cycle Read — flat row layout (no card chrome)
+   ========================================================= */
+
+/* Strip card styling from cycle-stat articles only
+   (number-grid articles keep their existing card style) */
+html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-current-cycle-strip .atlas-bg-cycle-stat {
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  display: grid !important;
+  gap: 2px 12px !important;
+  grid-template-areas:
+    "icon label"
+    "icon value"
+    "icon detail" !important;
+  grid-template-columns: 28px 1fr !important;
+  min-height: 0 !important;
+  padding: 10px 0 !important;
+}
+
+/* Add a thin separator between cards except the first */
+html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-current-cycle-strip .atlas-bg-cycle-stat + .atlas-bg-cycle-stat {
+  border-top: 1px solid #e8e9ea !important;
+}
+
+/* Override the strip to be a vertical column for the flat-row layout */
+html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-current-cycle-strip:has(.atlas-bg-cycle-stat) {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0 !important;
+}
+
+/* Blue icon badge */
+html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-current-cycle-strip .atlas-bg-cycle-stat-icon {
+  align-items: center !important;
+  background: #e8f0fe !important;
+  border-radius: 8px !important;
+  color: #1a56db !important;
+  display: flex !important;
+  grid-area: icon !important;
+  height: 28px !important;
+  justify-content: center !important;
+  margin-top: 2px !important;
+  width: 28px !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-current-cycle-strip .atlas-bg-cycle-stat-icon svg {
+  stroke: #1a56db !important;
+}
+
+/* Label — overwrite the uppercase span rule scoped to this element */
+html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-current-cycle-strip .atlas-bg-cycle-stat-label {
+  color: #707172 !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  grid-area: label !important;
+  letter-spacing: 0.04em !important;
+  line-height: 16px !important;
+  text-transform: uppercase !important;
+}
+
+/* Value */
+html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-current-cycle-strip .atlas-bg-cycle-stat-value {
+  color: #31373d !important;
+  font-family: var(--font-display) !important;
+  font-size: 18px !important;
+  font-weight: 500 !important;
+  grid-area: value !important;
+  letter-spacing: 0 !important;
+  line-height: 1.2 !important;
+}
+
+/* Detail */
+html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-current-cycle-strip .atlas-bg-cycle-stat-detail {
+  color: #9a9b9c !important;
+  font-size: 12px !important;
+  grid-area: detail !important;
+  line-height: 18px !important;
+  margin: 0 !important;
+}
+
