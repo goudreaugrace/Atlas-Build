@@ -10468,7 +10468,7 @@ function BuyingGroupReimaginedWorkspace({
   }
 
   return (
-    <section className="atlas-buying-group-profile atlas-bg-workspace">
+    <section className="atlas-bg-workspace">
       <div className="atlas-bg-back-row">
         <a href="/buying-groups" aria-label="Back to buying groups">‹</a>
         <span>Back to buying groups</span>
@@ -10749,7 +10749,7 @@ function BuyingGroupTriageTable({ activeSort = 'priority', groups }: { activeSor
             const exposure = group.financialExposure;
             const markets = group.primaryMarkets.map((id) => getMarket(id)?.name ?? id).join(' / ');
             const realizationGap = exposure.targetPriceRealization - exposure.expectedPriceRealization;
-            const href = `/buying-groups/${group.id}?view=current`;
+            const href = `/buying-groups/${group.id}?view=strategy`;
             return (
               <tr
                 className={`risk-${group.riskLevel}`}
