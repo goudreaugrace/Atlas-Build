@@ -9561,15 +9561,23 @@ function BuyingGroupProfileMiniView({
   const latestMemory = workspace.timelineEvents[0];
   const markets = workspace.markets.map((market) => market.name).join(' / ');
   const [openSource, setOpenSource] = useState<SourceMeta | null>(null);
+  const [expandedSignalId, setExpandedSignalId] = useState<string | null>(flaggedInsights[0]?.id ?? null);
 
   return (
     <>
-      <section className="atlas-bg-mini-view atlas-bg-profile-view atlas-bg-profile-view-v2">
+      <section className="atlas-bg-mini-view atlas-bg-profile-view atlas-bg-profile-view-v2 atlas-bg-profile-command-read">
         <div className="atlas-bg-profile-topline">
           <article className="atlas-bg-profile-lead">
-            <span>Buyer profile</span>
-            <h2>{workspace.buyingGroup.name} usually responds through {negotiator.style.toLowerCase()} behavior.</h2>
-            <p>{negotiator.watch}</p>
+            <header className="atlas-bg-profile-section-header">
+              <div>
+                <span>Buyer response read</span>
+                <h2>{workspace.buyingGroup.name} usually responds through {negotiator.style.toLowerCase()} behavior.</h2>
+                <p>{negotiator.watch}</p>
+              </div>
+              <a className="atlas-bg-profile-section-link" href={`/buying-groups/${workspace.buyingGroup.id}?view=current`}>
+                Open negotiation <ArrowRight size={14} />
+              </a>
+            </header>
             <dl className="atlas-bg-profile-facts">
               <div><dt>Markets</dt><dd>{markets}</dd></div>
               <div><dt>Stage</dt><dd>{workspace.buyingGroup.negotiationStage}</dd></div>
@@ -9592,41 +9600,104 @@ function BuyingGroupProfileMiniView({
           </article>
         </div>
 
-        <article className="atlas-bg-ai-flags">
-          <div className="atlas-bg-ai-flags-header">
-            <span>AI flagged for next negotiation</span>
-            <h3>External and historical signals this buyer may bring into the room</h3>
+        <section className="atlas-bg-profile-signal-feed">
+          <header className="atlas-bg-profile-feed-header">
+            <div>
+              <div className="atlas-bg-profile-feed-title-row">
+                <AlertCircle size={18} />
+                <h3>{flaggedInsights.length} Signals</h3>
+              </div>
+              <p>External and historical signals this buyer may bring into the room, ranked for CNO preparation.</p>
+            </div>
+          </header>
+          <div className="atlas-bg-profile-signal-list">
+            {flaggedInsights.map((insight, index) => {
+              const isExpanded = expandedSignalId === insight.id;
+              return (
+              <article className={`atlas-bg-profile-signal-accordion${isExpanded ? ' is-expanded' : ''}`} key={insight.id}>
+                <div className="atlas-bg-profile-signal-accordion-main">
+                  <div className="atlas-bg-profile-signal-title-block">
+                    <p>{insight.label}</p>
+                    <h4>{insight.strategyUse}</h4>
+                  </div>
+                  <dl className="atlas-bg-profile-signal-metrics">
+                    <div>
+                      <dt>Rank</dt>
+                      <dd>{String(index + 1).padStart(2, '0')}</dd>
+                    </div>
+                    <div>
+                      <dt>Signal</dt>
+                      <dd>{insight.change}</dd>
+                    </div>
+                    <div>
+                      <dt>Source</dt>
+                      <dd>{sourceDisplayName(insight.source)}</dd>
+                    </div>
+                  </dl>
+                  <button
+                    aria-expanded={isExpanded}
+                    aria-label={`${isExpanded ? 'Collapse' : 'Expand'} ${insight.strategyUse}`}
+                    className="atlas-bg-profile-signal-chevron"
+                    onClick={() => setExpandedSignalId(isExpanded ? null : insight.id)}
+                    type="button"
+                  >
+                    {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                  </button>
+                </div>
+
+                <div className="atlas-bg-profile-signal-reaction-row">
+                  <div className="atlas-bg-profile-signal-reaction">
+                    <img src="/images/backgrounds/isotope_orbs 1.png" alt="Atlas" />
+                    <p><span>Atlas read:</span> {insight.implication}</p>
+                  </div>
+                  <BuyingGroupProfileSourceButton onOpen={setOpenSource} source={insight.source} />
+                </div>
+
+                <div className="atlas-bg-profile-signal-detail-wrapper">
+                  <section className="atlas-bg-profile-signal-detail">
+                    <div>
+                      <span>CNO move</span>
+                      <p>{insight.action}</p>
+                    </div>
+                    <div>
+                      <span>Buyer read</span>
+                      <p>{insight.response}</p>
+                    </div>
+                    <div>
+                      <span>Source context</span>
+                      <p>{sourceDisplayName(insight.source)} · {formatAtlasDate(insight.source.sourceDate, { includeYear: true })} · {insight.source.confidence} confidence</p>
+                    </div>
+                  </section>
+                </div>
+              </article>
+              );
+            })}
           </div>
-          <div className="atlas-bg-ai-flag-list">
-            {flaggedInsights.map((insight) => (
+        </section>
+
+        <section className="atlas-bg-profile-pattern-section">
+          <header className="atlas-bg-profile-section-header">
+            <div>
+              <span>Pattern library</span>
+              <h3>Expected buyer behaviors to account for before the next response</h3>
+              <p>These patterns translate prior rounds and comparable pressure into practical moves for the next negotiation room.</p>
+            </div>
+          </header>
+          <div className="atlas-bg-behavior-grid">
+            {patterns.map((pattern) => (
               <BuyingGroupIntelligenceCard
-                action={insight.action}
-                detail={`${insight.change}. ${insight.implication}`}
-                eyebrow={insight.label}
-                expectedResponse={insight.response}
-                key={insight.id}
+                action={pattern.action}
+                detail={pattern.detail}
+                eyebrow={pattern.label}
+                expectedResponse={pattern.expectedResponse}
+                key={pattern.label}
                 onOpenSource={setOpenSource}
-                source={insight.source}
-                title={insight.strategyUse}
+                source={pattern.source}
+                title={pattern.value}
               />
             ))}
           </div>
-        </article>
-
-        <div className="atlas-bg-behavior-grid">
-          {patterns.map((pattern) => (
-            <BuyingGroupIntelligenceCard
-              action={pattern.action}
-              detail={pattern.detail}
-              eyebrow={pattern.label}
-              expectedResponse={pattern.expectedResponse}
-              key={pattern.label}
-              onOpenSource={setOpenSource}
-              source={pattern.source}
-              title={pattern.value}
-            />
-          ))}
-        </div>
+        </section>
       </section>
       {openSource ? <SourceDetailDrawer onClose={() => setOpenSource(null)} source={openSource} /> : null}
     </>
@@ -9671,26 +9742,6 @@ function BuyingGroupCurrentNegotiationMiniView({
     { label: 'Cycle state', value: buyerRoundLabel(workspace.buyingGroup), detail: currentState.negotiationRound },
     { label: 'Last buyer move', value: currentState.latestBuyerAsk, detail: askGap > 0 ? `${askGap.toFixed(1)} pts above PepsiCo position` : 'No modeled gap to PepsiCo position' },
     { label: 'Next milestone', value: currentState.nextMilestone, detail: firstApproval }
-  ];
-  const changeCards = [
-    {
-      detail: `ATLAS reads the current ask as ${askGap.toFixed(1)} pts away from PepsiCo's position and ${targetGap.toFixed(1)} pts away from target.`,
-      label: 'Buyer movement',
-      source: profileRead.source,
-      title: `Current ask is ${currentState.latestBuyerAsk}`
-    },
-    {
-      detail: primarySignal?.negotiationImplication ?? latestEvent?.summary ?? 'No new external signal is currently stronger than buyer history.',
-      label: primarySignal ? 'External signal' : 'Buyer memory',
-      source: primarySignal?.source ?? latestEvent?.source ?? workspace.buyingGroup.source,
-      title: primarySignal?.title ?? latestEvent?.title ?? 'History is the active context'
-    },
-    {
-      detail: competitor?.possibleBuyerLeverage ?? 'No competitor move is currently strong enough to change the primary price corridor.',
-      label: competitor ? 'Competitive pressure' : 'Source check',
-      source: competitor?.source ?? workspace.documents[0]?.source ?? workspace.buyingGroup.source,
-      title: competitor?.title ?? firstApproval
-    }
   ];
   const scenarioCompareParams = new URLSearchParams();
   scenarioCompareParams.set('buyingGroup', workspace.buyingGroup.id);
@@ -9752,34 +9803,31 @@ function BuyingGroupCurrentNegotiationMiniView({
       title: 'Buyer response pattern is loaded.'
     }
   ];
+  const primaryScenario = scenarios[0];
 
   return (
     <section className="atlas-bg-mini-view atlas-bg-current-view atlas-bg-current-view-v2">
-      <section className="atlas-bg-cycle-read">
-        <header>
+      <section className="atlas-bg-current-room-read">
+        <div className="atlas-bg-current-room-copy">
           <span>Current cycle read</span>
           <h2>{workspace.buyingGroup.name} is in {currentState.negotiationRound.toLowerCase()} with a {askGap.toFixed(1)} pt ask gap.</h2>
-          <p>Start here to see what changed in this cycle, what ATLAS thinks it means, and what needs to be ready before the next room.</p>
-        </header>
-        <div className="atlas-bg-current-read-grid">
-          {cycleCards.map((card) => (
-            <article key={card.label}>
-              <span>{card.label}</span>
-              <strong>{card.value}</strong>
-              <p>{card.detail}</p>
-            </article>
-          ))}
+          <p>Use this read to decide whether to hold the current position, trade support, or move into a fallback scenario before the next room.</p>
+          <div className="atlas-bg-current-cycle-strip">
+            {cycleCards.map((card) => (
+              <article key={card.label}>
+                <span>{card.label}</span>
+                <strong>{card.value}</strong>
+                <p>{card.detail}</p>
+              </article>
+            ))}
+          </div>
         </div>
-        <div className="atlas-bg-cycle-change-grid">
-          {changeCards.map((card) => (
-            <article key={card.label}>
-              <span>{card.label}</span>
-              <h3>{card.title}</h3>
-              <p>{card.detail}</p>
-              <SourceTrustMini source={card.source} />
-            </article>
-          ))}
-        </div>
+        <aside className="atlas-bg-current-room-action">
+          <span>Recommended next move</span>
+          <strong>{primaryScenario?.recommendedAction ?? guardrailStatus}</strong>
+          <p>{likelyObjection}</p>
+          <a href={`/generated-views?${scenarioBriefParams.toString()}`}>Open room brief <ArrowRight size={13} /></a>
+        </aside>
       </section>
 
       <section className="atlas-bg-current-numbers">
@@ -9788,8 +9836,26 @@ function BuyingGroupCurrentNegotiationMiniView({
           <h2>Use the current corridor before changing the negotiation position.</h2>
           <p>These are the sourced baseline numbers CNOs need before selecting a scenario or trading support.</p>
         </header>
-        <div className="atlas-bg-current-number-grid">
-          {numberCards.map((card) => (
+        <div className="atlas-bg-current-number-workspace">
+          <div className="atlas-bg-current-corridor-panel">
+            <div className="atlas-bg-current-number-grid atlas-bg-current-number-grid--corridor">
+              {numberCards.slice(0, 4).map((card) => (
+                <article key={card.label}>
+                  <span>{card.label}</span>
+                  <strong>{card.value}</strong>
+                  <p>{card.detail}</p>
+                </article>
+              ))}
+            </div>
+          </div>
+          <aside className="atlas-bg-guardrail-note">
+            <span>Guardrail read</span>
+            <strong>{guardrailStatus}</strong>
+            <p>{firstApproval}</p>
+          </aside>
+        </div>
+        <div className="atlas-bg-current-exposure-row">
+          {numberCards.slice(4).map((card) => (
             <article key={card.label}>
               <span>{card.label}</span>
               <strong>{card.value}</strong>
@@ -9797,12 +9863,9 @@ function BuyingGroupCurrentNegotiationMiniView({
             </article>
           ))}
         </div>
-        <aside className="atlas-bg-guardrail-note">
-          <span>Guardrail read</span>
-          <strong>{guardrailStatus}</strong>
-          <p>{firstApproval}</p>
-        </aside>
-        <SourceTrustMini source={profileRead.source} />
+        <div className="atlas-bg-current-number-source">
+          <SourceTrustMini source={profileRead.source} />
+        </div>
       </section>
 
       <section className="atlas-bg-prep-section">
@@ -9817,9 +9880,11 @@ function BuyingGroupCurrentNegotiationMiniView({
               <span>{card.label}</span>
               <h3>{card.title}</h3>
               <p>{card.detail}</p>
+              <div className="atlas-bg-prep-row-source">
+                <SourceTrustMini linked={false} source={card.source} />
+              </div>
               <footer>
                 <a href={card.actionHref}>{card.actionLabel} <ArrowRight size={13} /></a>
-                <SourceTrustMini source={card.source} />
               </footer>
             </article>
           ))}
@@ -9828,9 +9893,8 @@ function BuyingGroupCurrentNegotiationMiniView({
 
       <section className="atlas-bg-scenario-section">
         <header>
-          <span>Predictive scenarios</span>
-          <h2>Scenarios to keep ready for this buying group</h2>
-          <p>Each scenario connects the current numbers to expected buyer response, financial impact, and the CNO move.</p>
+          <h2>Scenarios to keep ready before responding</h2>
+          <p>Each scenario connects the current numbers to expected buyer response, financial impact, and the recommended CNO move.</p>
         </header>
         <div className="atlas-bg-scenario-list">
           {scenarios.map((scenario) => (
@@ -9875,7 +9939,6 @@ function BuyingGroupTimelineMiniView({
   profileUpdates: BuyerProfileDocumentUpdate[];
   workspace: BuyingGroupWorkspacePacket;
 }) {
-  const savedViews = useStoredGeneratedViews({ buyingGroupId: workspace.buyingGroup.id });
   const negotiationEventTypes: TimelineEvent['eventType'][] = [
     'competitor_move',
     'negotiation_update',
@@ -9885,9 +9948,6 @@ function BuyingGroupTimelineMiniView({
     'financial_change'
   ];
   const negotiationEvents = workspace.timelineEvents.filter((event) => negotiationEventTypes.includes(event.eventType) && Number(event.timestamp.slice(0, 4)) >= 2025);
-  const supportingEvents = workspace.timelineEvents.filter((event) => !negotiationEvents.some((visibleEvent) => visibleEvent.id === event.id));
-  const hiddenInteractionCount =
-    supportingEvents.length + workspace.documents.length + savedViews.length + profileUpdates.length;
   const timelineRows = negotiationEvents.map((event) => {
     const financialImpact = compactFinancialImpact({
       margin: event.financialImpact?.marginImpact,
@@ -9919,23 +9979,6 @@ function BuyingGroupTimelineMiniView({
     }
     return years;
   }, []);
-  const supportingActivity = [
-    {
-      count: supportingEvents.filter((event) => event.eventType === 'scenario_modeled').length + savedViews.filter((view) => /scenario|model/i.test(`${view.title} ${view.prompt}`)).length,
-      label: 'Scenario saves',
-      detail: 'Available in Scenario Lab and source detail.'
-    },
-    {
-      count: workspace.documents.length,
-      label: 'Documents',
-      detail: 'Used for source validation, not shown as negotiation milestones.'
-    },
-    {
-      count: profileUpdates.length + savedViews.filter((view) => !/scenario|model/i.test(`${view.title} ${view.prompt}`)).length,
-      label: 'Workspace activity',
-      detail: 'Profile edits and generated reads stay outside the main timeline.'
-    }
-  ].filter((item) => item.count > 0);
 
   return (
     <section className="atlas-bg-mini-view atlas-bg-timeline-view atlas-bg-timeline-view-v2">
@@ -9947,30 +9990,6 @@ function BuyingGroupTimelineMiniView({
         </div>
         <a href={`/intelligence?buyingGroup=${workspace.buyingGroup.id}&action=add-debrief`}>Add debrief</a>
       </header>
-
-      {latestRow ? (
-        <section className="atlas-bg-timeline-current-read">
-          <div>
-            <span>Current read</span>
-            <strong>{latestRow.title}</strong>
-            <p>{latestRow.predictionEffect}</p>
-          </div>
-          <dl>
-            <div>
-              <dt>Latest update</dt>
-              <dd>{formatAtlasDate(latestRow.date, { includeYear: true })}</dd>
-            </div>
-            <div>
-              <dt>Modeled impact</dt>
-              <dd>{latestRow.impact}</dd>
-            </div>
-            <div>
-              <dt>Hidden activity</dt>
-              <dd>{hiddenInteractionCount} source items</dd>
-            </div>
-          </dl>
-        </section>
-      ) : null}
 
       <section className="atlas-bg-timeline-ledger">
         <header>
@@ -10001,16 +10020,10 @@ function BuyingGroupTimelineMiniView({
                       </div>
                       <h3>{row.title}</h3>
                       <p>{row.detail}</p>
-                      <dl>
-                        <div>
-                          <dt>Changed</dt>
-                          <dd>{row.impact}</dd>
-                        </div>
-                        <div>
-                          <dt>Prediction effect</dt>
-                          <dd>{row.predictionEffect}</dd>
-                        </div>
-                      </dl>
+                      <p className="atlas-bg-timeline-impact-line">
+                        <strong>{row.impact}</strong>
+                        <span>{row.predictionEffect}</span>
+                      </p>
                       <p className="atlas-bg-timeline-source-line">Source: {row.sourceLine}</p>
                     </div>
                   </article>
@@ -10020,24 +10033,6 @@ function BuyingGroupTimelineMiniView({
           ))}
         </div>
       </section>
-
-      {supportingActivity.length ? (
-        <details className="atlas-bg-timeline-supporting">
-          <summary>
-            <span>View supporting activity</span>
-            <em>{hiddenInteractionCount} hidden</em>
-          </summary>
-          <div>
-            {supportingActivity.map((item) => (
-              <article key={item.label}>
-                <strong>{item.count}</strong>
-                <span>{item.label}</span>
-                <p>{item.detail}</p>
-              </article>
-            ))}
-          </div>
-        </details>
-      ) : null}
     </section>
   );
 }
@@ -10100,6 +10095,14 @@ function BuyingGroupReimaginedWorkspace({
   const [activeView, setActiveView] = useState<BuyingGroupMiniView>(initialMiniView);
   const negotiator = buyerNegotiatorProfile(workspace);
   const topScenario = buyerScenarioRead(workspace)[0];
+  const marketNames = workspace.markets.map((market) => market.name).join(' / ');
+  const riskTone = workspace.buyingGroup.riskLevel.toLowerCase();
+  const exposure = profileRead.exposure;
+  const realizationGap = Math.max(0, exposure.targetPriceRealization - exposure.expectedPriceRealization);
+  const marginShare = exposure.revenueUnderNegotiation
+    ? Math.round((exposure.marginAtRisk / exposure.revenueUnderNegotiation) * 100)
+    : 0;
+  const scenarioHref = `/scenario-lab?buyingGroup=${workspace.buyingGroup.id}&scenario=${topScenario.id}&returnTo=${encodeURIComponent(`/buying-groups/${workspace.buyingGroup.id}?view=profile`)}`;
   const miniViews: Array<{ id: BuyingGroupMiniView; label: string; helper: string }> = [
     { id: 'profile', label: 'Profile', helper: 'Buyer behavior and negotiator read' },
     { id: 'current', label: 'Current negotiation', helper: 'Numbers and predictive scenarios' },
@@ -10112,28 +10115,65 @@ function BuyingGroupReimaginedWorkspace({
   }
 
   return (
-    <section className="atlas-bg-workspace">
-      <div className="atlas-bg-back-row">
-        <a href="/buying-groups" aria-label="Back to buying groups">‹</a>
-        <span>Back to buying groups</span>
-      </div>
-
+    <section className={`atlas-bg-workspace atlas-bg-workspace--${activeView}`}>
       <header className="atlas-bg-hero">
-        <div>
-          <span>Living buying group intelligence</span>
-          <h1>Buying Group Profile: {workspace.buyingGroup.name}</h1>
-          <p>Historical notes, negotiator behavior, current numbers, and predictive scenarios converted into guidance for the next negotiation.</p>
+        <a className="atlas-bg-hero-back" href="/buying-groups" aria-label="Back to buying groups">
+          <span aria-hidden="true">←</span>
+          <strong>Back to buying groups</strong>
+        </a>
+        <div className="atlas-bg-hero-main">
+          <div className="atlas-bg-hero-copy">
+            <h1>{workspace.buyingGroup.name} buyer profile</h1>
+            <p>{workspace.buyingGroup.name} has {euros(exposure.marginAtRisk)} margin at risk on {euros(exposure.revenueUnderNegotiation)} revenue under negotiation. Expected realization is {pct(exposure.expectedPriceRealization)} versus {pct(exposure.targetPriceRealization)} target.</p>
+            <div className="atlas-bg-hero-meta" aria-label={`${workspace.buyingGroup.name} profile context`}>
+              <span>{marketNames}</span>
+              <span>{workspace.buyingGroup.negotiationStage}</span>
+              <span>{negotiator.style}</span>
+              <span className={`atlas-bg-hero-risk-pill atlas-bg-hero-risk-pill--${riskTone}`}>{workspace.buyingGroup.riskLevel} risk</span>
+            </div>
+          </div>
+
+          <dl className="atlas-bg-hero-metrics" aria-label={`${workspace.buyingGroup.name} CNO financial metrics`}>
+            <div className="atlas-bg-hero-metric atlas-bg-hero-metric--margin">
+              <dt>Margin at risk</dt>
+              <dd>{euros(exposure.marginAtRisk)}</dd>
+              <p>{marginShare}% of negotiated revenue</p>
+            </div>
+            <div className="atlas-bg-hero-metric atlas-bg-hero-metric--revenue">
+              <dt>Revenue under negotiation</dt>
+              <dd>{euros(exposure.revenueUnderNegotiation)}</dd>
+              <p>{workspace.buyingGroup.name} scope</p>
+            </div>
+            <div className="atlas-bg-hero-metric atlas-bg-hero-metric--realization">
+              <dt>Realization gap</dt>
+              <dd>{realizationGap.toFixed(1)} pts</dd>
+              <p>{pct(exposure.expectedPriceRealization)} expected vs {pct(exposure.targetPriceRealization)} target</p>
+            </div>
+            <div className="atlas-bg-hero-metric atlas-bg-hero-metric--trade">
+              <dt>Trade spend exposure</dt>
+              <dd>{euros(exposure.tradeSpendExposure)}</dd>
+              <p>Current pressure pool</p>
+            </div>
+          </dl>
         </div>
-        <dl>
-          <div><dt>Risk</dt><dd>{workspace.buyingGroup.riskLevel}</dd></div>
-          <div><dt>Margin at risk</dt><dd>{euros(profileRead.exposure.marginAtRisk)}</dd></div>
-          <div><dt>Top scenario</dt><dd>{topScenario.name}</dd></div>
-        </dl>
+
+        <aside className={`atlas-bg-hero-action-panel atlas-bg-hero-action-panel--${riskTone}`}>
+          <span>Recommended CNO move</span>
+          <p>Prioritize a scenario that closes the {realizationGap.toFixed(1)} point realization gap without expanding the {euros(exposure.marginAtRisk)} margin-at-risk position.</p>
+          <a href={scenarioHref}>Review scenario <ArrowRight size={22} /></a>
+        </aside>
       </header>
 
       <nav className="atlas-bg-mini-tabs" aria-label={`${workspace.buyingGroup.name} views`}>
         {miniViews.map((view) => (
-          <button className={activeView === view.id ? 'active' : ''} key={view.id} onClick={() => selectView(view.id)} type="button">
+          <button
+            aria-current={activeView === view.id ? 'page' : undefined}
+            className={activeView === view.id ? 'active' : ''}
+            key={view.id}
+            onClick={() => selectView(view.id)}
+            title={view.helper}
+            type="button"
+          >
             <strong>{view.label}</strong>
             <small>{view.helper}</small>
           </button>
