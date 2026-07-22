@@ -9886,55 +9886,67 @@ function BuyingGroupCurrentNegotiationMiniView({
 
         {indicatorsTab === 'indicators' && (
           <div className="atlas-bg-indicators-panel">
-            {/* Corridor metric rows */}
+            {/* Corridor metric rows (fluid 2x2 grid layout) */}
             <div className="atlas-bg-corridor-rows">
               <div className="atlas-bg-corridor-row">
-                <span className="atlas-bg-corridor-row-icon"><Target size={14} /></span>
-                <span className="atlas-bg-corridor-row-label">Buyer ask</span>
+                <span className="atlas-bg-corridor-row-icon"><Target size={15} /></span>
+                <div className="atlas-bg-corridor-row-copy">
+                  <span className="atlas-bg-corridor-row-label">Buyer ask</span>
+                  <span className="atlas-bg-corridor-row-detail">{numberCards[0].detail}</span>
+                </div>
                 <strong className="atlas-bg-corridor-row-value">{numberCards[0].value}</strong>
-                <span className="atlas-bg-corridor-row-detail">{numberCards[0].detail}</span>
               </div>
               <div className="atlas-bg-corridor-row">
-                <span className="atlas-bg-corridor-row-icon"><BarChart3 size={14} /></span>
-                <span className="atlas-bg-corridor-row-label">PepsiCo position</span>
+                <span className="atlas-bg-corridor-row-icon"><BarChart3 size={15} /></span>
+                <div className="atlas-bg-corridor-row-copy">
+                  <span className="atlas-bg-corridor-row-label">PepsiCo position</span>
+                  <span className="atlas-bg-corridor-row-detail">{numberCards[1].detail}</span>
+                </div>
                 <strong className="atlas-bg-corridor-row-value">{numberCards[1].value}</strong>
-                <span className="atlas-bg-corridor-row-detail">{numberCards[1].detail}</span>
               </div>
               <div className="atlas-bg-corridor-row">
-                <span className="atlas-bg-corridor-row-icon"><TrendingUp size={14} /></span>
-                <span className="atlas-bg-corridor-row-label">Target</span>
+                <span className="atlas-bg-corridor-row-icon"><TrendingUp size={15} /></span>
+                <div className="atlas-bg-corridor-row-copy">
+                  <span className="atlas-bg-corridor-row-label">Target</span>
+                  <span className="atlas-bg-corridor-row-detail">{numberCards[2].detail}</span>
+                </div>
                 <strong className="atlas-bg-corridor-row-value">{numberCards[2].value}</strong>
-                <span className="atlas-bg-corridor-row-detail">{numberCards[2].detail}</span>
               </div>
               <div className="atlas-bg-corridor-row">
-                <span className="atlas-bg-corridor-row-icon"><TrendingDown size={14} /></span>
-                <span className="atlas-bg-corridor-row-label">Red line</span>
+                <span className="atlas-bg-corridor-row-icon"><TrendingDown size={15} /></span>
+                <div className="atlas-bg-corridor-row-copy">
+                  <span className="atlas-bg-corridor-row-label">Red line</span>
+                  <span className="atlas-bg-corridor-row-detail">{numberCards[3].detail}</span>
+                </div>
                 <strong className="atlas-bg-corridor-row-value">{numberCards[3].value}</strong>
-                <span className="atlas-bg-corridor-row-detail">{numberCards[3].detail}</span>
               </div>
             </div>
 
-            {/* Guardrail callout */}
+            {/* Guardrail callout strip */}
             <div className="atlas-bg-guardrail-strip">
-              <span className="atlas-bg-guardrail-strip-icon"><ShieldCheck size={15} /></span>
+              <span className="atlas-bg-guardrail-strip-icon"><ShieldCheck size={16} /></span>
               <div className="atlas-bg-guardrail-strip-body">
-                <span className="atlas-bg-guardrail-strip-label">Guardrail read</span>
-                <strong className="atlas-bg-guardrail-strip-status">{guardrailStatus}</strong>
+                <div className="atlas-bg-guardrail-strip-header">
+                  <span className="atlas-bg-guardrail-strip-label">Guardrail read</span>
+                  <strong className="atlas-bg-guardrail-strip-status">{guardrailStatus}</strong>
+                </div>
                 <p className="atlas-bg-guardrail-strip-note">{firstApproval}</p>
               </div>
             </div>
 
             {/* Exposure chips row */}
             <div className="atlas-bg-exposure-chips">
-              <span className="atlas-bg-exposure-chip-icon"><PieChart size={13} /></span>
-              <div className="atlas-bg-exposure-chip">
-                <span>{numberCards[4].label}</span>
-                <strong>{numberCards[4].value}</strong>
-              </div>
-              <div className="atlas-bg-exposure-chip-sep" />
-              <div className="atlas-bg-exposure-chip">
-                <span>{numberCards[5].label}</span>
-                <strong>{numberCards[5].value}</strong>
+              <div className="atlas-bg-exposure-chips-left">
+                <span className="atlas-bg-exposure-chip-icon"><PieChart size={14} /></span>
+                <div className="atlas-bg-exposure-chip">
+                  <span>{numberCards[4].label}:</span>
+                  <strong>{numberCards[4].value}</strong>
+                </div>
+                <span className="atlas-bg-exposure-chip-dot">•</span>
+                <div className="atlas-bg-exposure-chip">
+                  <span>{numberCards[5].label}:</span>
+                  <strong>{numberCards[5].value}</strong>
+                </div>
               </div>
               <div className="atlas-bg-exposure-chip-source">
                 <SourceTrustMini source={profileRead.source} />
@@ -9993,6 +10005,7 @@ function BuyingGroupCurrentNegotiationMiniView({
             </div>
           </div>
         )}
+
 
       </section>
 
