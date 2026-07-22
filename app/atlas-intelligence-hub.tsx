@@ -1372,12 +1372,16 @@ function AtlasCommandSurface({
   const [isFocused, setIsFocused] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const stagedPromptRef = useRef(initialPrompt);
 
   function resetCommandSurface() {
+    stagedPromptRef.current = initialPrompt;
     setPrompt(initialPrompt);
     setStatus('');
     setIsThinking(false);
     setQuickAnswer(null);
+    setIsFocused(false);
+    setIsHovered(false);
   }
 
   useEffect(() => {
@@ -1437,9 +1441,12 @@ function AtlasCommandSurface({
     return `${href}${href.includes('?') ? '&' : '?'}${scope}`;
   }
 
-  function submit(command = prompt) {
-    const trimmed = command.trim();
+  function submit(command?: string) {
+    const nextCommand = command ?? (stagedPromptRef.current || prompt);
+    const trimmed = nextCommand.trim();
     if (!trimmed || isThinking) return;
+    stagedPromptRef.current = trimmed;
+    setPrompt(trimmed);
     const href = scopedGeneratedViewHref(outputHrefForCommand(trimmed));
     const isOutput = href.startsWith('/generated-views') || href.startsWith('/atlas-output');
 
@@ -1457,7 +1464,8 @@ function AtlasCommandSurface({
         setIsThinking(false);
         if (pendingOutputTab) {
           pendingOutputTab.location.href = href;
-          setStatus('Scenario output opened in a new tab.');
+          inputRef.current?.blur();
+          resetCommandSurface();
           return;
         }
         setStatus('Popup blocked. Opening here...');
@@ -1472,6 +1480,7 @@ function AtlasCommandSurface({
 
   function stageExample(example: string) {
     if (isThinking) return;
+    stagedPromptRef.current = example;
     setPrompt(example);
     setStatus('');
     inputRef.current?.focus();
@@ -1509,7 +1518,10 @@ function AtlasCommandSurface({
           <input
             ref={inputRef}
             value={prompt}
-            onChange={(event) => setPrompt(event.target.value)}
+            onChange={(event) => {
+              stagedPromptRef.current = event.target.value;
+              setPrompt(event.target.value);
+            }}
             onFocus={() => setIsFocused(true)}
             onBlur={() => setIsFocused(false)}
             placeholder={placeholder}
@@ -1530,7 +1542,8 @@ function AtlasCommandSurface({
         <button 
           type="submit" 
           className="send" 
-          disabled={isThinking || !prompt.trim()}
+          disabled={isThinking || !(prompt.trim() || stagedPromptRef.current.trim())}
+          onMouseDown={(event) => event.preventDefault()}
           aria-label={isThinking ? 'Processing' : 'Send'}
         >
           {isThinking ? <Square size={14} className="stop-icon" /> : <Send size={14} />}
@@ -12959,6 +12972,7 @@ function filterSourceDatabaseRows(rows: SourceDatabaseRow[], ask?: string) {
 }
 
 function SourceDatabaseView({ initialPrompt }: { initialPrompt?: string }) {
+  const [sourceDatabasePage, setSourceDatabasePage] = useState(1);
   const allRows = buildSourceDatabaseRows();
   const rows = filterSourceDatabaseRows(allRows, initialPrompt);
   const sourceWatchouts = allRows.filter((row) => row.source.status === 'stale' || row.source.status === 'needs_validation' || row.source.status === 'missing');
@@ -12996,6 +13010,15 @@ function SourceDatabaseView({ initialPrompt }: { initialPrompt?: string }) {
       value: String(nonCanonicalRows.length)
     }
   ];
+  const sourceDatabasePageSize = 10;
+  const sourceDatabaseTotalPages = Math.max(1, Math.ceil(rows.length / sourceDatabasePageSize));
+  const sourceDatabaseCurrentPage = Math.min(Math.max(1, sourceDatabasePage), sourceDatabaseTotalPages);
+  const sourceDatabaseStartIndex = (sourceDatabaseCurrentPage - 1) * sourceDatabasePageSize;
+  const visibleSourceDatabaseRows = rows.slice(sourceDatabaseStartIndex, sourceDatabaseStartIndex + sourceDatabasePageSize);
+
+  useEffect(() => {
+    setSourceDatabasePage(1);
+  }, [initialPrompt]);
 
   return (
     <>
@@ -13042,7 +13065,7 @@ function SourceDatabaseView({ initialPrompt }: { initialPrompt?: string }) {
             <span>Financial data</span>
             <span>Links</span>
           </div>
-          {rows.map((row) => (
+          {visibleSourceDatabaseRows.map((row) => (
             <article className="atlas-source-database-row" key={row.id} role="row">
               <div>
                 <em>{row.recordType}</em>
@@ -13066,6 +13089,32 @@ function SourceDatabaseView({ initialPrompt }: { initialPrompt?: string }) {
             </article>
           ))}
         </div>
+        {sourceDatabaseTotalPages > 1 ? (
+          <nav className="atlas-source-database-pagination" aria-label="Intelligence library table pages">
+            <span>
+              Showing {sourceDatabaseStartIndex + 1}-{Math.min(sourceDatabaseStartIndex + sourceDatabasePageSize, rows.length)} of {rows.length}
+            </span>
+            <div>
+              {sourceDatabaseCurrentPage > 1 ? (
+                <button onClick={() => setSourceDatabasePage(sourceDatabaseCurrentPage - 1)} type="button">Previous</button>
+              ) : (
+                <span aria-disabled="true">Previous</span>
+              )}
+              {Array.from({ length: sourceDatabaseTotalPages }, (_, index) => index + 1).map((page) => (
+                page === sourceDatabaseCurrentPage ? (
+                  <span aria-current="page" className="active" key={page}>{page}</span>
+                ) : (
+                  <button onClick={() => setSourceDatabasePage(page)} type="button" key={page}>{page}</button>
+                )
+              ))}
+              {sourceDatabaseCurrentPage < sourceDatabaseTotalPages ? (
+                <button onClick={() => setSourceDatabasePage(sourceDatabaseCurrentPage + 1)} type="button">Next</button>
+              ) : (
+                <span aria-disabled="true">Next</span>
+              )}
+            </div>
+          </nav>
+        ) : null}
       </section>
     </>
   );
