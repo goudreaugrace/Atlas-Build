@@ -10019,43 +10019,44 @@ function BuyingGroupCurrentNegotiationMiniView({
             <h2>Scenarios for this profile</h2>
             <p>Modeled buyer responses, financial impacts, and CNO recommended actions.</p>
           </div>
-          <div className="atlas-bg-scenarios-tabs" role="tablist">
-            {scenarios.map((scenario, index) => {
-              const label =
-                index === 0
-                  ? 'Recommended'
-                  : index === 1
-                  ? 'Likely Buyer Counter'
-                  : 'Watch out';
-              const isActive = (activeScenario?.id ?? scenarios[0]?.id) === scenario.id;
-              return (
-                <button
-                  aria-selected={isActive}
-                  className={`atlas-bg-scenario-tab${isActive ? ' atlas-bg-scenario-tab--active' : ''}`}
-                  key={scenario.id}
-                  onClick={() => setActiveScenarioId(scenario.id)}
-                  role="tab"
-                  type="button"
-                >
-                  {label}
-                </button>
-              );
-            })}
-          </div>
         </header>
 
         {activeScenario && (
           <div className="atlas-bg-scenario-single-panel">
-            {/* Scenario headline strip */}
-            <div className="atlas-bg-scenario-main-header">
-              <div className="atlas-bg-scenario-name-row">
+            {/* Top header row inside panel with badge on its own line + tabs on top-right */}
+            <div className="atlas-bg-scenario-panel-top">
+              <div className="atlas-bg-scenario-name-block">
                 <span className="atlas-bg-scenario-badge">{activeScenario.priority}</span>
                 <h3>{activeScenario.name}</h3>
               </div>
-              <p className="atlas-bg-scenario-basis-note">
-                <ScanSearch size={14} /> Based on {activeScenario.basis}, ATLAS modeled {pct(activeScenario.inputs.priceIncreasePercent)} ask / {pct(activeScenario.inputs.expectedRealizationPercent)} expected realization.
-              </p>
+              <div className="atlas-bg-scenarios-tabs" role="tablist">
+                {scenarios.map((scenario, index) => {
+                  const label =
+                    index === 0
+                      ? 'Recommended'
+                      : index === 1
+                      ? 'Likely Buyer Counter'
+                      : 'Watch out';
+                  const isActive = (activeScenario?.id ?? scenarios[0]?.id) === scenario.id;
+                  return (
+                    <button
+                      aria-selected={isActive}
+                      className={`atlas-bg-scenario-tab${isActive ? ' atlas-bg-scenario-tab--active' : ''}`}
+                      key={scenario.id}
+                      onClick={() => setActiveScenarioId(scenario.id)}
+                      role="tab"
+                      type="button"
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
+
+            <p className="atlas-bg-scenario-basis-note">
+              <ScanSearch size={14} /> Based on {activeScenario.basis}, ATLAS modeled {pct(activeScenario.inputs.priceIncreasePercent)} ask / {pct(activeScenario.inputs.expectedRealizationPercent)} expected realization.
+            </p>
 
             {/* Flat icon metric cards */}
             <div className="atlas-bg-scenario-metrics-strip">
