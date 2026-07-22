@@ -142,6 +142,14 @@ function formatAtlasDate(dateInput: string, options: { includeTime?: boolean; in
   return `${dateLabel}, ${hour12}:${minutes} ${period}`;
 }
 
+function isSameAtlasDate(dateInput: string, comparisonDate: Date) {
+  const date = new Date(dateInput);
+  if (Number.isNaN(date.getTime())) return false;
+  return date.getUTCFullYear() === comparisonDate.getUTCFullYear()
+    && date.getUTCMonth() === comparisonDate.getUTCMonth()
+    && date.getUTCDate() === comparisonDate.getUTCDate();
+}
+
 type PageIntentKey =
   | 'overview'
   | 'markets'
@@ -1627,7 +1635,7 @@ function KpiRow() {
   const kpis = [
     { label: 'Revenue under negotiation', value: euros(packet.summary.revenueUnderNegotiation), delta: '+12% vs last refresh', note: 'Driven by Germany and UK renewals' },
     { label: 'Margin at risk', value: euros(packet.summary.marginAtRisk), delta: '+9% vs last refresh', note: 'EDEKA, Tesco and Carrefour lead exposure' },
-    { label: 'Gap to plan', value: euros(packet.summary.gapToPlan), delta: '+EUR 1.6M vs last refresh', note: 'Expected realization trails target' },
+    { label: 'Gap to plan', value: euros(packet.summary.gapToPlan), delta: '+€1.6M vs last refresh', note: 'Expected realization trails target' },
     { label: 'High-risk buying groups', value: String(packet.summary.highRiskBuyingGroups), delta: `${packet.summary.activeBuyingGroups} active total`, note: 'Prioritize critical and high risk groups' }
   ];
   return (
@@ -2761,8 +2769,8 @@ function BuyerProfileUpdatePanel({
   }> = [
     { label: 'Buyer ask', value: buyerAskDelta, setter: setBuyerAskDelta, unit: 'pts' },
     { label: 'Expected realization', value: expectedRealizationDelta, setter: setExpectedRealizationDelta, unit: 'pts' },
-    { label: 'Margin at risk', value: marginAtRiskDelta, setter: setMarginAtRiskDelta, unit: 'EUR M' },
-    { label: 'Trade spend', value: tradeSpendDelta, setter: setTradeSpendDelta, unit: 'EUR M' }
+    { label: 'Margin at risk', value: marginAtRiskDelta, setter: setMarginAtRiskDelta, unit: '€M' },
+    { label: 'Trade spend', value: tradeSpendDelta, setter: setTradeSpendDelta, unit: '€M' }
   ];
 
   function applyPreset(nextImpactType: string) {
@@ -3927,7 +3935,7 @@ function OverviewAttentionBrief() {
       href: `/buying-groups/${topGroup.id}`,
       label: 'Buyer risk',
       meta: `${pct(topGroup.financialExposure.expectedPriceRealization)} realized / ${pct(topGroup.financialExposure.targetPriceRealization)} target`,
-      movement: '+EUR 1.1M vs prior read',
+      movement: '+€1.1M vs prior read',
       title: topGroup.name,
       tone: 'risk',
       value: euros(topGroup.financialExposure.marginAtRisk)
@@ -6519,6 +6527,7 @@ const scenarioWorkspaceModules: Array<{ id: PredictiveWorkspaceModuleId; label: 
 ];
 
 const SCENARIO_DEBRIEF_STORAGE_KEY = 'atlas-scenario-debriefs';
+const SCENARIO_LAB_VISIT_STORAGE_KEY = 'atlas-scenario-lab-last-visit';
 
 function readScenarioDebriefMemory(buyingGroupId?: string): ScenarioDebriefEntry[] {
   if (typeof window === 'undefined') return [];
@@ -7100,11 +7109,11 @@ function BuyerPredictiveScenarioWorkspace({
     { key: 'priceIncreasePercent', label: 'Proposed price move', min: 0, max: 6, step: 0.1, suffix: '%' },
     { key: 'expectedRealizationPercent', label: 'Expected landed realization', min: 0, max: 5, step: 0.1, suffix: '%' },
     { key: 'volumeChangePercent', label: 'Modeled volume movement', min: -8, max: 4, step: 0.1, suffix: '%' },
-    { key: 'tradeSpendChange', label: 'Trade spend change', min: 0, max: Math.max(2_500_000, Math.ceil(defaultInputs.tradeSpendChange * 1.5)), step: 25000, suffix: 'EUR' },
-    { key: 'concessionAmount', label: 'Concession envelope', min: 0, max: Math.max(2_000_000, Math.ceil(defaultInputs.concessionAmount * 1.5)), step: 25000, suffix: 'EUR' },
+    { key: 'tradeSpendChange', label: 'Trade spend change', min: 0, max: Math.max(2_500_000, Math.ceil(defaultInputs.tradeSpendChange * 1.5)), step: 25000, suffix: '€' },
+    { key: 'concessionAmount', label: 'Concession envelope', min: 0, max: Math.max(2_000_000, Math.ceil(defaultInputs.concessionAmount * 1.5)), step: 25000, suffix: '€' },
     { key: 'buyerAcceptanceProbability', label: 'Buyer acceptance probability', min: 20, max: 95, step: 1, suffix: '%' }
   ];
-  const formatLabControlValue = (suffix: string, value: number) => suffix === 'EUR'
+  const formatLabControlValue = (suffix: string, value: number) => suffix === '€'
     ? euros(value)
     : `${value.toFixed(suffix === '%' ? 1 : 0)}${suffix}`;
   const cockpitQuickControls = labControls.filter(({ key }) => (
@@ -7688,7 +7697,7 @@ function BuyerPredictiveScenarioWorkspace({
                   const currentValue = Number(inputs[key]);
                   const defaultValue = Number(defaultInputs[key]);
                   const delta = currentValue - defaultValue;
-                  const deltaLabel = suffix === 'EUR'
+                  const deltaLabel = suffix === '€'
                     ? euros(delta)
                     : `${delta >= 0 ? '+' : ''}${delta.toFixed(1)} pts`;
                   return (
@@ -8501,7 +8510,7 @@ function BuyerProfileStrategyWorkspace({
     label: string;
     source: SourceMeta;
     sourceSummary: string;
-    suffix: '%' | 'EUR' | 'EUR / case' | 'cases';
+    suffix: '%' | '€' | '€ / case' | 'cases';
   }> = [
     {
       basis: 'Increase vs current customer net price',
@@ -8551,7 +8560,7 @@ function BuyerProfileStrategyWorkspace({
       label: 'Current net price',
       source: primarySource,
       sourceSummary: 'Estimated buyer net price per case used to translate percent moves into actual pricing.',
-      suffix: 'EUR / case'
+      suffix: '€ / case'
     },
     {
       basis: 'Annual cases under negotiation',
@@ -8591,7 +8600,7 @@ function BuyerProfileStrategyWorkspace({
       label: 'Trade spend envelope',
       source: workspace.buyingGroup.source,
       sourceSummary: 'Estimated from buyer trade spend exposure and current market pressure for this buying group.',
-      suffix: 'EUR'
+      suffix: '€'
     }
   ];
   const priceMoveRows = financeInputRows.filter((row) => row.group === 'price');
@@ -8663,22 +8672,22 @@ function BuyerProfileStrategyWorkspace({
     setNumberSaveState('Inputs saved for this strategy draft');
   }
 
-  function formatNumberInputValue(row: { suffix: '%' | 'EUR' | 'EUR / case' | 'cases' }, value: number) {
+  function formatNumberInputValue(row: { suffix: '%' | '€' | '€ / case' | 'cases' }, value: number) {
     if (row.suffix === '%') return `${value.toFixed(1)}%`;
-    if (row.suffix === 'EUR / case') return netPricePerCase(value);
+    if (row.suffix === '€ / case') return netPricePerCase(value);
     if (row.suffix === 'cases') return value.toLocaleString();
     return euros(value);
   }
 
-  function inputStepForSuffix(suffix: '%' | 'EUR' | 'EUR / case' | 'cases') {
+  function inputStepForSuffix(suffix: '%' | '€' | '€ / case' | 'cases') {
     if (suffix === '%') return 0.1;
-    if (suffix === 'EUR / case') return 0.05;
+    if (suffix === '€ / case') return 0.05;
     if (suffix === 'cases') return 10000;
     return 10000;
   }
 
   function netPricePerCase(value: number) {
-    return `EUR ${value.toFixed(2)} / case`;
+    return `€${value.toFixed(2)} / case`;
   }
 
   function priceAfterIncrease(basePrice: number, increasePercent: number) {
@@ -10538,7 +10547,8 @@ function ScenarioModelsView({
   const [scenarioTableBuyingGroupFilter, setScenarioTableBuyingGroupFilter] = useState(buyingGroupId ?? '');
   const [scenarioTableMarketFilter, setScenarioTableMarketFilter] = useState(marketId ?? '');
   const [scenarioTablePage, setScenarioTablePage] = useState(Number.parseInt(initialScenarioPage || '1', 10));
-  const [scenarioTableSort, setScenarioTableSort] = useState(initialSort || 'created');
+  const [scenarioTableSort, setScenarioTableSort] = useState(initialSort || 'impact');
+  const [scenarioNewSinceLastVisitCount, setScenarioNewSinceLastVisitCount] = useState<number | null>(null);
   const [expandedScenarioPriorityGroups, setExpandedScenarioPriorityGroups] = useState({ planning: false, traceability: false });
   const [expandedScenarioRowIds, setExpandedScenarioRowIds] = useState<string[]>([]);
   const [compareScenarioIds, setCompareScenarioIds] = useState<string[]>([]);
@@ -10575,6 +10585,15 @@ function ScenarioModelsView({
     .slice(0, 5);
   const attachedWorkspace = attachedBuyingGroup ? buildBuyingGroupWorkspacePacket(attachedBuyingGroup.id) : undefined;
   const latestScenarioDebrief = scenarioDebriefEntries[0];
+  const scenarioLabNow = new Date();
+  const scenarioLabCreatedAt = (daysAgo: number, hour: number, minute: number) => new Date(Date.UTC(
+    scenarioLabNow.getFullYear(),
+    scenarioLabNow.getMonth(),
+    scenarioLabNow.getDate() - daysAgo,
+    hour,
+    minute,
+    0
+  )).toISOString();
   function scenarioHref({ buyer = selectedBuyingGroupId, market = selectedMarketId }: { buyer?: string; market?: string } = {}) {
     const params = new URLSearchParams();
     if (market) params.set('market', market);
@@ -10591,7 +10610,7 @@ function ScenarioModelsView({
     setScenarioTableBuyingGroupFilter(buyingGroupId ?? '');
     setScenarioTableMarketFilter(marketId ?? '');
     setScenarioTablePage(Number.parseInt(initialScenarioPage || '1', 10));
-    setScenarioTableSort(initialSort || 'created');
+    setScenarioTableSort(initialSort || 'impact');
   }, [buyingGroupId, initialScenarioPage, initialSort, marketId]);
 
   useEffect(() => {
@@ -10746,8 +10765,8 @@ function ScenarioModelsView({
     { key: 'priceIncreasePercent', label: 'Price increase %', min: 0, max: Math.max(6, inputs.priceIncreasePercent + 1), step: 0.1, affects: 'Target ask, acceptance, revenue' },
     { key: 'expectedRealizationPercent', label: 'Expected realization %', min: 0, max: Math.max(5, inputs.priceIncreasePercent + 1), step: 0.1, affects: 'Gap to plan, margin, risk value' },
     { key: 'volumeChangePercent', label: 'Volume change %', min: -5, max: 3, step: 0.1, affects: 'Volume, revenue, buyer risk' },
-    { key: 'tradeSpendChange', label: 'Trade spend change EUR', min: 0, max: Math.max(1000000, inputs.tradeSpendChange * 1.5), step: 25000, affects: 'Trade spend, margin, acceptance' },
-    { key: 'concessionAmount', label: 'Concession amount EUR', min: 0, max: Math.max(1000000, inputs.concessionAmount * 1.75), step: 25000, affects: 'Revenue leakage, guardrail pressure' },
+    { key: 'tradeSpendChange', label: 'Trade spend change €', min: 0, max: Math.max(1000000, inputs.tradeSpendChange * 1.5), step: 25000, affects: 'Trade spend, margin, acceptance' },
+    { key: 'concessionAmount', label: 'Concession amount €', min: 0, max: Math.max(1000000, inputs.concessionAmount * 1.75), step: 25000, affects: 'Revenue leakage, guardrail pressure' },
     { key: 'costInflationPercent', label: 'Cost inflation %', min: 0, max: Math.max(6, inputs.costInflationPercent + 1), step: 0.1, affects: 'Evidence strength, defendability' },
     { key: 'buyerAcceptanceProbability', label: 'Buyer acceptance probability', min: 0, max: 100, step: 1, affects: 'Risk-adjusted value' },
     { key: 'contractLengthMonths', label: 'Contract length months', min: 3, max: 24, step: 1, affects: 'Exposure window, lock-in risk' }
@@ -11005,7 +11024,7 @@ function ScenarioModelsView({
   };
   const planningScenarioOptions = [
     {
-      createdAt: '2026-07-17T09:18:00.000Z',
+      createdAt: scenarioLabCreatedAt(0, 13, 42),
       description: 'Pairs the price ask with a service-value commitment to improve acceptance without opening a pure concession.',
       id: 'service-value-tradeoff',
       inputs: {
@@ -11019,7 +11038,7 @@ function ScenarioModelsView({
       why: 'Tests whether non-price value can protect the ask before adding trade support.'
     },
     {
-      createdAt: '2026-07-17T09:21:00.000Z',
+      createdAt: scenarioLabCreatedAt(0, 12, 58),
       description: 'Stages the realization ask across the agreement period to reduce first-round buyer resistance.',
       id: 'phased-realization-path',
       inputs: {
@@ -11033,7 +11052,7 @@ function ScenarioModelsView({
       why: 'Tests if a staged ask keeps the negotiation inside guardrails while improving the chance to land.'
     },
     {
-      createdAt: '2026-07-17T09:24:00.000Z',
+      createdAt: scenarioLabCreatedAt(0, 12, 21),
       description: 'Uses a controlled promo envelope to defend volume while keeping the landed price near target.',
       id: 'promo-envelope-defense',
       inputs: {
@@ -11048,7 +11067,7 @@ function ScenarioModelsView({
       why: 'Tests whether a small, bounded support package prevents volume risk without breaking the pricing case.'
     },
     {
-      createdAt: '2026-07-17T09:27:00.000Z',
+      createdAt: scenarioLabCreatedAt(1, 16, 35),
       description: 'Offsets buyer pushback by shifting focus toward higher-margin categories in the same buying group.',
       id: 'category-mix-offset',
       inputs: {
@@ -11063,7 +11082,7 @@ function ScenarioModelsView({
       why: 'Tests if the strategy can protect value by moving pressure away from the most sensitive category.'
     },
     {
-      createdAt: '2026-07-17T09:30:00.000Z',
+      createdAt: scenarioLabCreatedAt(1, 15, 48),
       description: 'Holds the price position but adds a guardrail review before any concession is offered.',
       id: 'finance-guardrail-review',
       inputs: {
@@ -11085,7 +11104,7 @@ function ScenarioModelsView({
   }));
   const referenceScenarioOptions = [
     {
-      createdAt: '2026-07-17T09:34:00.000Z',
+      createdAt: scenarioLabCreatedAt(1, 14, 20),
       description: 'Keeps the current recommended ask and only monitors buyer response timing against prior cycles.',
       id: 'response-cadence-watch',
       inputs: {
@@ -11097,7 +11116,7 @@ function ScenarioModelsView({
       why: 'Keeps the scenario available as a low-risk watchout if buyer timing starts to look unusual.'
     },
     {
-      createdAt: '2026-07-17T09:37:00.000Z',
+      createdAt: scenarioLabCreatedAt(2, 11, 55),
       description: 'Tests whether stronger source documentation changes confidence without changing the commercial move.',
       id: 'source-proof-only',
       inputs: initialInputs,
@@ -11106,7 +11125,7 @@ function ScenarioModelsView({
       why: 'Useful as a documentation check, but it does not change the pricing position by itself.'
     },
     {
-      createdAt: '2026-07-17T09:40:00.000Z',
+      createdAt: scenarioLabCreatedAt(2, 10, 40),
       description: 'Evaluates payment-term language as a minor support lever without changing price or trade spend.',
       id: 'terms-language-check',
       inputs: {
@@ -11118,7 +11137,7 @@ function ScenarioModelsView({
       why: 'Keeps a light operational lever in view without treating it as a primary scenario.'
     },
     {
-      createdAt: '2026-07-17T09:43:00.000Z',
+      createdAt: scenarioLabCreatedAt(0, 11, 44),
       description: 'Tracks whether an external market signal should stay as context rather than change the buyer move.',
       id: 'market-signal-monitor',
       inputs: initialInputs,
@@ -11127,7 +11146,7 @@ function ScenarioModelsView({
       why: 'Useful for awareness, but the signal is not material enough to change the current scenario.'
     },
     {
-      createdAt: '2026-07-17T09:46:00.000Z',
+      createdAt: scenarioLabCreatedAt(3, 15, 5),
       description: 'Keeps a buyer-history pattern visible for future rounds without changing this round’s assumption set.',
       id: 'history-pattern-reference',
       inputs: initialInputs,
@@ -11136,7 +11155,7 @@ function ScenarioModelsView({
       why: 'Preserves the closed-loop learning, but it is not urgent unless the buyer repeats the pattern.'
     },
     {
-      createdAt: '2026-07-17T09:49:00.000Z',
+      createdAt: scenarioLabCreatedAt(3, 13, 16),
       description: 'Checks whether shelf-visibility language should be added as supporting evidence, not a financial lever.',
       id: 'visibility-language-check',
       inputs: {
@@ -11153,16 +11172,142 @@ function ScenarioModelsView({
     origin: 'atlas' as const,
     scenarioStyle: scenario.scenarioStyle
   }));
+  const highImpactScenarioOptions = [
+    {
+      createdAt: scenarioLabCreatedAt(0, 10, 52),
+      description: 'Models a competitor-driven buyer escalation where volume risk and proof burden rise together.',
+      id: 'competitor-escalation-stress',
+      inputs: {
+        ...initialInputs,
+        buyerAcceptanceProbability: Math.max(25, initialInputs.buyerAcceptanceProbability - 18),
+        competitorPressureLevel: 'high' as const,
+        expectedRealizationPercent: Math.max(0.5, initialInputs.expectedRealizationPercent - 0.35),
+        priceIncreasePercent: Math.min(6, initialInputs.priceIncreasePercent + 0.75),
+        tradeSpendChange: Math.round(initialInputs.tradeSpendChange * 1.28),
+        volumeChangePercent: initialInputs.volumeChangePercent - 1.1
+      },
+      name: 'Competitor escalation stress',
+      scenarioStyle: 'Stress test',
+      why: 'Shows where the plan breaks if a competitor reference changes the buyer’s negotiation posture.'
+    },
+    {
+      createdAt: scenarioLabCreatedAt(1, 13, 42),
+      description: 'Tests the downside case where the buyer rejects the ask and shifts the discussion to concessions.',
+      id: 'concession-pressure-breakpoint',
+      inputs: {
+        ...initialInputs,
+        buyerAcceptanceProbability: Math.max(22, initialInputs.buyerAcceptanceProbability - 20),
+        concessionAmount: Math.round(initialInputs.concessionAmount * 1.55),
+        expectedRealizationPercent: Math.max(0.5, initialInputs.expectedRealizationPercent - 0.6),
+        priceIncreasePercent: Math.min(6, initialInputs.priceIncreasePercent + 0.65),
+        tradeSpendChange: Math.round(initialInputs.tradeSpendChange * 1.35),
+        volumeChangePercent: initialInputs.volumeChangePercent - 0.95
+      },
+      name: 'Concession pressure breakpoint',
+      scenarioStyle: 'Stress test',
+      why: 'Highlights the impact if the buyer forces concessions before accepting any meaningful price movement.'
+    }
+  ].map((scenario) => ({
+    ...predictiveScenario(scenario.id, scenario.name, scenario.description, scenario.inputs, scenario.why),
+    createdAt: scenario.createdAt,
+    origin: 'atlas' as const,
+    scenarioStyle: scenario.scenarioStyle
+  }));
+  const lowImpactScenarioOptions = [
+    {
+      createdAt: scenarioLabCreatedAt(2, 9, 35),
+      description: 'Keeps a narrow source-quality note available without changing the commercial ask.',
+      id: 'source-quality-note',
+      inputs: {
+        ...initialInputs,
+        buyerAcceptanceProbability: Math.min(95, initialInputs.buyerAcceptanceProbability + 4),
+        concessionAmount: 0,
+        contractLengthMonths: 3,
+        costInflationPercent: 0,
+        expectedRealizationPercent: initialInputs.expectedRealizationPercent,
+        tradeSpendChange: 0,
+        volumeChangePercent: 0
+      },
+      name: 'Source quality note',
+      scenarioStyle: 'Reference',
+      why: 'Useful for evidence hygiene, but it does not materially change the buyer or financial position.'
+    },
+    {
+      createdAt: scenarioLabCreatedAt(2, 8, 55),
+      description: 'Captures a short-term communication adjustment that should not change the pricing scenario.',
+      id: 'message-sequencing-note',
+      inputs: {
+        ...initialInputs,
+        buyerAcceptanceProbability: Math.min(95, initialInputs.buyerAcceptanceProbability + 3),
+        concessionAmount: 0,
+        contractLengthMonths: 3,
+        costInflationPercent: 0,
+        expectedRealizationPercent: initialInputs.expectedRealizationPercent,
+        tradeSpendChange: 0,
+        volumeChangePercent: 0.05
+      },
+      name: 'Message sequencing note',
+      scenarioStyle: 'Reference',
+      why: 'Keeps the room narrative consistent while leaving the modeled economics largely unchanged.'
+    },
+    {
+      createdAt: scenarioLabCreatedAt(3, 9, 10),
+      description: 'Tracks a minor follow-up task for the buyer file without changing the current negotiation move.',
+      id: 'buyer-file-cleanup',
+      inputs: {
+        ...initialInputs,
+        buyerAcceptanceProbability: Math.min(95, initialInputs.buyerAcceptanceProbability + 2),
+        concessionAmount: 0,
+        contractLengthMonths: 3,
+        costInflationPercent: 0,
+        expectedRealizationPercent: initialInputs.expectedRealizationPercent,
+        tradeSpendChange: 0,
+        volumeChangePercent: 0
+      },
+      name: 'Buyer file cleanup',
+      scenarioStyle: 'Reference',
+      why: 'Low-impact housekeeping that keeps the buyer record current without changing the scenario recommendation.'
+    }
+  ].map((scenario) => ({
+    ...predictiveScenario(scenario.id, scenario.name, scenario.description, scenario.inputs, scenario.why),
+    createdAt: scenario.createdAt,
+    origin: 'atlas' as const,
+    scenarioStyle: scenario.scenarioStyle
+  }));
 	  const scenarioOptions = [
-    { ...predictiveScenario('recommended', 'Balanced evidence-backed ask', 'Best current move based on buyer history, finance guardrails, and market signals.', recommendedScenarioInputs, 'Best default when the team needs a sourced starting point.'), createdAt: '2026-07-17T09:00:00.000Z', origin: 'atlas' as const, scenarioStyle: 'Recommended' },
-    { ...predictiveScenario('conservative', 'Lower-risk landing path', 'Protect landing probability with a smaller price move and controlled support.', conservativeScenarioInputs, 'Best when relationship risk or source confidence makes the full move harder to land.'), createdAt: '2026-07-17T09:05:00.000Z', origin: 'atlas' as const, scenarioStyle: 'Conservative' },
-    { ...predictiveScenario('aggressive', 'Value capture stretch', 'Push for more price realization with less trade support and higher buyer resistance.', aggressiveScenarioInputs, 'Use when margin protection is more important than relationship safety.'), createdAt: '2026-07-17T09:08:00.000Z', origin: 'atlas' as const, scenarioStyle: 'Aggressive' },
-    { ...predictiveScenario('buyer-counter', 'Likely buyer counter', 'Models the buyer pushing back with lower realization and more trade support.', buyerCounterInputs, 'Use to prepare the downside case and pushback response.'), createdAt: '2026-07-17T09:10:00.000Z', origin: 'atlas' as const, scenarioStyle: 'Buyer counter' },
-    { ...predictiveScenario('custom', 'Current working model', 'Uses the current levers, scenario level, SKU rows, and custom assumptions.', inputs, 'Updates as the CNO changes the model.'), createdAt: '2026-07-17T09:15:00.000Z', origin: 'atlas' as const, scenarioStyle: 'Custom' },
+    { ...predictiveScenario('recommended', 'Balanced evidence-backed ask', 'Best current move based on buyer history, finance guardrails, and market signals.', recommendedScenarioInputs, 'Best default when the team needs a sourced starting point.'), createdAt: scenarioLabCreatedAt(0, 14, 18), origin: 'atlas' as const, scenarioStyle: 'Recommended' },
+    { ...predictiveScenario('conservative', 'Lower-risk landing path', 'Protect landing probability with a smaller price move and controlled support.', conservativeScenarioInputs, 'Best when relationship risk or source confidence makes the full move harder to land.'), createdAt: scenarioLabCreatedAt(1, 17, 5), origin: 'atlas' as const, scenarioStyle: 'Conservative' },
+    { ...predictiveScenario('aggressive', 'Value capture stretch', 'Push for more price realization with less trade support and higher buyer resistance.', aggressiveScenarioInputs, 'Use when margin protection is more important than relationship safety.'), createdAt: scenarioLabCreatedAt(0, 13, 5), origin: 'atlas' as const, scenarioStyle: 'Aggressive' },
+    { ...predictiveScenario('buyer-counter', 'Likely buyer counter', 'Models the buyer pushing back with lower realization and more trade support.', buyerCounterInputs, 'Use to prepare the downside case and pushback response.'), createdAt: scenarioLabCreatedAt(0, 12, 47), origin: 'atlas' as const, scenarioStyle: 'Buyer counter' },
+    { ...predictiveScenario('custom', 'Current working model', 'Uses the current levers, scenario level, SKU rows, and custom assumptions.', inputs, 'Updates as the CNO changes the model.'), createdAt: scenarioLabCreatedAt(0, 11, 12), origin: 'atlas' as const, scenarioStyle: 'Custom' },
+    ...highImpactScenarioOptions,
     ...planningScenarioOptions,
     ...referenceScenarioOptions,
+    ...lowImpactScenarioOptions,
     ...savedManualScenarios
 	  ];
+  const scenarioGeneratedTodayCount = scenarioOptions.filter((scenario) => scenario.origin === 'atlas' && scenario.id !== 'custom' && isSameAtlasDate(scenario.createdAt, scenarioLabNow)).length;
+  const scenarioLiveHeaderCount = scenarioNewSinceLastVisitCount ?? scenarioGeneratedTodayCount;
+  const scenarioLiveHeaderTitle = scenarioLiveHeaderCount > 0
+    ? `${scenarioLiveHeaderCount} new scenarios generated since your last visit`
+    : `${scenarioGeneratedTodayCount} scenarios refreshed today from triage alerts`;
+  const scenarioLiveHeaderCopy = scenarioGeneratedTodayCount > 0
+    ? `ATLAS refreshed ${scenarioGeneratedTodayCount} scenarios today from active buyer pressure, market signal, and CNO-review alerts surfaced in triage.`
+    : 'ATLAS is monitoring triage alerts and will add new scenario rows when buyer pressure, market signals, or CNO-review watchouts change.';
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const previousVisit = window.localStorage.getItem(SCENARIO_LAB_VISIT_STORAGE_KEY);
+    const previousVisitTime = previousVisit ? new Date(previousVisit).getTime() : Number.NaN;
+    const fallbackVisitTime = scenarioLabNow.getTime() - 24 * 60 * 60 * 1000;
+    const lastVisitTime = Number.isNaN(previousVisitTime) ? fallbackVisitTime : previousVisitTime;
+    const generatedSinceLastVisit = scenarioOptions.filter((scenario) => (
+      scenario.origin === 'atlas'
+      && scenario.id !== 'custom'
+      && new Date(scenario.createdAt).getTime() > lastVisitTime
+    )).length;
+    setScenarioNewSinceLastVisitCount(generatedSinceLastVisit);
+    window.localStorage.setItem(SCENARIO_LAB_VISIT_STORAGE_KEY, new Date().toISOString());
+  }, []);
 	  const topRecommendedScenario = [...scenarioOptions].sort((a, b) => b.atlasScore - a.atlasScore)[0];
 	  const selectedPredictiveScenario = scenarioOptions.find((scenario) => scenario.id === selectedScenarioId) ?? scenarioOptions[0];
 	  useEffect(() => {
@@ -11495,18 +11640,25 @@ function ScenarioModelsView({
 	    params.set('scenario', scenarioId);
 	    return `/scenario-lab?${params.toString()}`;
   }
-  const scenarioTableActiveSort = scenarioTableSort || 'created';
+  const scenarioTableActiveSort = scenarioTableSort || 'impact';
   const scenarioTablePageSize = 10;
   const scenarioTableRows = visibleScenarioOptions.filter((scenario) => {
     if (scenario.id === 'custom' || scenario.origin !== 'atlas') return false;
     const scope = scenarioTableScope(scenario);
-    const matchesBuyingGroup = !scenarioTableBuyingGroupFilter || scope.buyingGroupId === scenarioTableBuyingGroupFilter || scope.multi;
-    const matchesMarket = !scenarioTableMarketFilter || scope.marketId === scenarioTableMarketFilter || scope.multi;
+    const matchesBuyingGroup = !scenarioTableBuyingGroupFilter || scope.buyingGroupId === scenarioTableBuyingGroupFilter;
+    const matchesMarket = !scenarioTableMarketFilter
+      || scope.marketId === scenarioTableMarketFilter
+      || ('marketIds' in scope && Array.isArray(scope.marketIds) && scope.marketIds.includes(scenarioTableMarketFilter));
     return matchesBuyingGroup && matchesMarket;
-  }).slice(0, 15).sort((a, b) => {
-    const { direction } = parseSortParam(scenarioTableActiveSort, 'created');
+  }).slice(0, 20).sort((a, b) => {
+    const { direction, key } = parseSortParam(scenarioTableActiveSort, 'impact');
+    const impactOrder: Record<string, number> = { high: 3, medium: 2, low: 1 };
+    const impactDelta = impactOrder[scenarioTableImpact(a).tone] - impactOrder[scenarioTableImpact(b).tone];
     const createdDelta = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-    return direction === 'asc' ? createdDelta : -createdDelta;
+    if (key === 'impact' && impactDelta !== 0) return direction === 'asc' ? impactDelta : -impactDelta;
+    if (key === 'created' && createdDelta !== 0) return direction === 'asc' ? createdDelta : -createdDelta;
+    if (impactDelta !== 0) return -impactDelta;
+    return -createdDelta;
   });
   const scenarioTableTotalPages = Math.max(1, Math.ceil(scenarioTableRows.length / scenarioTablePageSize));
   const scenarioTableCurrentPage = Math.min(Math.max(1, Number.isFinite(scenarioTablePage) ? scenarioTablePage : 1), scenarioTableTotalPages);
@@ -11519,23 +11671,59 @@ function ScenarioModelsView({
     if (scenario.id === 'promo-envelope-defense') return 'Rewe promo envelope pressure';
     return scenario.name.replace(/^[A-C]\.\s*/, '');
   }
-  function scenarioTableStatus(scenario: ScenarioLabOption) {
-    if (scenario.id === 'market-signal-monitor') return { label: 'Monitoring', tone: 'monitoring' };
-    if (scenario.id === 'buyer-counter') return { label: 'Ready to use', tone: 'ready' };
-    if (scenarioAttentionBucket(scenario) === 'cno-review') return { label: 'Needs CNO review', tone: 'review' };
-    if (scenarioAttentionBucket(scenario) === 'traceability') return { label: 'Monitoring', tone: 'monitoring' };
-    return { label: 'Ready to use', tone: 'ready' };
+  function scenarioTableImpact(scenario: ScenarioLabOption) {
+    const nrImpact = Math.abs(scenario.outputs.revenueImpact);
+    const gmImpact = Math.abs(scenario.outputs.marginImpact);
+    const tradeImpact = Math.abs(scenario.outputs.tradeSpendImpact);
+    const modeledSwing = Math.max(nrImpact + gmImpact, Math.abs(scenario.valueProtected), tradeImpact);
+    const hasBuyerRisk = scenario.relationshipRisk === 'High' || scenario.guardrailRisk === 'Guardrail breach';
+    const tone = modeledSwing >= 900000 || hasBuyerRisk
+      ? 'high'
+      : modeledSwing >= 620000 || scenario.guardrailRisk === 'Watch'
+        ? 'medium'
+        : 'low';
+    const label = tone === 'high' ? 'High impact' : tone === 'medium' ? 'Medium impact' : 'Low impact';
+    const reason = hasBuyerRisk
+      ? 'possible downside from buyer pushback'
+      : gmImpact >= nrImpact && gmImpact >= tradeImpact
+        ? 'margin risk'
+        : nrImpact >= tradeImpact
+          ? 'revenue movement'
+          : 'trade spend movement';
+    return {
+      detail: `${euros(Math.round(modeledSwing))} ${reason}`,
+      label,
+      tone
+    };
   }
   function scenarioTableScope(scenario: ScenarioLabOption) {
     if (scenario.id === 'recommended') return { buyingGroup: 'EDEKA', buyingGroupId: 'edeka', market: 'Germany', marketId: 'germany', multi: false };
-    if (scenario.id === 'market-signal-monitor') return { buyingGroup: `${mvpScenarioBuyingGroups.length} buying groups`, buyingGroupId: '', market: '6 markets', marketId: '', multi: true };
+    if (scenario.id === 'market-signal-monitor') {
+      const marketNames = railMarkets.map((market) => market.name);
+      const marketIds = railMarkets.map((market) => market.id);
+      const primaryGroup = mvpScenarioBuyingGroups[0];
+      return {
+        buyingGroup: primaryGroup?.name ?? 'EDEKA',
+        buyingGroupId: primaryGroup?.id ?? 'edeka',
+        market: `${marketNames.length} markets`,
+        marketId: marketIds[0] ?? '',
+        marketIds,
+        marketNames,
+        multi: false
+      };
+    }
     if (scenario.id === 'buyer-counter') return { buyingGroup: 'Carrefour', buyingGroupId: 'carrefour', market: 'France', marketId: 'france', multi: false };
     if (scenario.id === 'promo-envelope-defense') return { buyingGroup: 'Rewe', buyingGroupId: 'rewe', market: 'Germany', marketId: 'germany', multi: false };
     const scenarioContext = scenarioBuyingGroupContext(scenario);
     return { buyingGroup: scenarioContext.buyingGroup, market: scenarioContext.market, multi: false };
   }
   function scenarioTableCreatedLabel(createdAt: string) {
-    return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).format(new Date(createdAt));
+    const date = new Date(createdAt);
+    if (Number.isNaN(date.getTime())) return createdAt;
+    const day = String(date.getUTCDate()).padStart(2, '0');
+    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+    const year = date.getUTCFullYear();
+    return `${day}/${month}/${year}`;
   }
   function scenarioTableSortHref(sort: string) {
     const params = new URLSearchParams();
@@ -11560,8 +11748,12 @@ function ScenarioModelsView({
     if (selectedMarketId) params.set('market', selectedMarketId);
     return `/scenario-lab?${params.toString()}`;
   }
+  function closeScenarioFilter(filterId = openScenarioFilter) {
+    if (!filterId) return;
+    setOpenScenarioFilter((currentFilter) => (currentFilter === filterId ? null : currentFilter));
+  }
   function ScenarioTableSortableHeader({ label, sort }: { label: string; sort: string }) {
-    const active = parseSortParam(scenarioTableActiveSort, 'created').key === sort;
+    const active = parseSortParam(scenarioTableActiveSort, 'impact').key === sort;
     const nextSort = nextSortParam(scenarioTableActiveSort, sort);
     return (
       <button
@@ -11597,31 +11789,36 @@ function ScenarioModelsView({
       <div
         className={`atlas-scenario-filter-select${isOpen ? ' open' : ''}`}
         onBlur={(event) => {
-          if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setOpenScenarioFilter(null);
+          if (!event.currentTarget.contains(event.relatedTarget as Node | null)) closeScenarioFilter(id);
         }}
         onKeyDown={(event) => {
-          if (event.key === 'Escape') setOpenScenarioFilter(null);
+          if (event.key === 'Escape') closeScenarioFilter(id);
         }}
       >
         <button
           aria-expanded={isOpen}
           aria-haspopup="listbox"
           aria-label={label}
-          onClick={() => setOpenScenarioFilter(isOpen ? null : id)}
+          onClick={() => {
+            if (isOpen) {
+              closeScenarioFilter(id);
+              return;
+            }
+            setOpenScenarioFilter(id);
+          }}
           type="button"
         >
           <span>{selected?.label ?? label}</span>
           <i aria-hidden="true" />
         </button>
-        {isOpen ? (
-          <div className="atlas-scenario-filter-menu" role="listbox" aria-label={label}>
+          <div className="atlas-scenario-filter-menu" role="listbox" aria-label={label} aria-hidden={!isOpen}>
             {options.map((option) => (
               <button
                 aria-selected={option.value === value}
                 className={option.value === value ? 'selected' : ''}
                 key={option.value || 'all'}
                 onClick={() => {
-                  setOpenScenarioFilter(null);
+                  closeScenarioFilter(id);
                   onChange(option.value);
                 }}
                 onMouseDown={(event) => event.preventDefault()}
@@ -11632,7 +11829,6 @@ function ScenarioModelsView({
               </button>
             ))}
           </div>
-        ) : null}
       </div>
     );
   }
@@ -11765,8 +11961,8 @@ function ScenarioModelsView({
 	  return (
 	    <section className="atlas-scenario-modeler" aria-label="Scenario Lab intelligent modeler">
 	      <header className="atlas-scenario-modeler-head">
-	        <h1>Scenario Lab</h1>
-	        <p>Compare ATLAS-modeled moves, adjust the assumptions, and choose which scenarios are worth taking into buyer planning.</p>
+	        <h1>{scenarioLiveHeaderTitle}</h1>
+	        <p>{scenarioLiveHeaderCopy}</p>
 	      </header>
 
 		      {scenarioLabMode === 'review' ? <section className="atlas-scenario-overview" aria-label="Modeled scenario impact overview">
@@ -11830,7 +12026,7 @@ function ScenarioModelsView({
 		                    <thead>
 		                      <tr>
 		                        <th>Scenario</th>
-		                        <th>Status</th>
+		                        <th><ScenarioTableSortableHeader label="Impact" sort="impact" /></th>
 		                        <th>Scenario type</th>
 		                        <th><ScenarioTableSortableHeader label="Created" sort="created" /></th>
 		                        <th>Buying group</th>
@@ -11839,11 +12035,15 @@ function ScenarioModelsView({
 		                    </thead>
 		                    <tbody>
 		                      {scenarioTableVisibleRows.map((scenario) => {
-		                        const status = scenarioTableStatus(scenario);
+		                        const impact = scenarioTableImpact(scenario);
 		                        const scope = scenarioTableScope(scenario);
+                            const marketNames = 'marketNames' in scope && scope.marketNames
+                              ? scope.marketNames
+                              : scope.market.split(' / ').map((market) => market.trim()).filter(Boolean);
+                            const hasMultipleMarkets = marketNames.length > 1;
 		                        return (
 		                            <tr
-                                  className={`status-${status.tone}`}
+                                  className={`impact-${impact.tone}`}
                                   key={scenario.id}
                                   onClick={() => { window.location.href = scenarioDetailHref(scenario.id); }}
                                   onKeyDown={(event) => {
@@ -11860,13 +12060,27 @@ function ScenarioModelsView({
 		                                  <strong>{scenarioTableTitle(scenario)}</strong>
 		                                </a>
 		                              </td>
-                                  <td><span className={`atlas-scenario-status-pill status-${status.tone}`}>{status.label}</span></td>
+                                  <td>
+                                    <span className={`atlas-scenario-impact-read impact-${impact.tone}`}>
+                                      <strong>{impact.label}</strong>
+                                      <small>{impact.detail}</small>
+                                    </span>
+                                  </td>
                                   <td><span className="atlas-scenario-type-text">{scenario.origin === 'manual' ? 'Manual' : 'ATLAS generated'}</span></td>
                                   <td>{scenarioTableCreatedLabel(scenario.createdAt)}</td>
 		                              <td>
-		                                <span className={`atlas-scenario-scope-text${scope.multi ? ' is-multi' : ''}`}>{scope.buyingGroup}</span>
+		                                <span className="atlas-scenario-scope-text">{scope.buyingGroup}</span>
 		                              </td>
-                                  <td><span className={`atlas-scenario-scope-text${scope.multi ? ' is-multi' : ''}`}>{scope.market}</span></td>
+                                  <td>
+                                    {hasMultipleMarkets ? (
+                                      <span className="atlas-scenario-market-badge" aria-label={`Markets: ${marketNames.join(', ')}`}>
+                                        <span className="atlas-scenario-market-badge-label">{marketNames.length} markets</span>
+                                        <span className="atlas-scenario-market-tooltip" role="tooltip">{marketNames.join(', ')}</span>
+                                      </span>
+                                    ) : (
+                                      <span className="atlas-scenario-scope-text">{scope.market}</span>
+                                    )}
+                                  </td>
 		                            </tr>
 		                        );
 		                      })}
@@ -12294,7 +12508,7 @@ function ScenarioCompareView({
               {([
                 ['priceIncreasePercent', 'Price ask %', 0, Math.max(6, scenario.inputs.priceIncreasePercent + 1), 0.1],
                 ['expectedRealizationPercent', 'Expected realization %', 0, Math.max(5, scenario.inputs.priceIncreasePercent + 1), 0.1],
-                ['tradeSpendChange', 'Trade spend EUR', 0, Math.max(1000000, scenario.inputs.tradeSpendChange * 1.5), 25000],
+                ['tradeSpendChange', 'Trade spend €', 0, Math.max(1000000, scenario.inputs.tradeSpendChange * 1.5), 25000],
                 ['volumeChangePercent', 'Volume risk %', -5, 3, 0.1],
                 ['buyerAcceptanceProbability', 'Buyer acceptance', 0, 100, 1]
               ] as Array<[keyof ScenarioInputs, string, number, number, number]>).map(([key, label, min, max, step]) => (

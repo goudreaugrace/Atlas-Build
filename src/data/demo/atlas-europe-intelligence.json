@@ -1715,7 +1715,7 @@
       "timestamp": "2026-07-03T14:10:00.000Z",
       "eventType": "negotiation_update",
       "title": "Round 3 counter shifted pressure to trade funding",
-      "summary": "EDEKA held its 1.8% landing position and requested EUR 640K in incremental promotional support before accepting the Germany price move.",
+      "summary": "EDEKA held its 1.8% landing position and requested €640K in incremental promotional support before accepting the Germany price move.",
       "marketIds": ["germany"],
       "buyingGroupIds": ["edeka"],
       "financialImpact": { "revenueImpact": -760000, "marginImpact": -280000, "tradeSpendImpact": -640000 },
@@ -2444,7 +2444,7 @@
       "id": "watch-edeka-exposure",
       "itemType": "financial_exposure",
       "title": "EDEKA is the highest financial exposure",
-      "whyItMatters": "Germany has EUR 42M under negotiation and EDEKA contributes EUR 7.2M margin at risk.",
+      "whyItMatters": "Germany has €42M under negotiation and EDEKA contributes €7.2M margin at risk.",
       "affectedMarkets": ["germany"],
       "affectedBuyingGroups": ["edeka"],
       "financialImplication": {

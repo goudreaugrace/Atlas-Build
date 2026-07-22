@@ -70,9 +70,9 @@ export const atlasIntelligenceSeed = filterAtlasSeedForMvp(rawAtlasIntelligenceS
 export function euros(value: number) {
   const abs = Math.abs(value);
   const sign = value < 0 ? '-' : '';
-  if (abs >= 1000000) return `${sign}EUR ${(abs / 1000000).toFixed(abs >= 10000000 ? 0 : 1)}M`;
-  if (abs >= 1000) return `${sign}EUR ${(abs / 1000).toFixed(0)}K`;
-  return `${sign}EUR ${abs.toFixed(0)}`;
+  if (abs >= 1000000) return `${sign}€${(abs / 1000000).toFixed(abs >= 10000000 ? 0 : 1)}M`;
+  if (abs >= 1000) return `${sign}€${(abs / 1000).toFixed(0)}K`;
+  return `${sign}€${abs.toFixed(0)}`;
 }
 
 export function pct(value: number) {
