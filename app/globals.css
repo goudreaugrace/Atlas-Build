@@ -73089,6 +73089,55 @@ html body .atlas-generated-report-primary {
   transform: translateY(0) !important;
 }
 
+/* Buying group page: action footer for CNO prep assets. */
+html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-current-view-v2 .atlas-bg-prep-grid article footer {
+  align-items: center !important;
+  border-top: 1px solid #edf1f7 !important;
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 12px !important;
+  justify-content: space-between !important;
+  margin-top: 14px !important;
+  padding-top: 14px !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-current-view-v2 .atlas-bg-prep-grid article footer > a {
+  align-items: center !important;
+  background: #1a73e8 !important;
+  border: 1px solid #1a73e8 !important;
+  border-radius: 999px !important;
+  color: #ffffff !important;
+  display: inline-flex !important;
+  font-size: 13px !important;
+  font-weight: 760 !important;
+  gap: 6px !important;
+  min-height: 34px !important;
+  padding: 0 15px !important;
+  text-decoration: none !important;
+  white-space: nowrap !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-current-view-v2 .atlas-bg-prep-grid article footer .atlas-source-mini {
+  flex: 1 1 220px !important;
+  justify-content: flex-end !important;
+  margin: 0 !important;
+  min-width: 0 !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-current-view-v2 .atlas-bg-prep-grid article footer .atlas-source-mini a {
+  background: transparent !important;
+  border: 0 !important;
+  color: #5f6673 !important;
+  display: inline !important;
+  font-size: 10.5px !important;
+  font-weight: 650 !important;
+  max-width: 190px !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  padding: 0 !important;
+  text-overflow: ellipsis !important;
+}
+
 
 /* ============================================================
    GLOBAL HEADING STANDARDIZATION

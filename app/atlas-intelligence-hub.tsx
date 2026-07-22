@@ -142,6 +142,15 @@ function formatAtlasDate(dateInput: string, options: { includeTime?: boolean; in
   return `${dateLabel}, ${hour12}:${minutes} ${period}`;
 }
 
+function appendAtlasReturnContext(href: string, returnTo: string, returnLabel: string) {
+  if (!returnTo) return href;
+  const [path, query = ''] = href.split('?');
+  const params = new URLSearchParams(query);
+  params.set('returnTo', returnTo);
+  if (returnLabel) params.set('returnLabel', returnLabel);
+  return `${path}?${params.toString()}`;
+}
+
 function isSameAtlasDate(dateInput: string, comparisonDate: Date) {
   const date = new Date(dateInput);
   if (Number.isNaN(date.getTime())) return false;
@@ -5929,6 +5938,11 @@ function BuyingGroupFinancialPanel({
       detail: 'latest modeled acceptance'
     }
   ];
+  const financialScenarioHref = appendAtlasReturnContext(
+    `/scenario-lab?buyingGroup=${workspace.buyingGroup.id}`,
+    `/buying-groups/${workspace.buyingGroup.id}?view=current`,
+    `${workspace.buyingGroup.name} current negotiation`
+  );
 
   return (
     <section className="atlas-buying-group-financials" id="group-financials">
@@ -5938,7 +5952,7 @@ function BuyingGroupFinancialPanel({
           <h2>{euros(exposure.marginAtRisk)} margin at risk if the current position holds.</h2>
           <SourceTrustMini source={financialSource} />
         </div>
-        <a href={`/scenario-lab?buyingGroup=${workspace.buyingGroup.id}`}>Open PepsiCo impact <ArrowRight size={14} /></a>
+        <a href={financialScenarioHref}>Open PepsiCo impact <ArrowRight size={14} /></a>
       </header>
       <section className="atlas-buyer-financial-highlight-grid" aria-label="Key financial read">
         {financialHighlights.map((item) => (
@@ -5957,7 +5971,7 @@ function BuyingGroupFinancialPanel({
       />
       <ScenarioComparisonPanel compact workspace={workspace} />
       <div className="atlas-buyer-tab-actions">
-        <a href={`/scenario-lab?buyingGroup=${workspace.buyingGroup.id}`}>Open scenario workspace <ArrowRight size={14} /></a>
+        <a href={financialScenarioHref}>Open scenario workspace <ArrowRight size={14} /></a>
         <a href={`/buying-groups/${workspace.buyingGroup.id}`}>Return to buyer workspace <ArrowRight size={14} /></a>
       </div>
     </section>
@@ -6436,6 +6450,11 @@ function BuyingGroupOverviewPanel({
       text: `${latestEvent.title} is the latest memory item shaping this negotiation read.`
     } : null
   ].filter(Boolean) as Array<{ label: string; source: SourceMeta; text: string }>;
+  const profileScenarioHref = appendAtlasReturnContext(
+    `/scenario-lab?buyingGroup=${workspace.buyingGroup.id}`,
+    `/buying-groups/${workspace.buyingGroup.id}?view=profile`,
+    `${workspace.buyingGroup.name} profile`
+  );
 
   return (
     <section className="atlas-buyer-overview-panel" aria-label={`${workspace.buyingGroup.name} overview`}>
@@ -6456,7 +6475,7 @@ function BuyingGroupOverviewPanel({
         <footer>
           <a href={`/buying-groups/${workspace.buyingGroup.id}`}>Open scenario workspace <ArrowRight size={13} /></a>
           <a href={`/buying-groups/${workspace.buyingGroup.id}?view=strategy`}>Review scenario memory <ArrowRight size={13} /></a>
-          <a href={`/scenario-lab?buyingGroup=${workspace.buyingGroup.id}`}>Open scenario workspace <ArrowRight size={13} /></a>
+          <a href={profileScenarioHref}>Open scenario workspace <ArrowRight size={13} /></a>
         </footer>
       </section>
     </section>
@@ -9673,26 +9692,64 @@ function BuyingGroupCurrentNegotiationMiniView({
       title: competitor?.title ?? firstApproval
     }
   ];
+  const scenarioCompareParams = new URLSearchParams();
+  scenarioCompareParams.set('buyingGroup', workspace.buyingGroup.id);
+  scenarios.slice(0, 2).forEach((scenario) => scenarioCompareParams.append('scenario', scenario.id));
+  scenarioCompareParams.set('returnTo', `/buying-groups/${workspace.buyingGroup.id}?view=current`);
+  scenarioCompareParams.set('returnLabel', `${workspace.buyingGroup.name} current negotiation`);
+  const scenarioBriefParams = new URLSearchParams({
+    buyingGroupId: workspace.buyingGroup.id,
+    editable: '1',
+    mode: 'draft',
+    prompt: `Create the room-ready scenario brief for ${workspace.buyingGroup.name}`
+  });
+  const evidenceParams = new URLSearchParams({
+    buyingGroup: workspace.buyingGroup.id,
+    type: 'pricing-evidence'
+  });
+  function currentNegotiationScenarioHref(scenarioId: string) {
+    const params = new URLSearchParams({
+      buyingGroup: workspace.buyingGroup.id,
+      returnLabel: `${workspace.buyingGroup.name} current negotiation`,
+      returnTo: `/buying-groups/${workspace.buyingGroup.id}?view=current`,
+      scenario: scenarioId
+    });
+    return `/scenario-lab?${params.toString()}`;
+  }
   const preparationCards = [
     {
-      detail: likelyObjection,
-      label: 'Expected pushback',
+      actionHref: `/generated-views?${scenarioBriefParams.toString()}`,
+      actionLabel: 'Open brief',
+      detail: `ATLAS drafted the response around the live ask gap, finance floor, and likely objection: ${likelyObjection}`,
+      label: 'Report created',
       source: primarySignal?.source ?? competitor?.source ?? workspace.buyingGroup.source,
-      title: 'Prepare for affordability, proof, or benchmark pressure.'
+      title: 'Room response brief is ready.'
     },
     {
-      detail: latestEvent?.summary ?? 'Use the latest buyer memory and comparable rounds before changing the current position.',
-      label: 'Evidence to bring',
-      source: latestEvent?.source ?? workspace.documents[0]?.source ?? workspace.buyingGroup.source,
-      title: latestEvent?.title ?? 'Prior-year outcome and Finance guardrail'
-    },
-    {
-      detail: scenarios[0]
-        ? `${scenarios[0].likelihood}% likelihood to land with ${euros(scenarios[0].outputs.marginImpact)} GM impact.`
-        : 'Run a buyer-scoped scenario before changing the approved corridor.',
-      label: 'Scenario already run',
+      actionHref: `/scenario-lab/compare?${scenarioCompareParams.toString()}`,
+      actionLabel: 'Open comparison',
+      detail: scenarios[1]
+        ? `ATLAS compared ${scenarios[0]?.name ?? 'the recommended case'} against ${scenarios[1].name} so the CNO can see the likely counter path before responding.`
+        : `ATLAS modeled ${scenarios[0]?.name ?? 'the current buyer case'} against the live corridor and buyer history.`,
+      label: 'Scenario modeled',
       source: scenarios[0]?.source ?? workspace.buyingGroup.source,
-      title: scenarios[0]?.name ?? 'No scenario selected'
+      title: scenarios[0]?.name ?? 'Buyer scenario is ready.'
+    },
+    {
+      actionHref: `/intelligence?${evidenceParams.toString()}`,
+      actionLabel: 'Review evidence',
+      detail: latestEvent?.summary ?? 'ATLAS pulled the latest buyer memory, comparable rounds, and approved finance guardrail into the evidence trail.',
+      label: 'Evidence compiled',
+      source: latestEvent?.source ?? workspace.documents[0]?.source ?? workspace.buyingGroup.source,
+      title: latestEvent?.title ?? 'Pricing evidence pack is ready.'
+    },
+    {
+      actionHref: `/buying-groups/${workspace.buyingGroup.id}?view=profile`,
+      actionLabel: 'Open profile read',
+      detail: `ATLAS applied buyer memory to the negotiation posture so the response can account for ${buyerRoundLabel(workspace.buyingGroup).toLowerCase()}, prior concessions, and current relationship pressure.`,
+      label: 'Buyer read applied',
+      source: profileRead.source,
+      title: 'Buyer response pattern is loaded.'
     }
   ];
 
@@ -9751,8 +9808,8 @@ function BuyingGroupCurrentNegotiationMiniView({
       <section className="atlas-bg-prep-section">
         <header>
           <span>Prepare for the room</span>
-          <h2>What the CNO should have ready before responding</h2>
-          <p>ATLAS keeps this focused on pushback, evidence, and scenario work that changes the next move.</p>
+          <h2>ATLAS has prepared the assets the CNO should review before responding.</h2>
+          <p>The heavy lifting is already done: response draft, modeled scenarios, evidence trail, and buyer behavior read.</p>
         </header>
         <div className="atlas-bg-prep-grid">
           {preparationCards.map((card) => (
@@ -9760,7 +9817,10 @@ function BuyingGroupCurrentNegotiationMiniView({
               <span>{card.label}</span>
               <h3>{card.title}</h3>
               <p>{card.detail}</p>
-              <SourceTrustMini source={card.source} />
+              <footer>
+                <a href={card.actionHref}>{card.actionLabel} <ArrowRight size={13} /></a>
+                <SourceTrustMini source={card.source} />
+              </footer>
             </article>
           ))}
         </div>
@@ -9797,7 +9857,7 @@ function BuyingGroupCurrentNegotiationMiniView({
                 </section>
               </div>
               <footer>
-                <a href={`/scenario-lab?buyingGroup=${workspace.buyingGroup.id}&scenario=${scenario.id}`}>Open scenario <ArrowRight size={13} /></a>
+                <a href={currentNegotiationScenarioHref(scenario.id)}>Open scenario <ArrowRight size={13} /></a>
                 <SourceTrustMini source={scenario.source} />
               </footer>
             </article>
