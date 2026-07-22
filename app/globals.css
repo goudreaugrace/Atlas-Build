@@ -69267,6 +69267,19 @@ html body .atlas-nav-dropdown,
   transition: opacity .14s ease, transform .14s ease !important;
 }
 
+html body main.atlas-hub-shell .atlas-primary-nav-item.has-menu::after,
+html body .atlas-primary-nav-item.has-menu::after,
+.atlas-primary-nav-item.has-menu::after {
+  content: "" !important;
+  display: block !important;
+  height: 14px !important;
+  left: 0 !important;
+  min-width: 270px !important;
+  position: absolute !important;
+  top: 100% !important;
+  width: 100% !important;
+}
+
 html body main.atlas-hub-shell .atlas-primary-nav-item.has-menu:hover .atlas-nav-dropdown,
 html body main.atlas-hub-shell .atlas-primary-nav-item.has-menu:focus-within .atlas-nav-dropdown,
 html body .atlas-primary-nav-item.has-menu:hover .atlas-nav-dropdown,
