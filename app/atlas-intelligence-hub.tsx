@@ -6,17 +6,22 @@ import {
   AlertTriangle,
   ArrowRight,
   BarChart3,
+  BadgeCheck,
   BookOpen,
+  Briefcase,
   Brain,
   ChevronDown,
   ChevronUp,
   CheckCircle2,
   CircleDollarSign,
   Clock3,
+  ClipboardList,
   Download,
   Flag,
   FileSearch,
+  FileText,
   Filter,
+  GitCompare,
   Globe2,
   Layers3,
   LineChart,
@@ -24,14 +29,18 @@ import {
   Mic,
   MoveRight,
   Newspaper,
+  PieChart,
   RefreshCw,
+  ScanSearch,
   Search,
   Send,
   ShieldCheck,
   Sparkles,
   Square,
   Target,
+  TrendingDown,
   TrendingUp,
+  User,
   X
 } from 'lucide-react';
 import {
@@ -9877,58 +9886,114 @@ function BuyingGroupCurrentNegotiationMiniView({
 
         {indicatorsTab === 'indicators' && (
           <div className="atlas-bg-indicators-panel">
-            <div className="atlas-bg-current-number-workspace">
-              <div className="atlas-bg-current-corridor-panel">
-                <div className="atlas-bg-current-number-grid atlas-bg-current-number-grid--corridor">
-                  {numberCards.slice(0, 4).map((card) => (
-                    <article key={card.label}>
-                      <span>{card.label}</span>
-                      <strong>{card.value}</strong>
-                      <p>{card.detail}</p>
-                    </article>
-                  ))}
-                </div>
+            {/* Corridor metric rows */}
+            <div className="atlas-bg-corridor-rows">
+              <div className="atlas-bg-corridor-row">
+                <span className="atlas-bg-corridor-row-icon"><Target size={14} /></span>
+                <span className="atlas-bg-corridor-row-label">Buyer ask</span>
+                <strong className="atlas-bg-corridor-row-value">{numberCards[0].value}</strong>
+                <span className="atlas-bg-corridor-row-detail">{numberCards[0].detail}</span>
               </div>
-              <aside className="atlas-bg-guardrail-note">
-                <span>Guardrail read</span>
-                <strong>{guardrailStatus}</strong>
-                <p>{firstApproval}</p>
-              </aside>
+              <div className="atlas-bg-corridor-row">
+                <span className="atlas-bg-corridor-row-icon"><BarChart3 size={14} /></span>
+                <span className="atlas-bg-corridor-row-label">PepsiCo position</span>
+                <strong className="atlas-bg-corridor-row-value">{numberCards[1].value}</strong>
+                <span className="atlas-bg-corridor-row-detail">{numberCards[1].detail}</span>
+              </div>
+              <div className="atlas-bg-corridor-row">
+                <span className="atlas-bg-corridor-row-icon"><TrendingUp size={14} /></span>
+                <span className="atlas-bg-corridor-row-label">Target</span>
+                <strong className="atlas-bg-corridor-row-value">{numberCards[2].value}</strong>
+                <span className="atlas-bg-corridor-row-detail">{numberCards[2].detail}</span>
+              </div>
+              <div className="atlas-bg-corridor-row">
+                <span className="atlas-bg-corridor-row-icon"><TrendingDown size={14} /></span>
+                <span className="atlas-bg-corridor-row-label">Red line</span>
+                <strong className="atlas-bg-corridor-row-value">{numberCards[3].value}</strong>
+                <span className="atlas-bg-corridor-row-detail">{numberCards[3].detail}</span>
+              </div>
             </div>
-            <div className="atlas-bg-current-exposure-row">
-              {numberCards.slice(4).map((card) => (
-                <article key={card.label}>
-                  <span>{card.label}</span>
-                  <strong>{card.value}</strong>
-                  <p>{card.detail}</p>
-                </article>
-              ))}
+
+            {/* Guardrail callout */}
+            <div className="atlas-bg-guardrail-strip">
+              <span className="atlas-bg-guardrail-strip-icon"><ShieldCheck size={15} /></span>
+              <div className="atlas-bg-guardrail-strip-body">
+                <span className="atlas-bg-guardrail-strip-label">Guardrail read</span>
+                <strong className="atlas-bg-guardrail-strip-status">{guardrailStatus}</strong>
+                <p className="atlas-bg-guardrail-strip-note">{firstApproval}</p>
+              </div>
             </div>
-            <div className="atlas-bg-current-number-source">
-              <SourceTrustMini source={profileRead.source} />
+
+            {/* Exposure chips row */}
+            <div className="atlas-bg-exposure-chips">
+              <span className="atlas-bg-exposure-chip-icon"><PieChart size={13} /></span>
+              <div className="atlas-bg-exposure-chip">
+                <span>{numberCards[4].label}</span>
+                <strong>{numberCards[4].value}</strong>
+              </div>
+              <div className="atlas-bg-exposure-chip-sep" />
+              <div className="atlas-bg-exposure-chip">
+                <span>{numberCards[5].label}</span>
+                <strong>{numberCards[5].value}</strong>
+              </div>
+              <div className="atlas-bg-exposure-chip-source">
+                <SourceTrustMini source={profileRead.source} />
+              </div>
             </div>
           </div>
         )}
 
         {indicatorsTab === 'prepare' && (
           <div className="atlas-bg-prepare-panel">
-            <div className="atlas-bg-prep-grid">
-              {preparationCards.map((card) => (
-                <article key={card.label}>
-                  <span>{card.label}</span>
-                  <h3>{card.title}</h3>
-                  <p>{card.detail}</p>
-                  <div className="atlas-bg-prep-row-source">
-                    <SourceTrustMini linked={false} source={card.source} />
+            <div className="atlas-bg-prep-list">
+              <div className="atlas-bg-prep-row">
+                <span className="atlas-bg-prep-row-icon"><FileText size={15} /></span>
+                <div className="atlas-bg-prep-row-body">
+                  <div className="atlas-bg-prep-row-meta">
+                    <span className="atlas-bg-prep-row-label">{preparationCards[0].label}</span>
+                    <a className="atlas-bg-prep-row-link" href={preparationCards[0].actionHref}>{preparationCards[0].actionLabel} <ArrowRight size={12} /></a>
                   </div>
-                  <footer>
-                    <a href={card.actionHref}>{card.actionLabel} <ArrowRight size={13} /></a>
-                  </footer>
-                </article>
-              ))}
+                  <strong className="atlas-bg-prep-row-title">{preparationCards[0].title}</strong>
+                  <p className="atlas-bg-prep-row-detail">{preparationCards[0].detail}</p>
+                </div>
+              </div>
+              <div className="atlas-bg-prep-row">
+                <span className="atlas-bg-prep-row-icon"><GitCompare size={15} /></span>
+                <div className="atlas-bg-prep-row-body">
+                  <div className="atlas-bg-prep-row-meta">
+                    <span className="atlas-bg-prep-row-label">{preparationCards[1].label}</span>
+                    <a className="atlas-bg-prep-row-link" href={preparationCards[1].actionHref}>{preparationCards[1].actionLabel} <ArrowRight size={12} /></a>
+                  </div>
+                  <strong className="atlas-bg-prep-row-title">{preparationCards[1].title}</strong>
+                  <p className="atlas-bg-prep-row-detail">{preparationCards[1].detail}</p>
+                </div>
+              </div>
+              <div className="atlas-bg-prep-row">
+                <span className="atlas-bg-prep-row-icon"><ScanSearch size={15} /></span>
+                <div className="atlas-bg-prep-row-body">
+                  <div className="atlas-bg-prep-row-meta">
+                    <span className="atlas-bg-prep-row-label">{preparationCards[2].label}</span>
+                    <a className="atlas-bg-prep-row-link" href={preparationCards[2].actionHref}>{preparationCards[2].actionLabel} <ArrowRight size={12} /></a>
+                  </div>
+                  <strong className="atlas-bg-prep-row-title">{preparationCards[2].title}</strong>
+                  <p className="atlas-bg-prep-row-detail">{preparationCards[2].detail}</p>
+                </div>
+              </div>
+              <div className="atlas-bg-prep-row">
+                <span className="atlas-bg-prep-row-icon"><User size={15} /></span>
+                <div className="atlas-bg-prep-row-body">
+                  <div className="atlas-bg-prep-row-meta">
+                    <span className="atlas-bg-prep-row-label">{preparationCards[3].label}</span>
+                    <a className="atlas-bg-prep-row-link" href={preparationCards[3].actionHref}>{preparationCards[3].actionLabel} <ArrowRight size={12} /></a>
+                  </div>
+                  <strong className="atlas-bg-prep-row-title">{preparationCards[3].title}</strong>
+                  <p className="atlas-bg-prep-row-detail">{preparationCards[3].detail}</p>
+                </div>
+              </div>
             </div>
           </div>
         )}
+
       </section>
 
       <section className="atlas-bg-scenario-section">
