@@ -81772,7 +81772,8 @@ html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-indicators-prepare .atl
 
 html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-indicators-prepare-tabs {
   align-items: center !important;
-  background: #f0f1f2 !important;
+  background: #ffffff !important;
+  border: 1px solid #d9dbe0 !important;
   border-radius: 999px !important;
   display: inline-flex !important;
   flex-shrink: 0 !important;
@@ -81785,7 +81786,7 @@ html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-indicators-tab {
   background: transparent !important;
   border: none !important;
   border-radius: 999px !important;
-  color: #707172 !important;
+  color: #5f6673 !important;
   cursor: pointer !important;
   display: inline-flex !important;
   font-family: var(--font-body) !important;
@@ -81795,25 +81796,26 @@ html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-indicators-tab {
   letter-spacing: 0 !important;
   min-height: 28px !important;
   outline: none !important;
-  padding: 0 14px !important;
+  padding: 0 16px !important;
   transition: background 120ms ease, color 120ms ease !important;
   white-space: nowrap !important;
 }
 
 html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-indicators-tab--active {
-  background: #0f2350 !important;
+  background: #0b57d0 !important;
   color: #ffffff !important;
 }
 
 html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-indicators-tab:not(.atlas-bg-indicators-tab--active):hover {
-  background: rgba(0, 0, 0, .06) !important;
-  color: #31373d !important;
+  background: #f4f5f6 !important;
+  color: #30343b !important;
 }
 
 html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-indicators-panel,
 html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-prepare-panel {
   display: grid !important;
   gap: 20px !important;
+  width: 100% !important;
 }
 
 
@@ -81824,8 +81826,10 @@ html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-prepare-panel {
 
 html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-corridor-rows {
   display: flex !important;
-  flex-direction: column !important;
+  flex-direction: row !important;
+  flex-wrap: wrap !important;
   gap: 0 !important;
+  width: 100% !important;
 }
 
 html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-corridor-row {
@@ -81833,14 +81837,23 @@ html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-corridor-row {
   border-bottom: 1px solid #f0f1f2 !important;
   column-gap: 12px !important;
   display: grid !important;
+  flex: 1 1 calc(50% - 1px) !important;
   grid-template-areas: "icon label value detail" !important;
   grid-template-columns: 26px 1fr auto auto !important;
-  padding: 11px 0 !important;
+  min-width: 240px !important;
+  padding: 11px 12px !important;
   row-gap: 0 !important;
 }
 
-html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-corridor-row:last-child {
+/* Pairs: rows 1+2 share a top border-bottom; rows 3+4 have none */
+html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-corridor-row:nth-child(3),
+html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-corridor-row:nth-child(4) {
   border-bottom: none !important;
+}
+
+/* Vertical separator between the two columns */
+html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-corridor-row:nth-child(odd) {
+  border-right: 1px solid #f0f1f2 !important;
 }
 
 html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-corridor-row-icon {
@@ -81883,10 +81896,12 @@ html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-corridor-row-detail {
   font-size: 11.5px !important;
   grid-area: detail !important;
   letter-spacing: 0 !important;
+  max-width: 180px !important;
+  overflow: hidden !important;
   text-align: right !important;
+  text-overflow: ellipsis !important;
   text-transform: none !important;
   white-space: nowrap !important;
-  width: 160px !important;
 }
 
 /* =========================================================
@@ -81957,9 +81972,11 @@ html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-exposure-chips {
   align-items: center !important;
   border-top: 1px solid #f0f1f2 !important;
   display: flex !important;
+  flex-direction: row !important;
   flex-wrap: wrap !important;
   gap: 8px 16px !important;
   padding-top: 12px !important;
+  width: 100% !important;
 }
 
 html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-exposure-chip-icon {
@@ -82014,6 +82031,7 @@ html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-prep-list {
   display: flex !important;
   flex-direction: column !important;
   gap: 0 !important;
+  width: 100% !important;
 }
 
 html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-prep-row {
@@ -82022,6 +82040,7 @@ html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-prep-row {
   display: flex !important;
   gap: 14px !important;
   padding: 14px 0 !important;
+  width: 100% !important;
 }
 
 html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-prep-row:last-child {
