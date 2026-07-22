@@ -5893,7 +5893,7 @@ function BuyingGroupStatePanel({
               <div key={metric.label}>
                 <dt>{metric.label}</dt>
                 <dd>
-                  <strong><AnimatedNumberValue value={metric.value} /></strong>
+                  <strong>{metric.value}</strong>
                   <em className={`movement-${metric.tone}`}>{metric.movement}</em>
                 </dd>
               </div>
@@ -7141,11 +7141,11 @@ function BuyerPredictiveScenarioWorkspace({
     { key: 'priceIncreasePercent', label: 'Proposed price move', min: 0, max: 6, step: 0.1, suffix: '%' },
     { key: 'expectedRealizationPercent', label: 'Expected landed realization', min: 0, max: 5, step: 0.1, suffix: '%' },
     { key: 'volumeChangePercent', label: 'Modeled volume movement', min: -8, max: 4, step: 0.1, suffix: '%' },
-    { key: 'tradeSpendChange', label: 'Trade spend change', min: 0, max: Math.max(2_500_000, Math.ceil(defaultInputs.tradeSpendChange * 1.5)), step: 25000, suffix: '€' },
-    { key: 'concessionAmount', label: 'Concession envelope', min: 0, max: Math.max(2_000_000, Math.ceil(defaultInputs.concessionAmount * 1.5)), step: 25000, suffix: '€' },
+    { key: 'tradeSpendChange', label: 'Trade spend change', min: 0, max: Math.max(2_500_000, Math.ceil(defaultInputs.tradeSpendChange * 1.5)), step: 25000, suffix: 'EUR' },
+    { key: 'concessionAmount', label: 'Concession envelope', min: 0, max: Math.max(2_000_000, Math.ceil(defaultInputs.concessionAmount * 1.5)), step: 25000, suffix: 'EUR' },
     { key: 'buyerAcceptanceProbability', label: 'Buyer acceptance probability', min: 20, max: 95, step: 1, suffix: '%' }
   ];
-  const formatLabControlValue = (suffix: string, value: number) => suffix === '€'
+  const formatLabControlValue = (suffix: string, value: number) => suffix === 'EUR'
     ? euros(value)
     : `${value.toFixed(suffix === '%' ? 1 : 0)}${suffix}`;
   const cockpitQuickControls = labControls.filter(({ key }) => (
@@ -7729,7 +7729,7 @@ function BuyerPredictiveScenarioWorkspace({
                   const currentValue = Number(inputs[key]);
                   const defaultValue = Number(defaultInputs[key]);
                   const delta = currentValue - defaultValue;
-                  const deltaLabel = suffix === '€'
+                  const deltaLabel = suffix === 'EUR'
                     ? euros(delta)
                     : `${delta >= 0 ? '+' : ''}${delta.toFixed(1)} pts`;
                   return (
@@ -8542,7 +8542,7 @@ function BuyerProfileStrategyWorkspace({
     label: string;
     source: SourceMeta;
     sourceSummary: string;
-    suffix: '%' | '€' | '€ / case' | 'cases';
+    suffix: '%' | 'EUR' | 'EUR / case' | 'cases';
   }> = [
     {
       basis: 'Increase vs current customer net price',
@@ -8592,7 +8592,7 @@ function BuyerProfileStrategyWorkspace({
       label: 'Current net price',
       source: primarySource,
       sourceSummary: 'Estimated buyer net price per case used to translate percent moves into actual pricing.',
-      suffix: '€ / case'
+      suffix: 'EUR / case'
     },
     {
       basis: 'Annual cases under negotiation',
@@ -8632,7 +8632,7 @@ function BuyerProfileStrategyWorkspace({
       label: 'Trade spend envelope',
       source: workspace.buyingGroup.source,
       sourceSummary: 'Estimated from buyer trade spend exposure and current market pressure for this buying group.',
-      suffix: '€'
+      suffix: 'EUR'
     }
   ];
   const priceMoveRows = financeInputRows.filter((row) => row.group === 'price');
@@ -8704,22 +8704,22 @@ function BuyerProfileStrategyWorkspace({
     setNumberSaveState('Inputs saved for this strategy draft');
   }
 
-  function formatNumberInputValue(row: { suffix: '%' | '€' | '€ / case' | 'cases' }, value: number) {
+  function formatNumberInputValue(row: { suffix: '%' | 'EUR' | 'EUR / case' | 'cases' }, value: number) {
     if (row.suffix === '%') return `${value.toFixed(1)}%`;
-    if (row.suffix === '€ / case') return netPricePerCase(value);
+    if (row.suffix === 'EUR / case') return netPricePerCase(value);
     if (row.suffix === 'cases') return value.toLocaleString();
     return euros(value);
   }
 
-  function inputStepForSuffix(suffix: '%' | '€' | '€ / case' | 'cases') {
+  function inputStepForSuffix(suffix: '%' | 'EUR' | 'EUR / case' | 'cases') {
     if (suffix === '%') return 0.1;
-    if (suffix === '€ / case') return 0.05;
+    if (suffix === 'EUR / case') return 0.05;
     if (suffix === 'cases') return 10000;
     return 10000;
   }
 
   function netPricePerCase(value: number) {
-    return `€${value.toFixed(2)} / case`;
+    return `EUR ${value.toFixed(2)} / case`;
   }
 
   function priceAfterIncrease(basePrice: number, increasePercent: number) {
