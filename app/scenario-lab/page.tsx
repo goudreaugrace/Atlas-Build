@@ -1,7 +1,7 @@
 import AtlasIntelligenceHub from '../atlas-intelligence-hub';
 
 type ScenarioLabPageProps = {
-  searchParams: Promise<{ ask?: string; buyingGroup?: string; market?: string; mode?: string; prompt?: string; scenario?: string; view?: string }>;
+  searchParams: Promise<{ ask?: string; buyingGroup?: string; market?: string; mode?: string; page?: string; prompt?: string; scenario?: string; sort?: string; view?: string }>;
 };
 
 export default async function ScenarioLabPage({ searchParams }: ScenarioLabPageProps) {
@@ -14,6 +14,8 @@ export default async function ScenarioLabPage({ searchParams }: ScenarioLabPageP
       initialPrompt={query.ask ?? query.prompt ?? ''}
       initialScenarioId={query.scenario ?? ''}
       initialScenarioLabMode={query.mode ?? ''}
+      initialScenarioPage={query.page ?? ''}
+      initialSort={query.sort ?? ''}
       marketId={query.market ?? ''}
       view="scenarioModels"
     />

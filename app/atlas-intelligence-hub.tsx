@@ -88,6 +88,7 @@ type AtlasIntelligenceHubProps = {
   initialGeneratedView?: string;
   initialScenarioId?: string;
   initialScenarioLabMode?: string;
+  initialScenarioPage?: string;
   initialSort?: string;
   initialMonitorTab?: string;
   initialBuyingGroupView?: string;
@@ -1392,6 +1393,8 @@ function AtlasCommandSurface({
       '.atlas-source-database',
       '.atlas-buyer-list-head',
       '.atlas-buyer-triage-table-wrap',
+      '.atlas-scenario-modeler-head',
+      '.atlas-scenario-table-section',
       '.atlas-buyer-report-shell',
       '.atlas-generated-workspace-shell',
       '.atlas-generated-report-primary'
@@ -10497,12 +10500,16 @@ function ScenarioModelsView({
   buyingGroupId,
   initialScenarioId,
   initialScenarioLabMode,
+  initialScenarioPage,
+  initialSort,
   initialPrompt,
   marketId
 }: {
   buyingGroupId?: string;
   initialScenarioId?: string;
   initialScenarioLabMode?: string;
+  initialScenarioPage?: string;
+  initialSort?: string;
   initialPrompt?: string;
   initialView?: string;
   marketId?: string;
@@ -10524,6 +10531,11 @@ function ScenarioModelsView({
   const [selectedScenarioId, setSelectedScenarioId] = useState(initialScenarioId ?? '');
   const [scenarioLabMode, setScenarioLabMode] = useState<ScenarioLabMode>(initialScenarioLabMode === 'create' ? 'create' : 'review');
   const [scenarioTypeFilter, setScenarioTypeFilter] = useState('all');
+  const [openScenarioFilter, setOpenScenarioFilter] = useState<string | null>(null);
+  const [scenarioTableBuyingGroupFilter, setScenarioTableBuyingGroupFilter] = useState(buyingGroupId ?? '');
+  const [scenarioTableMarketFilter, setScenarioTableMarketFilter] = useState(marketId ?? '');
+  const [scenarioTablePage, setScenarioTablePage] = useState(Number.parseInt(initialScenarioPage || '1', 10));
+  const [scenarioTableSort, setScenarioTableSort] = useState(initialSort || 'created');
   const [expandedScenarioPriorityGroups, setExpandedScenarioPriorityGroups] = useState({ planning: false, traceability: false });
   const [expandedScenarioRowIds, setExpandedScenarioRowIds] = useState<string[]>([]);
   const [compareScenarioIds, setCompareScenarioIds] = useState<string[]>([]);
@@ -10571,6 +10583,13 @@ function ScenarioModelsView({
   useEffect(() => {
     setInputs(initialInputs);
   }, [initialInputs]);
+
+  useEffect(() => {
+    setScenarioTableBuyingGroupFilter(buyingGroupId ?? '');
+    setScenarioTableMarketFilter(marketId ?? '');
+    setScenarioTablePage(Number.parseInt(initialScenarioPage || '1', 10));
+    setScenarioTableSort(initialSort || 'created');
+  }, [buyingGroupId, initialScenarioPage, initialSort, marketId]);
 
   useEffect(() => {
     setScenarioDebriefEntries(readScenarioDebriefMemory(attachedBuyingGroup?.id));
@@ -11472,7 +11491,148 @@ function ScenarioModelsView({
 	    params.set('mode', 'create');
 	    params.set('scenario', scenarioId);
 	    return `/scenario-lab?${params.toString()}`;
-	  }
+  }
+  const scenarioTableActiveSort = scenarioTableSort || 'created';
+  const scenarioTablePageSize = 10;
+  const scenarioTableRows = visibleScenarioOptions.filter((scenario) => {
+    if (scenario.id === 'custom' || scenario.origin !== 'atlas') return false;
+    const scope = scenarioTableScope(scenario);
+    const matchesBuyingGroup = !scenarioTableBuyingGroupFilter || scope.buyingGroupId === scenarioTableBuyingGroupFilter || scope.multi;
+    const matchesMarket = !scenarioTableMarketFilter || scope.marketId === scenarioTableMarketFilter || scope.multi;
+    return matchesBuyingGroup && matchesMarket;
+  }).slice(0, 15).sort((a, b) => {
+    const { direction } = parseSortParam(scenarioTableActiveSort, 'created');
+    const createdDelta = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+    return direction === 'asc' ? createdDelta : -createdDelta;
+  });
+  const scenarioTableTotalPages = Math.max(1, Math.ceil(scenarioTableRows.length / scenarioTablePageSize));
+  const scenarioTableCurrentPage = Math.min(Math.max(1, Number.isFinite(scenarioTablePage) ? scenarioTablePage : 1), scenarioTableTotalPages);
+  const scenarioTableStartIndex = (scenarioTableCurrentPage - 1) * scenarioTablePageSize;
+  const scenarioTableVisibleRows = scenarioTableRows.slice(scenarioTableStartIndex, scenarioTableStartIndex + scenarioTablePageSize);
+  function scenarioTableTitle(scenario: ScenarioLabOption) {
+    if (scenario.id === 'recommended') return 'EDEKA price realization pressure';
+    if (scenario.id === 'market-signal-monitor') return 'Market pressure may change the buyer response';
+    if (scenario.id === 'buyer-counter') return 'Buyer history suggests a counter pattern';
+    if (scenario.id === 'promo-envelope-defense') return 'Rewe promo envelope pressure';
+    return scenario.name.replace(/^[A-C]\.\s*/, '');
+  }
+  function scenarioTableStatus(scenario: ScenarioLabOption) {
+    if (scenario.id === 'market-signal-monitor') return { label: 'Monitoring', tone: 'monitoring' };
+    if (scenario.id === 'buyer-counter') return { label: 'Ready to use', tone: 'ready' };
+    if (scenarioAttentionBucket(scenario) === 'cno-review') return { label: 'Needs CNO review', tone: 'review' };
+    if (scenarioAttentionBucket(scenario) === 'traceability') return { label: 'Monitoring', tone: 'monitoring' };
+    return { label: 'Ready to use', tone: 'ready' };
+  }
+  function scenarioTableScope(scenario: ScenarioLabOption) {
+    if (scenario.id === 'recommended') return { buyingGroup: 'EDEKA', buyingGroupId: 'edeka', market: 'Germany', marketId: 'germany', multi: false };
+    if (scenario.id === 'market-signal-monitor') return { buyingGroup: `${mvpScenarioBuyingGroups.length} buying groups`, buyingGroupId: '', market: '6 markets', marketId: '', multi: true };
+    if (scenario.id === 'buyer-counter') return { buyingGroup: 'Carrefour', buyingGroupId: 'carrefour', market: 'France', marketId: 'france', multi: false };
+    if (scenario.id === 'promo-envelope-defense') return { buyingGroup: 'Rewe', buyingGroupId: 'rewe', market: 'Germany', marketId: 'germany', multi: false };
+    const scenarioContext = scenarioBuyingGroupContext(scenario);
+    return { buyingGroup: scenarioContext.buyingGroup, market: scenarioContext.market, multi: false };
+  }
+  function scenarioTableCreatedLabel(createdAt: string) {
+    return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).format(new Date(createdAt));
+  }
+  function scenarioTableSortHref(sort: string) {
+    const params = new URLSearchParams();
+    if (selectedBuyingGroupId) params.set('buyingGroup', selectedBuyingGroupId);
+    if (selectedMarketId) params.set('market', selectedMarketId);
+    params.set('sort', sort);
+    return `/scenario-lab?${params.toString()}`;
+  }
+  function scenarioTablePageHref(page: number) {
+    const params = new URLSearchParams();
+    if (selectedBuyingGroupId) params.set('buyingGroup', selectedBuyingGroupId);
+    if (selectedMarketId) params.set('market', selectedMarketId);
+    if (scenarioTableActiveSort) params.set('sort', scenarioTableActiveSort);
+    if (page > 1) params.set('page', String(page));
+    const query = params.toString();
+    return query ? `/scenario-lab?${query}` : '/scenario-lab';
+  }
+  function scenarioCreateHref() {
+    const params = new URLSearchParams();
+    params.set('mode', 'create');
+    if (selectedBuyingGroupId) params.set('buyingGroup', selectedBuyingGroupId);
+    if (selectedMarketId) params.set('market', selectedMarketId);
+    return `/scenario-lab?${params.toString()}`;
+  }
+  function ScenarioTableSortableHeader({ label, sort }: { label: string; sort: string }) {
+    const active = parseSortParam(scenarioTableActiveSort, 'created').key === sort;
+    const nextSort = nextSortParam(scenarioTableActiveSort, sort);
+    return (
+      <button
+        className={active ? 'active' : ''}
+        onClick={() => {
+          setScenarioTableSort(nextSort);
+          setScenarioTablePage(1);
+        }}
+        type="button"
+        aria-current={active ? 'true' : undefined}
+      >
+        {label}
+        {active ? <span aria-hidden="true">{sortDirectionArrow(scenarioTableActiveSort, sort)}</span> : null}
+      </button>
+    );
+  }
+  function ScenarioFilterDropdown({
+    id,
+    label,
+    onChange,
+    options,
+    value
+  }: {
+    id: string;
+    label: string;
+    onChange: (value: string) => void;
+    options: Array<{ label: string; value: string }>;
+    value: string;
+  }) {
+    const isOpen = openScenarioFilter === id;
+    const selected = options.find((option) => option.value === value) ?? options[0];
+    return (
+      <div
+        className={`atlas-scenario-filter-select${isOpen ? ' open' : ''}`}
+        onBlur={(event) => {
+          if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setOpenScenarioFilter(null);
+        }}
+        onKeyDown={(event) => {
+          if (event.key === 'Escape') setOpenScenarioFilter(null);
+        }}
+      >
+        <button
+          aria-expanded={isOpen}
+          aria-haspopup="listbox"
+          aria-label={label}
+          onClick={() => setOpenScenarioFilter(isOpen ? null : id)}
+          type="button"
+        >
+          <span>{selected?.label ?? label}</span>
+          <i aria-hidden="true" />
+        </button>
+        {isOpen ? (
+          <div className="atlas-scenario-filter-menu" role="listbox" aria-label={label}>
+            {options.map((option) => (
+              <button
+                aria-selected={option.value === value}
+                className={option.value === value ? 'selected' : ''}
+                key={option.value || 'all'}
+                onClick={() => {
+                  setOpenScenarioFilter(null);
+                  onChange(option.value);
+                }}
+                onMouseDown={(event) => event.preventDefault()}
+                role="option"
+                type="button"
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        ) : null}
+      </div>
+    );
+  }
 	  const compareParams = new URLSearchParams();
   compareScenarioIds.forEach((id) => compareParams.append('scenario', id));
   if (selectedBuyingGroupId) compareParams.set('buyingGroup', selectedBuyingGroupId);
@@ -11606,233 +11766,135 @@ function ScenarioModelsView({
 	        <p>Compare ATLAS-modeled moves, adjust the assumptions, and choose which scenarios are worth taking into buyer planning.</p>
 	      </header>
 
-      <nav className="atlas-scenario-workspace-tabs" aria-label="Scenario Lab views">
-        <button className={scenarioLabMode === 'review' ? 'active' : ''} type="button" onClick={() => setScenarioLabMode('review')}>Review scenarios</button>
-        <button className={scenarioLabMode === 'create' ? 'active' : ''} type="button" onClick={() => setScenarioLabMode('create')}>Create scenario</button>
-      </nav>
-
 		      {scenarioLabMode === 'review' ? <section className="atlas-scenario-overview" aria-label="Modeled scenario impact overview">
-		        <div className="atlas-scenario-table-filters" aria-label="Scenario table filters">
-		          <label>
-		            <span>Scenario type</span>
-		            <select value={scenarioTypeFilter} onChange={(event) => setScenarioTypeFilter(event.currentTarget.value)}>
-		              <option value="all">All scenarios</option>
-		              <option value="atlas">ATLAS generated</option>
-		              <option value="manual">Manual / adjusted</option>
-		              <option value="recommended">Recommended</option>
-		              <option value="conservative">Conservative</option>
-		              <option value="aggressive">Aggressive</option>
-		              <option value="buyer-counter">Buyer counter</option>
-		              <option value="custom">Custom working</option>
-		            </select>
-		          </label>
-		          <label>
-		            <span>Buying group</span>
-		            <select
-		              value={selectedBuyingGroupId}
-		              onChange={(event) => {
-		                window.location.href = scenarioHref({ buyer: event.currentTarget.value, market: selectedMarketId });
-		              }}
-		            >
-		              <option value="">All buying groups</option>
-		              {mvpScenarioBuyingGroups.map((group) => (
-		                <option value={group.id} key={group.id}>{group.name}</option>
-		              ))}
-		            </select>
-		          </label>
-		          <label>
-		            <span>Market</span>
-		            <select
-		              value={selectedMarketId}
-		              onChange={(event) => {
-		                window.location.href = scenarioHref({ buyer: selectedBuyingGroupId, market: event.currentTarget.value });
-		              }}
-		            >
-		              <option value="">All markets</option>
-		              {railMarkets.map((market) => (
-		                <option value={market.id} key={market.id}>{market.name}</option>
-		              ))}
-		            </select>
-		          </label>
-		        </div>
-		        <div className="atlas-scenario-selection-controls" aria-label="Scenario comparison controls">
-		          <span>{compareScenarioIds.length} selected</span>
-		          <a aria-disabled={compareScenarioIds.length < 2} href={compareHref}>Compare selected</a>
-		          <button disabled={compareScenarioIds.length === 0} onClick={() => setCompareScenarioIds([])} type="button">Clear selections</button>
-		        </div>
 		        <div className="atlas-scenario-table-stack">
-		          {scenarioPriorityGroups.filter((group) => group.scenarios.length > 0).map((group) => (
-		            <section className={`atlas-scenario-table-section priority-${group.id}`} key={group.id}>
-		              <header className="atlas-scenario-table-section-head">
-		                <div>
-		                  <span>{group.label}</span>
-		                  <p>{group.note}</p>
-		                </div>
-		                <strong>{group.isExpanded ? 'Showing all' : group.collapsedLabel} · {group.scenarios.length} scenarios</strong>
-		              </header>
-		              {group.id === 'traceability' && !group.isExpanded ? (
-		                <button
-		                  className="atlas-scenario-hidden-run-toggle"
-		                  onClick={() => setExpandedScenarioPriorityGroups((current) => ({
-		                    ...current,
-		                    traceability: true
-		                  }))}
-		                  type="button"
-		                >
-		                  Show {group.scenarios.length} scenarios ATLAS ran but deprioritized
-		                </button>
-		              ) : null}
-		              {group.visibleScenarios.length > 0 ? (
+		            <section className="atlas-scenario-table-section atlas-scenario-table-section-flat">
+                    <div className="atlas-scenario-table-toolbar">
+                      <div className="atlas-scenario-table-filters" aria-label="Scenario table filters">
+                        <ScenarioFilterDropdown
+                          id="scenario-type"
+                          label="Scenario type"
+                          onChange={(value) => {
+                            setScenarioTypeFilter(value);
+                            setScenarioTablePage(1);
+                          }}
+                          options={[
+                            { value: 'all', label: 'All scenarios' },
+                            { value: 'atlas', label: 'ATLAS generated' },
+                            { value: 'custom', label: 'Custom' }
+                          ]}
+                          value={scenarioTypeFilter}
+                        />
+                        <ScenarioFilterDropdown
+                          id="buying-group"
+                          label="Buying group"
+                          onChange={(value) => {
+                            setScenarioTableBuyingGroupFilter(value);
+                            setScenarioTablePage(1);
+                          }}
+                          options={[
+                            { value: '', label: 'All buying groups' },
+                            ...mvpScenarioBuyingGroups.map((group) => ({ value: group.id, label: group.name }))
+                          ]}
+                          value={scenarioTableBuyingGroupFilter}
+                        />
+                        <ScenarioFilterDropdown
+                          id="market"
+                          label="Market"
+                          onChange={(value) => {
+                            setScenarioTableMarketFilter(value);
+                            setScenarioTablePage(1);
+                          }}
+                          options={[
+                            { value: '', label: 'All markets' },
+                            ...railMarkets.map((market) => ({ value: market.id, label: market.name }))
+                          ]}
+                          value={scenarioTableMarketFilter}
+                        />
+                      </div>
+                      <a className="atlas-scenario-create-action" href={scenarioCreateHref()}>Create scenario</a>
+                    </div>
 		                <div className="atlas-scenario-table-wrap">
 		                  <table className="atlas-scenario-review-table">
 		                    <colgroup>
-		                      <col className="compare-col" />
 		                      <col className="scenario-col" />
+		                      <col className="status-col" />
+		                      <col className="type-col" />
+		                      <col className="created-col" />
 		                      <col className="buyer-col" />
-		                      <col className="basis-col" />
-		                      <col className="metric-col" />
-		                      <col className="metric-col" />
-		                      <col className="metric-col" />
-		                      <col className="relationship-col" />
-		                      <col className="updated-col" />
-		                      <col className="details-col" />
+		                      <col className="market-col" />
 		                    </colgroup>
 		                    <thead>
 		                      <tr>
-		                        <th aria-label="Select scenarios to compare">Compare</th>
 		                        <th>Scenario</th>
+		                        <th>Status</th>
+		                        <th>Scenario type</th>
+		                        <th><ScenarioTableSortableHeader label="Created" sort="created" /></th>
 		                        <th>Buying group</th>
-		                        <th>Based on</th>
-		                        <th>Likelihood</th>
-		                        <th>NR</th>
-		                        <th>GM</th>
-		                        <th>Relationship</th>
-		                        <th>Updated</th>
-		                        <th aria-label="Expand scenario details">Details</th>
+		                        <th>Market</th>
 		                      </tr>
 		                    </thead>
 		                    <tbody>
-		                      {group.visibleScenarios.map((scenario, scenarioIndex) => {
-		                        const isCompareSelected = compareScenarioIds.includes(scenario.id);
-		                        const isExpanded = expandedScenarioRowIds.includes(scenario.id);
-		                        const attentionReason = scenarioAttentionReason(scenario);
-		                        const scenarioContext = scenarioBuyingGroupContext(scenario);
-		                        const modeledMove = `${pct(scenario.inputs.priceIncreasePercent)} ask / ${pct(scenario.inputs.expectedRealizationPercent)} realization`;
-		                        const collapsedScenarioBasis = scenario.origin === 'manual'
-		                          ? 'CNO adjusted'
-		                          : scenario.scenarioStyle === 'Reference'
-		                            ? 'Reference run'
-		                            : `${scenario.scenarioStyle} logic`;
-		                        const scenarioBasis = scenario.origin === 'manual'
-		                          ? 'This scenario uses CNO-adjusted assumptions plus current buyer context and saved local inputs.'
-		                          : `${scenario.why}${scenarioTrigger ? ` Trigger: ${scenarioTrigger.title}.` : ''}`;
-		                        const scenarioUpdatedDate = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(new Date(scenario.createdAt));
-		                        const rowNumber = String(scenarioIndex + 1).padStart(2, '0');
+		                      {scenarioTableVisibleRows.map((scenario) => {
+		                        const status = scenarioTableStatus(scenario);
+		                        const scope = scenarioTableScope(scenario);
 		                        return (
-		                          <Fragment key={scenario.id}>
-		                            <tr className={isExpanded ? 'expanded' : ''} key={`${scenario.id}-row`}>
-		                              <td>
-		                                <label className="atlas-scenario-table-checkbox" aria-label={`Select ${scenario.name} for comparison`}>
-		                                  <input
-		                                    checked={isCompareSelected}
-		                                    onChange={() => toggleCompareScenario(scenario.id)}
-		                                    type="checkbox"
-		                                  />
-		                                </label>
-		                              </td>
+		                            <tr
+                                  className={`status-${status.tone}`}
+                                  key={scenario.id}
+                                  onClick={() => { window.location.href = scenarioDetailHref(scenario.id); }}
+                                  onKeyDown={(event) => {
+                                    if (event.key === 'Enter' || event.key === ' ') {
+                                      event.preventDefault();
+                                      window.location.href = scenarioDetailHref(scenario.id);
+                                    }
+                                  }}
+                                  role="link"
+                                  tabIndex={0}
+                                >
 		                              <td className="atlas-scenario-table-name">
 		                                <a href={scenarioDetailHref(scenario.id)}>
-		                                  <span>{rowNumber} · {attentionReason}</span>
-		                                  <strong>{scenario.name.replace(/^[A-C]\.\s*/, '')}</strong>
-		                                  <small>{scenario.origin === 'manual' ? 'Manual' : 'ATLAS generated'} · {scenario.scenarioStyle}</small>
+		                                  <strong>{scenarioTableTitle(scenario)}</strong>
 		                                </a>
 		                              </td>
+                                  <td><span className={`atlas-scenario-status-pill status-${status.tone}`}>{status.label}</span></td>
+                                  <td><span className="atlas-scenario-type-text">{scenario.origin === 'manual' ? 'Manual' : 'ATLAS generated'}</span></td>
+                                  <td>{scenarioTableCreatedLabel(scenario.createdAt)}</td>
 		                              <td>
-		                                <strong>{scenarioContext.buyingGroup}</strong>
-		                                <small>{scenarioContext.market}</small>
+		                                <span className={`atlas-scenario-scope-text${scope.multi ? ' is-multi' : ''}`}>{scope.buyingGroup}</span>
 		                              </td>
-		                              <td>{collapsedScenarioBasis}</td>
-		                              <td><strong>{scenario.likelihood}%</strong></td>
-		                              <td><strong>{scenarioDeltaLabel(scenario.outputs.revenueImpact)}</strong></td>
-		                              <td>{scenarioDeltaLabel(scenario.outputs.marginImpact)}</td>
-		                              <td>{scenario.relationshipRisk}</td>
-		                              <td>{scenarioUpdatedDate}</td>
-		                              <td>
-		                                <button
-		                                  aria-expanded={isExpanded}
-		                                  aria-label={`${isExpanded ? 'Collapse' : 'Expand'} ${scenario.name}`}
-		                                  className="atlas-scenario-table-expand"
-		                                  onClick={() => toggleScenarioRowExpansion(scenario.id)}
-		                                  type="button"
-		                                >
-		                                  {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
-		                                </button>
-		                              </td>
+                                  <td><span className={`atlas-scenario-scope-text${scope.multi ? ' is-multi' : ''}`}>{scope.market}</span></td>
 		                            </tr>
-		                            {isExpanded ? (
-		                              <tr className="atlas-scenario-expanded-row" key={`${scenario.id}-detail`}>
-		                                <td colSpan={10}>
-		                                  <div className="atlas-scenario-expanded-story">
-		                                    <section>
-		                                      <h4>Based on</h4>
-		                                      <p>{scenarioBasis}</p>
-		                                    </section>
-		                                    <section>
-		                                      <h4>Modeled numbers</h4>
-		                                      <dl>
-		                                        <div><dt>Price ask</dt><dd>{pct(scenario.inputs.priceIncreasePercent)}</dd></div>
-		                                        <div><dt>Realization</dt><dd>{pct(scenario.inputs.expectedRealizationPercent)}</dd></div>
-		                                        <div><dt>Trade spend</dt><dd>{euros(scenario.inputs.tradeSpendChange)}</dd></div>
-		                                        <div><dt>Volume risk</dt><dd>{pct(scenario.inputs.volumeChangePercent)}</dd></div>
-		                                      </dl>
-		                                    </section>
-		                                    <section>
-		                                      <h4>Expected buyer response</h4>
-		                                      <p>{scenario.buyerResponse}</p>
-		                                      <div className="atlas-scenario-progress"><i style={{ width: `${scenario.likelihood}%` }} /></div>
-		                                      <small>{scenario.likelihood}% likelihood to land · {scenario.evidenceStrength}% evidence strength</small>
-		                                    </section>
-		                                    <section className="atlas-scenario-expanded-action">
-		                                      <h4>Recommended action</h4>
-		                                      <p>{scenario.recommendedEdit}</p>
-		                                    </section>
-		                                  </div>
-		                                  <div className="atlas-scenario-expanded-footer">
-		                                    <SourceTrustMini source={scenarioSource} />
-		                                    <div className="atlas-scenario-expanded-actions">
-		                                      <a href={scenarioDetailHref(scenario.id)}>Open full view</a>
-		                                      <button type="button" onClick={() => editScenarioFromCard(scenario.id)}>Edit scenario</button>
-		                                      <a href={scenarioReportHrefFor(scenario)} rel="noreferrer" target="_blank">Download report</a>
-		                                    </div>
-		                                  </div>
-		                                </td>
-		                              </tr>
-		                            ) : null}
-		                          </Fragment>
 		                        );
 		                      })}
 		                    </tbody>
 		                  </table>
 		                </div>
-		              ) : null}
-		              {group.isExpandable && (group.id !== 'traceability' || group.isExpanded) && (group.scenarios.length > 5 || group.id === 'traceability') ? (
-		                <button
-		                  className="atlas-scenario-show-more"
-		                  onClick={() => setExpandedScenarioPriorityGroups((current) => ({
-		                    ...current,
-		                    [group.id as 'planning' | 'traceability']: !group.isExpanded
-		                  }))}
-		                  type="button"
-		                >
-		                  {group.isExpanded
-		                    ? `Hide ${group.label.toLowerCase()}`
-		                    : group.id === 'traceability'
-		                      ? `Show ${group.scenarios.length} deprioritized scenarios`
-		                      : `Show ${group.scenarios.length - 5} more ${group.label.toLowerCase()}`}
-		                </button>
-		              ) : null}
+                    <nav className="atlas-scenario-table-pagination" aria-label="Scenario table pages">
+                      <span>
+                        Showing {scenarioTableStartIndex + 1}-{Math.min(scenarioTableStartIndex + scenarioTablePageSize, scenarioTableRows.length)} of {scenarioTableRows.length}
+                      </span>
+                      <div>
+                        {scenarioTableCurrentPage > 1 ? (
+                          <button onClick={() => setScenarioTablePage(scenarioTableCurrentPage - 1)} type="button">Previous</button>
+                        ) : (
+                          <span aria-disabled="true">Previous</span>
+                        )}
+                        {Array.from({ length: scenarioTableTotalPages }, (_, index) => index + 1).map((page) => (
+                          page === scenarioTableCurrentPage ? (
+                            <span aria-current="page" className="active" key={page}>{page}</span>
+                          ) : (
+                            <button onClick={() => setScenarioTablePage(page)} type="button" key={page}>{page}</button>
+                          )
+                        ))}
+                        {scenarioTableCurrentPage < scenarioTableTotalPages ? (
+                          <button onClick={() => setScenarioTablePage(scenarioTableCurrentPage + 1)} type="button">Next</button>
+                        ) : (
+                          <span aria-disabled="true">Next</span>
+                        )}
+                      </div>
+                    </nav>
 		            </section>
-		          ))}
 		          {scenarioSaveStatus ? <span className="atlas-scenario-save-status">{scenarioSaveStatus}</span> : null}
 		        </div>
 		      </section> : null}
@@ -13066,6 +13128,7 @@ function AtlasIntelligenceContent({
   initialPrompt,
   initialScenarioId,
   initialScenarioLabMode,
+  initialScenarioPage,
   initialSort
 }: AtlasIntelligenceHubProps) {
   if (view === 'markets' || view === 'market') return <MarketsView initialGeneratedView={initialGeneratedView} initialPrompt={initialPrompt} initialSort={initialSort} marketId={marketId} />;
@@ -13088,7 +13151,7 @@ function AtlasIntelligenceContent({
   if (view === 'database') return <SourceDatabaseView initialPrompt={initialPrompt} />;
   if (view === 'howItWorks') return <HowItWorksView />;
   if (view === 'scenarioCompare') return <ScenarioCompareView buyingGroupId={buyingGroupId} initialView={initialGeneratedView} marketId={marketId} />;
-  if (view === 'scenarioModels') return <ScenarioModelsView buyingGroupId={buyingGroupId} initialPrompt={initialPrompt} initialScenarioId={initialScenarioId} initialScenarioLabMode={initialScenarioLabMode} initialView={initialGeneratedView} marketId={marketId} />;
+  if (view === 'scenarioModels') return <ScenarioModelsView buyingGroupId={buyingGroupId} initialPrompt={initialPrompt} initialScenarioId={initialScenarioId} initialScenarioLabMode={initialScenarioLabMode} initialScenarioPage={initialScenarioPage} initialSort={initialSort} initialView={initialGeneratedView} marketId={marketId} />;
   return <EuropeOverview initialGeneratedView={initialGeneratedView} initialMonitorTab={initialMonitorTab} initialPrompt={initialPrompt} />;
 }
 
