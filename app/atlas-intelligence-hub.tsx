@@ -10164,28 +10164,39 @@ function BuyingGroupReimaginedWorkspace({
         </aside>
       </header>
 
-      <nav className="atlas-bg-mini-tabs" aria-label={`${workspace.buyingGroup.name} views`}>
-        {miniViews.map((view) => (
-          <button
-            aria-current={activeView === view.id ? 'page' : undefined}
-            className={activeView === view.id ? 'active' : ''}
-            key={view.id}
-            onClick={() => selectView(view.id)}
-            title={view.helper}
-            type="button"
-          >
-            <strong>{view.label}</strong>
-            <small>{view.helper}</small>
-          </button>
-        ))}
-      </nav>
+      <div className="atlas-bg-body-grid">
+        {/* Sidebar — mirrors atlas-triage-side-nav */}
+        <aside className="atlas-bg-side-nav" aria-label={`${workspace.buyingGroup.name} views`}>
+          <span>View</span>
+          <nav>
+            {miniViews.map((view) => (
+              <button
+                aria-current={activeView === view.id ? 'page' : undefined}
+                className={activeView === view.id ? 'is-active' : ''}
+                key={view.id}
+                onClick={() => selectView(view.id)}
+                type="button"
+              >
+                <div>
+                  <strong>{view.label}</strong>
+                  <small>{view.helper}</small>
+                </div>
+              </button>
+            ))}
+          </nav>
+        </aside>
 
-      {activeView === 'profile' ? <BuyingGroupProfileMiniView profileRead={profileRead} workspace={workspace} /> : null}
-      {activeView === 'current' ? <BuyingGroupCurrentNegotiationMiniView profileRead={profileRead} workspace={workspace} /> : null}
-      {activeView === 'timeline' ? <BuyingGroupTimelineMiniView profileUpdates={profileUpdates} workspace={workspace} /> : null}
+        {/* Central content pane — dynamic per selected view */}
+        <div className="atlas-bg-content-pane">
+          {activeView === 'profile' ? <BuyingGroupProfileMiniView profileRead={profileRead} workspace={workspace} /> : null}
+          {activeView === 'current' ? <BuyingGroupCurrentNegotiationMiniView profileRead={profileRead} workspace={workspace} /> : null}
+          {activeView === 'timeline' ? <BuyingGroupTimelineMiniView profileUpdates={profileUpdates} workspace={workspace} /> : null}
+        </div>
+      </div>
     </section>
   );
 }
+
 
 function BuyingGroupWorkspaceView({
   buyingGroupId,
