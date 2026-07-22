@@ -11926,428 +11926,526 @@ function ScenarioModelsView({
     ));
   }
 
-	  if (fullViewScenario) {
-	    const scenario = fullViewScenario;
-	    const scenarioContext = scenarioBuyingGroupContext(scenario);
-	    const attentionReason = scenarioAttentionReason(scenario);
-	    const scenarioBasis = scenario.origin === 'manual'
-	      ? 'This scenario uses CNO-adjusted assumptions plus current buyer context and saved local inputs.'
-	      : `${scenario.why}${scenarioTrigger ? ` It was refreshed after ATLAS reviewed ${scenarioTrigger.title.toLowerCase()}.` : ''}`;
-	    const detailModeledNumbers = [
-	      { label: 'Price ask', value: pct(scenario.inputs.priceIncreasePercent) },
-	      { label: 'Expected realization', value: pct(scenario.inputs.expectedRealizationPercent) },
-	      { label: 'Trade spend', value: euros(scenario.inputs.tradeSpendChange) },
-	      { label: 'Volume risk', value: pct(scenario.inputs.volumeChangePercent) },
-	      { label: 'Buyer acceptance', value: `${scenario.likelihood}%` }
-	    ];
-	    const detailImpactNumbers = [
-	      { label: 'NR impact', value: scenarioDeltaLabel(scenario.outputs.revenueImpact) },
-	      { label: 'GM impact', value: scenarioDeltaLabel(scenario.outputs.marginImpact) },
-	      { label: 'Trade impact', value: scenarioDeltaLabel(scenario.outputs.tradeSpendImpact) },
-	      { label: 'Risk-adjusted value', value: euros(scenario.valueProtected) }
-	    ];
-	    const scenarioCompareParams = new URLSearchParams();
-	    scenarioCompareParams.append('scenario', scenario.id);
-	    scenarioCompareParams.append('scenario', scenario.id === 'buyer-counter' ? 'recommended' : 'buyer-counter');
-	    if (scenarioContext.buyingGroupId) scenarioCompareParams.set('buyingGroup', scenarioContext.buyingGroupId);
-	    if (scenarioContext.marketId) scenarioCompareParams.set('market', scenarioContext.marketId);
-	    const buyerProfileHref = scenarioContext.buyingGroupId ? `/buying-groups/${scenarioContext.buyingGroupId}?view=current` : scenarioHref();
-	    const scenarioFullSummary = `Based on ${scenario.scenarioStyle.toLowerCase()} logic, ATLAS modeled ${pct(scenario.inputs.priceIncreasePercent)} ask / ${pct(scenario.inputs.expectedRealizationPercent)} realization with ${scenarioDeltaLabel(scenario.outputs.revenueImpact)} NR impact and ${scenario.likelihood}% likelihood to land.`;
-	    return (
-	      <section className="atlas-scenario-full-view" aria-label={`${scenario.name} full scenario view`}>
-	        <header className="atlas-scenario-full-header">
-	          <a href={scenarioHref()}>Back to Scenario Lab</a>
-	          <div>
-	            <span>{attentionReason} · {scenarioContext.buyingGroup}</span>
-	            <h1>{scenario.name.replace(/^[A-C]\.\s*/, '')}</h1>
-	            <p>{scenarioFullSummary}</p>
-	          </div>
-	          <div className="atlas-scenario-full-header-actions">
-	            <a href={scenarioEditHref(scenario.id)}>Edit scenario</a>
-	            <a href={`/scenario-lab/compare?${scenarioCompareParams.toString()}`}>Compare</a>
-	          </div>
-	        </header>
 
-	        <div className="atlas-scenario-full-grid">
-	          <article className="atlas-scenario-full-primary">
-	            <div className="atlas-scenario-card-heading">
-	              <span>{scenario.origin === 'manual' ? 'Manual' : 'ATLAS generated'}</span>
-	              <span>{scenario.scenarioStyle}</span>
-	              <span>{scenarioContext.market}</span>
-	            </div>
-	            <h2>What ATLAS modeled</h2>
-	            <p>{scenarioBasis}</p>
-	            <dl className="atlas-scenario-full-metrics">
-	              {detailModeledNumbers.map((item) => (
-	                <div key={item.label}>
-	                  <dt>{item.label}</dt>
-	                  <dd>{item.value}</dd>
-	                </div>
-	              ))}
-	            </dl>
-	          </article>
+  // ── Pending/committed input state for "Update Parameters" pattern ──
+  const [pendingInputs, setPendingInputs] = useState<ScenarioInputs>(inputs);
+  const [committedInputs, setCommittedInputs] = useState<ScenarioInputs>(inputs);
+  const [hasPendingChanges, setHasPendingChanges] = useState(false);
+  const [isAnimating, setIsAnimating] = useState(false);
+  const [selectedBuilderTab, setSelectedBuilderTab] = useState<string>(selectedScenarioId || 'recommended');
 
-	          <aside className="atlas-scenario-full-read">
-	            <h2>Scenario read</h2>
-	            <section>
-	              <h3>Expected buyer response</h3>
-	              <p>{scenario.buyerResponse}</p>
-	              <div className="atlas-scenario-progress"><i style={{ width: `${scenario.likelihood}%` }} /></div>
-	              <small>{scenario.likelihood}% likelihood to land · {scenario.evidenceStrength}% evidence strength</small>
-	            </section>
-	            <section>
-	              <h3>Recommended CNO action</h3>
-	              <p>{scenario.recommendedEdit}</p>
-	              <small>{scenario.relationshipRisk} relationship risk</small>
-	            </section>
-	          </aside>
-	        </div>
+  // Keep pending in sync when scenario tab changes
+  useEffect(() => {
+    const scenario = scenarioOptions.find((s) => s.id === selectedBuilderTab);
+    if (scenario) {
+      setPendingInputs(scenario.inputs);
+      setCommittedInputs(scenario.inputs);
+      setHasPendingChanges(false);
+    }
+  }, [selectedBuilderTab]);
 
-	        <section className="atlas-scenario-full-impact" aria-label="Scenario impact and actions">
-	          <div>
-	            <h2>Expected impact</h2>
-	            <dl className="atlas-scenario-full-metrics">
-	              {detailImpactNumbers.map((item) => (
-	                <div key={item.label}>
-	                  <dt>{item.label}</dt>
-	                  <dd>{item.value}</dd>
-	                </div>
-	              ))}
-	            </dl>
-	          </div>
-	          <div className="atlas-scenario-full-actions">
-	            <a href={buyerProfileHref}>Save to buyer profile</a>
-	            <a href={scenarioReportHref} rel="noreferrer" target="_blank">Download report</a>
-	            <a href={scenarioEditHref(scenario.id)}>Adjust levers</a>
-	          </div>
-	        </section>
+  // Keep pendingInputs in sync when external inputs change (level selection)
+  useEffect(() => {
+    setPendingInputs(inputs);
+    setCommittedInputs(inputs);
+    setHasPendingChanges(false);
+  }, [inputs]);
 
-	        <section className="atlas-scenario-full-source" aria-label="Scenario source trail">
-	          <h2>Source trail</h2>
-	          <p>ATLAS tied this run to buyer history, current scenario inputs, market signals, and finance guardrail context.</p>
-	          <SourceTrustMini source={scenarioSource} />
-	        </section>
-	      </section>
-	    );
-	  }
+  function updatePendingInput<K extends keyof ScenarioInputs>(key: K, value: ScenarioInputs[K]) {
+    setPendingInputs((current) => ({ ...current, [key]: value }));
+    setHasPendingChanges(true);
+  }
 
-	  return (
-	    <section className="atlas-scenario-modeler" aria-label="Scenario Lab intelligent modeler">
-	      <header className="atlas-scenario-modeler-head">
-	        <h1>{scenarioLiveHeaderTitle}</h1>
-	        <p>{scenarioLiveHeaderCopy}</p>
-	      </header>
+  function commitPendingInputs() {
+    setIsAnimating(true);
+    setInputs(pendingInputs);
+    setCommittedInputs(pendingInputs);
+    setHasPendingChanges(false);
+    setSelectedScenarioId('custom');
+    setTimeout(() => setIsAnimating(false), 1000);
+  }
 
-		      {scenarioLabMode === 'review' ? <section className="atlas-scenario-overview" aria-label="Modeled scenario impact overview">
-		        <div className="atlas-scenario-table-stack">
-		            <section className="atlas-scenario-table-section atlas-scenario-table-section-flat">
-                    <div className="atlas-scenario-table-toolbar">
-                      <div className="atlas-scenario-table-filters" aria-label="Scenario table filters">
-                        <ScenarioFilterDropdown
-                          id="scenario-type"
-                          label="Scenario type"
-                          onChange={(value) => {
-                            setScenarioTypeFilter(value);
-                            setScenarioTablePage(1);
-                          }}
-                          options={[
-                            { value: 'all', label: 'All scenarios' },
-                            { value: 'atlas', label: 'ATLAS generated' },
-                            { value: 'custom', label: 'Custom' }
-                          ]}
-                          value={scenarioTypeFilter}
-                        />
-                        <ScenarioFilterDropdown
-                          id="buying-group"
-                          label="Buying group"
-                          onChange={(value) => {
-                            setScenarioTableBuyingGroupFilter(value);
-                            setScenarioTablePage(1);
-                          }}
-                          options={[
-                            { value: '', label: 'All buying groups' },
-                            ...mvpScenarioBuyingGroups.map((group) => ({ value: group.id, label: group.name }))
-                          ]}
-                          value={scenarioTableBuyingGroupFilter}
-                        />
-                        <ScenarioFilterDropdown
-                          id="market"
-                          label="Market"
-                          onChange={(value) => {
-                            setScenarioTableMarketFilter(value);
-                            setScenarioTablePage(1);
-                          }}
-                          options={[
-                            { value: '', label: 'All markets' },
-                            ...railMarkets.map((market) => ({ value: market.id, label: market.name }))
-                          ]}
-                          value={scenarioTableMarketFilter}
-                        />
-                      </div>
-                      <a className="atlas-scenario-create-action" href={scenarioCreateHref()}>Create scenario</a>
-                    </div>
-		                <div className="atlas-scenario-table-wrap">
-		                  <table className="atlas-scenario-review-table">
-		                    <colgroup>
-		                      <col className="scenario-col" />
-		                      <col className="status-col" />
-		                      <col className="type-col" />
-		                      <col className="created-col" />
-		                      <col className="buyer-col" />
-		                      <col className="market-col" />
-		                    </colgroup>
-		                    <thead>
-		                      <tr>
-		                        <th>Scenario</th>
-		                        <th><ScenarioTableSortableHeader label="Impact" sort="impact" /></th>
-		                        <th>Scenario type</th>
-		                        <th><ScenarioTableSortableHeader label="Created" sort="created" /></th>
-		                        <th>Buying group</th>
-		                        <th>Market</th>
-		                      </tr>
-		                    </thead>
-		                    <tbody>
-		                      {scenarioTableVisibleRows.map((scenario) => {
-		                        const impact = scenarioTableImpact(scenario);
-		                        const scope = scenarioTableScope(scenario);
-                            const marketNames = 'marketNames' in scope && scope.marketNames
-                              ? scope.marketNames
-                              : scope.market.split(' / ').map((market) => market.trim()).filter(Boolean);
-                            const hasMultipleMarkets = marketNames.length > 1;
-		                        return (
-		                            <tr
-                                  className={`impact-${impact.tone}`}
-                                  key={scenario.id}
-                                  onClick={() => { window.location.href = scenarioDetailHref(scenario.id); }}
-                                  onKeyDown={(event) => {
-                                    if (event.key === 'Enter' || event.key === ' ') {
-                                      event.preventDefault();
-                                      window.location.href = scenarioDetailHref(scenario.id);
-                                    }
-                                  }}
-                                  role="link"
-                                  tabIndex={0}
-                                >
-		                              <td className="atlas-scenario-table-name">
-		                                <a href={scenarioDetailHref(scenario.id)}>
-		                                  <strong>{scenarioTableTitle(scenario)}</strong>
-		                                </a>
-		                              </td>
-                                  <td>
-                                    <span className={`atlas-scenario-impact-read impact-${impact.tone}`}>
-                                      <strong>{impact.label}</strong>
-                                      <small>{impact.detail}</small>
-                                    </span>
-                                  </td>
-                                  <td><span className="atlas-scenario-type-text">{scenario.origin === 'manual' ? 'Manual' : 'ATLAS generated'}</span></td>
-                                  <td>{scenarioTableCreatedLabel(scenario.createdAt)}</td>
-		                              <td>
-		                                <span className="atlas-scenario-scope-text">{scope.buyingGroup}</span>
-		                              </td>
-                                  <td>
-                                    {hasMultipleMarkets ? (
-                                      <span className="atlas-scenario-market-badge" aria-label={`Markets: ${marketNames.join(', ')}`}>
-                                        <span className="atlas-scenario-market-badge-label">{marketNames.length} markets</span>
-                                        <span className="atlas-scenario-market-tooltip" role="tooltip">{marketNames.join(', ')}</span>
-                                      </span>
-                                    ) : (
-                                      <span className="atlas-scenario-scope-text">{scope.market}</span>
-                                    )}
-                                  </td>
-		                            </tr>
-		                        );
-		                      })}
-		                    </tbody>
-		                  </table>
-		                </div>
-                    <nav className="atlas-scenario-table-pagination" aria-label="Scenario table pages">
-                      <span>
-                        Showing {scenarioTableStartIndex + 1}-{Math.min(scenarioTableStartIndex + scenarioTablePageSize, scenarioTableRows.length)} of {scenarioTableRows.length}
-                      </span>
-                      <div>
-                        {scenarioTableCurrentPage > 1 ? (
-                          <button onClick={() => setScenarioTablePage(scenarioTableCurrentPage - 1)} type="button">Previous</button>
-                        ) : (
-                          <span aria-disabled="true">Previous</span>
-                        )}
-                        {Array.from({ length: scenarioTableTotalPages }, (_, index) => index + 1).map((page) => (
-                          page === scenarioTableCurrentPage ? (
-                            <span aria-current="page" className="active" key={page}>{page}</span>
-                          ) : (
-                            <button onClick={() => setScenarioTablePage(page)} type="button" key={page}>{page}</button>
-                          )
-                        ))}
-                        {scenarioTableCurrentPage < scenarioTableTotalPages ? (
-                          <button onClick={() => setScenarioTablePage(scenarioTableCurrentPage + 1)} type="button">Next</button>
-                        ) : (
-                          <span aria-disabled="true">Next</span>
-                        )}
-                      </div>
-                    </nav>
-		            </section>
-		          {scenarioSaveStatus ? <span className="atlas-scenario-save-status">{scenarioSaveStatus}</span> : null}
-		        </div>
-		      </section> : null}
+  function selectBuilderTab(tabId: string) {
+    setSelectedBuilderTab(tabId);
+    const scenario = scenarioOptions.find((s) => s.id === tabId);
+    if (scenario) {
+      setSelectedScenarioId(tabId);
+      setInputs(scenario.inputs);
+    }
+  }
 
-      {scenarioLabMode === 'create' ? <section className="atlas-scenario-lever-workbench atlas-scenario-modeler-levers" aria-label="Scenario lever controls">
-        <header>
-          <div>
-            <span>Manual scenario</span>
-            <h2>Change the primary levers and save the adjusted scenario back to the table.</h2>
+  // ── Posture calculation ──
+  type PostureInfo = { label: string; clock: string; angle: number; sub: string };
+
+  function postureFromInputs(inp: ScenarioInputs): PostureInfo {
+    const acceptance = inp.buyerAcceptanceProbability;
+    const priceDelta = inp.priceIncreasePercent - inp.expectedRealizationPercent;
+    const aggressionScore = acceptance < 40 ? priceDelta * 1.5 : priceDelta;
+    if (priceDelta > 1.4 && acceptance < 45) return { label: 'Hard Bargaining', clock: '2:00', angle: -65, sub: 'High price pressure, low flexibility. Buyer likely to resist.' };
+    if (aggressionScore > 0.8) return { label: 'Dealing', clock: '3:00', angle: -40, sub: 'Active negotiation with balanced interests on both sides.' };
+    if (aggressionScore > 0.3) return { label: 'Concession Trading', clock: '4:00', angle: -15, sub: 'Both sides exchanging concessions to find common ground.' };
+    if (aggressionScore > -0.1 && acceptance >= 55) return { label: 'Win-Win', clock: '6:00', angle: 0, sub: 'Balanced evidence-backed ask lands at mutual benefit.' };
+    if (acceptance > 75) return { label: 'Partnership', clock: '7:00', angle: 30, sub: 'High trust posture. Long-term relationship drives the move.' };
+    if (acceptance > 60 && priceDelta < 0.2) return { label: 'Relationship Building', clock: '8:00', angle: 55, sub: 'Relationship and value narrative lead ahead of price.' };
+    if (priceDelta < -0.3 && acceptance < 45) return { label: 'Bartering', clock: '9:00', angle: 80, sub: 'Non-price value exchange to unlock a stuck negotiation.' };
+    return { label: 'Haggling', clock: '12:00', angle: -85, sub: 'Positional bargaining. Both sides testing the opening.' };
+  }
+
+  const committedPosture = postureFromInputs(committedInputs);
+  const displayPosture = committedPosture;
+
+  // Builder scenario tabs
+  const builderTabs = [
+    { id: 'recommended', label: 'Recommended', badge: 'recommended', sub: `${scenarioOptions.find((s) => s.id === 'recommended')?.atlasScore ?? 0}/100 · ${scenarioOptions.find((s) => s.id === 'recommended')?.likelihood ?? 0}% likely` },
+    { id: 'conservative', label: 'Conservative', badge: 'conservative', sub: `${scenarioOptions.find((s) => s.id === 'conservative')?.atlasScore ?? 0}/100 · ${scenarioOptions.find((s) => s.id === 'conservative')?.likelihood ?? 0}% likely` },
+    { id: 'aggressive', label: 'Aggressive', badge: 'aggressive', sub: `${scenarioOptions.find((s) => s.id === 'aggressive')?.atlasScore ?? 0}/100 · ${scenarioOptions.find((s) => s.id === 'aggressive')?.likelihood ?? 0}% likely` },
+    { id: 'buyer-counter', label: 'Buyer Counter', badge: 'counter', sub: `${scenarioOptions.find((s) => s.id === 'buyer-counter')?.atlasScore ?? 0}/100 · ${scenarioOptions.find((s) => s.id === 'buyer-counter')?.likelihood ?? 0}% likely` },
+    { id: 'custom', label: 'Custom', badge: 'custom', sub: 'Working model' }
+  ];
+
+  const activeTabScenario = scenarioOptions.find((s) => s.id === selectedBuilderTab) ?? scenarioOptions[0];
+  const activeOutputs = useMemo(() => calculateScenarioOutputs(
+    selectedBuilderTab === 'custom' ? committedInputs : activeTabScenario.inputs,
+    baseRevenue
+  ), [selectedBuilderTab, committedInputs, activeTabScenario, baseRevenue]);
+
+  const builderMetrics = [
+    { label: 'Margin Impact', value: scenarioDeltaLabel(activeOutputs.marginImpact), tone: activeOutputs.marginImpact < 0 ? 'negative' : activeOutputs.marginImpact > 0 ? 'positive' : '' },
+    { label: 'Ask', value: `${(selectedBuilderTab === 'custom' ? committedInputs : activeTabScenario.inputs).priceIncreasePercent.toFixed(1)}%`, tone: '' },
+    { label: 'Realization', value: `${(selectedBuilderTab === 'custom' ? committedInputs : activeTabScenario.inputs).expectedRealizationPercent.toFixed(1)}%`, tone: '' },
+    { label: 'Land', value: `${activeTabScenario.likelihood}%`, tone: '' },
+    { label: 'Guardrail', value: activeTabScenario.guardrailRisk === 'Inside corridor' ? 'Inside corridor' : activeTabScenario.guardrailRisk === 'Watch' ? 'Watch' : 'Breach', tone: activeTabScenario.guardrailRisk === 'Inside corridor' ? 'positive' : 'negative' }
+  ];
+
+  // NeedleChart component
+  function NeedleChartDynamic({ posture, animating }: { posture: PostureInfo; animating: boolean }) {
+    const cx = 180;
+    const cy = 180;
+    const r = 155;
+    const dialColors = ['#e63946', '#e07a2e', '#f4b942', '#8bc34a', '#4caf50', '#2196f3', '#9c27b0', '#607d8b'];
+    const toRad = (deg: number) => (deg * Math.PI) / 180;
+    const dialSegments = dialColors.map((color, i) => {
+      const segStart = -180 + i * (180 / 8);
+      const segEnd = segStart + (180 / 8);
+      const x1 = cx + r * Math.cos(toRad(segStart));
+      const y1 = cy + r * Math.sin(toRad(segStart));
+      const x2 = cx + r * Math.cos(toRad(segEnd));
+      const y2 = cy + r * Math.sin(toRad(segEnd));
+      const innerR = r * 0.35;
+      const ix1 = cx + innerR * Math.cos(toRad(segStart));
+      const iy1 = cy + innerR * Math.sin(toRad(segStart));
+      const ix2 = cx + innerR * Math.cos(toRad(segEnd));
+      const iy2 = cy + innerR * Math.sin(toRad(segEnd));
+      return { color, d: `M ${ix1} ${iy1} L ${x1} ${y1} A ${r} ${r} 0 0 1 ${x2} ${y2} L ${ix2} ${iy2} A ${innerR} ${innerR} 0 0 0 ${ix1} ${iy1} Z` };
+    });
+    const needleAngleDeg = posture.angle;
+    return (
+      <div className="atlas-needle-chart-wrap" aria-label={`Negotiation posture: ${posture.label}`}>
+        <svg className="atlas-needle-dial-svg" viewBox="0 0 360 360" aria-hidden="true">
+          {dialSegments.map((seg, i) => <path key={i} d={seg.d} fill={seg.color} opacity="0.82" />)}
+          <circle cx={cx} cy={cy} r={r * 0.5} fill="none" stroke="rgba(49,55,61,0.1)" strokeWidth="1.5" strokeDasharray="3 5" />
+          <circle cx={cx} cy={cy} r={r * 0.35} fill="#f5f5f5" />
+          <defs>
+            <filter id="needleshadow"><feDropShadow dx="0" dy="2" stdDeviation="5" floodColor="#00000018" /></filter>
+          </defs>
+          {Array.from({ length: 9 }).map((_, i) => {
+            const angle = -180 + i * (180 / 8);
+            const innerTick = r * 0.36;
+            const outerTick = r * 0.54;
+            return <line key={i} x1={cx + innerTick * Math.cos(toRad(angle))} y1={cy + innerTick * Math.sin(toRad(angle))} x2={cx + outerTick * Math.cos(toRad(angle))} y2={cy + outerTick * Math.sin(toRad(angle))} stroke="#f5f5f5" strokeWidth="2" />;
+          })}
+        </svg>
+        <div className="atlas-needle-center-ledger">
+          <span className="atlas-needle-posture-clock">{posture.clock}</span>
+          <span className="atlas-needle-posture-label">{posture.label}</span>
+        </div>
+        <div className="atlas-needle-pivot-area" aria-hidden="true">
+          <div
+            className="atlas-needle-arm"
+            style={{
+              position: 'absolute',
+              left: '50%',
+              top: '50%',
+              width: 0,
+              height: 0,
+              transform: `rotate(${needleAngleDeg}deg)`,
+              transition: 'transform 0.9s cubic-bezier(0.34, 1.56, 0.64, 1)'
+            }}
+          >
+            <svg
+              width="16" height="105" viewBox="0 0 16 105"
+              style={{ position: 'absolute', bottom: 0, left: '50%', transform: 'translateX(-50%)', filter: 'drop-shadow(0 2px 5px rgba(0,0,0,0.2))' }}
+            >
+              <defs>
+                <linearGradient id="needleGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#0563c7" />
+                  <stop offset="100%" stopColor="#1a7ee8" stopOpacity="0.65" />
+                </linearGradient>
+              </defs>
+              <path d="M8 2 L13 105 L8 98 L3 105 Z" fill="url(#needleGrad)" />
+            </svg>
+            <div style={{ position: 'absolute', bottom: '-7px', left: '50%', transform: 'translateX(-50%)', width: 14, height: 14, borderRadius: '50%', background: '#0563c7', boxShadow: '0 0 0 2px #f5f5f5, 0 0 0 4px #0563c7', zIndex: 5 }} />
           </div>
-          <div className="atlas-scenario-manual-actions">
-            <label>
-              <span>Competitor pressure</span>
-              <select value={inputs.competitorPressureLevel} onChange={(event) => updateInput('competitorPressureLevel', event.target.value as ScenarioInputs['competitorPressureLevel'])}>
-                <option value="low">Low</option>
-                <option value="medium">Medium</option>
-                <option value="high">High</option>
-              </select>
-            </label>
-            <button type="button" onClick={saveAdjustedScenarioToTable}>Save adjusted scenario to table</button>
+        </div>
+      </div>
+    );
+  }
+
+  if (fullViewScenario) {
+    const scenario = fullViewScenario;
+    const scenarioContext = scenarioBuyingGroupContext(scenario);
+    const attentionReason = scenarioAttentionReason(scenario);
+    const scenarioBasis = scenario.origin === 'manual'
+      ? 'This scenario uses CNO-adjusted assumptions plus current buyer context and saved local inputs.'
+      : `${scenario.why}${scenarioTrigger ? ` It was refreshed after ATLAS reviewed ${scenarioTrigger.title.toLowerCase()}.` : ''}`;
+    const detailModeledNumbers = [
+      { label: 'Price ask', value: pct(scenario.inputs.priceIncreasePercent) },
+      { label: 'Expected realization', value: pct(scenario.inputs.expectedRealizationPercent) },
+      { label: 'Trade spend', value: euros(scenario.inputs.tradeSpendChange) },
+      { label: 'Volume risk', value: pct(scenario.inputs.volumeChangePercent) },
+      { label: 'Buyer acceptance', value: `${scenario.likelihood}%` }
+    ];
+    const detailImpactNumbers = [
+      { label: 'NR impact', value: scenarioDeltaLabel(scenario.outputs.revenueImpact) },
+      { label: 'GM impact', value: scenarioDeltaLabel(scenario.outputs.marginImpact) },
+      { label: 'Trade impact', value: scenarioDeltaLabel(scenario.outputs.tradeSpendImpact) },
+      { label: 'Risk-adjusted value', value: euros(scenario.valueProtected) }
+    ];
+    const scenarioCompareParams2 = new URLSearchParams();
+    scenarioCompareParams2.append('scenario', scenario.id);
+    scenarioCompareParams2.append('scenario', scenario.id === 'buyer-counter' ? 'recommended' : 'buyer-counter');
+    if (scenarioContext.buyingGroupId) scenarioCompareParams2.set('buyingGroup', scenarioContext.buyingGroupId);
+    if (scenarioContext.marketId) scenarioCompareParams2.set('market', scenarioContext.marketId);
+    const buyerProfileHref = scenarioContext.buyingGroupId ? `/buying-groups/${scenarioContext.buyingGroupId}?view=current` : scenarioHref();
+    const scenarioFullSummary = `Based on ${scenario.scenarioStyle.toLowerCase()} logic, ATLAS modeled ${pct(scenario.inputs.priceIncreasePercent)} ask / ${pct(scenario.inputs.expectedRealizationPercent)} realization with ${scenarioDeltaLabel(scenario.outputs.revenueImpact)} NR impact and ${scenario.likelihood}% likelihood to land.`;
+    return (
+      <section className="atlas-scenario-full-view" aria-label={`${scenario.name} full scenario view`}>
+        <header className="atlas-scenario-full-header">
+          <a href={scenarioHref()}>Back to Scenario Lab</a>
+          <div>
+            <span>{attentionReason} · {scenarioContext.buyingGroup}</span>
+            <h1>{scenario.name.replace(/^[A-C]\.\s*/, '')}</h1>
+            <p>{scenarioFullSummary}</p>
+          </div>
+          <div className="atlas-scenario-full-header-actions">
+            <a href={scenarioEditHref(scenario.id)}>Edit scenario</a>
+            <a href={`/scenario-lab/compare?${scenarioCompareParams2.toString()}`}>Compare</a>
           </div>
         </header>
-        <div className="atlas-scenario-delta-strip" aria-label="Difference from ATLAS prediction">
-          {scenarioMetricCards.map((metric) => (
-            <article className={metric.delta < 0 ? 'negative' : metric.delta > 0 ? 'positive' : ''} key={metric.label}>
-              <span>{metric.label}</span>
-              <strong>{scenarioDeltaLabel(metric.delta)}</strong>
-              <em>{scenarioPercentChange(metric.delta, metric.value)} from current</em>
-            </article>
-          ))}
-        </div>
-        <div className="atlas-scenario-lever-grid">
-          {visibleScenarioControls.map(({ key, label, max, min, step }) => (
-            <label className="atlas-scenario-input" key={key}>
-              <span>{label}</span>
-              <strong>{formatScenarioInputValue(key, Number(inputs[key]))}</strong>
-              <input type="range" min={min} max={max} step={step} value={Number(inputs[key])} onChange={(event) => updateInput(key, Number(event.target.value) as ScenarioInputs[typeof key])} onInput={(event) => updateInput(key, Number(event.currentTarget.value) as ScenarioInputs[typeof key])} />
-              <small><span>{formatScenarioInputValue(key, min)}</span><span>{formatScenarioInputValue(key, max)}</span></small>
-            </label>
-          ))}
-        </div>
-      </section> : null}
-
-      {scenarioLabMode === 'create' ? <details className="atlas-scenario-advanced-workbench">
-          <summary>Advanced modeling: levels, SKU drill-in, custom levers, and debrief memory</summary>
-          <div className="atlas-scenario-level-buttons">
-            {scenarioLevels.map((level) => (
-              <button className={selectedLevel === level.id ? 'active' : ''} key={level.id} onClick={() => selectScenarioLevel(level.id)} type="button">
-                <span>{level.label}</span>
-                <small>{level.note}</small>
-              </button>
-            ))}
-          </div>
-          <div className="atlas-scenario-lever-grid">
-            {advancedScenarioControls.map(({ key, label, max, min, step }) => (
-              <label className="atlas-scenario-input" key={key}>
-                <span>{label}</span>
-                <strong>{formatScenarioInputValue(key, Number(inputs[key]))}</strong>
-                <input type="range" min={min} max={max} step={step} value={Number(inputs[key])} onChange={(event) => updateInput(key, Number(event.target.value) as ScenarioInputs[typeof key])} onInput={(event) => updateInput(key, Number(event.currentTarget.value) as ScenarioInputs[typeof key])} />
-                <small><span>{formatScenarioInputValue(key, min)}</span><span>{formatScenarioInputValue(key, max)}</span></small>
-              </label>
-            ))}
-          </div>
-          <section className="atlas-scenario-detail-table atlas-standalone-scenario-detail-table">
-            <header><h4>Optional SKU / pack drill-in</h4><button type="button" onClick={addSkuRow}>Add SKU</button></header>
-            <table>
-              <thead><tr><th>SKU / pack</th><th>Price move</th><th>Volume risk</th><th>GM rate</th><th>Buyer sensitivity</th><th>Action</th></tr></thead>
-              <tbody>
-                {skuRows.map((row) => (
-                  <tr key={row.id}>
-                    <td><input value={row.sku} onChange={(event) => updateSkuRow(row.id, 'sku', event.currentTarget.value)} /></td>
-                    <td><input type="number" step="0.1" value={row.priceMove} onChange={(event) => updateSkuRow(row.id, 'priceMove', Number(event.currentTarget.value))} />%</td>
-                    <td><input type="number" step="0.1" value={row.volumeRisk} onChange={(event) => updateSkuRow(row.id, 'volumeRisk', Number(event.currentTarget.value))} />%</td>
-                    <td><input type="number" step="0.1" value={row.margin} onChange={(event) => updateSkuRow(row.id, 'margin', Number(event.currentTarget.value))} />%</td>
-                    <td>
-                      <select value={row.sensitivity} onChange={(event) => updateSkuRow(row.id, 'sensitivity', event.currentTarget.value)}>
-                        <option>Low</option>
-                        <option>Medium</option>
-                        <option>High</option>
-                        <option>Needs review</option>
-                      </select>
-                    </td>
-                    <td><button type="button" onClick={() => removeSkuRow(row.id)}>Remove</button></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </section>
-          <section className="atlas-scenario-detail-table atlas-standalone-scenario-detail-table">
-            <header><h4>Custom scenario levers</h4><button type="button" onClick={addCustomLever}>Add lever</button></header>
-            <table>
-              <thead><tr><th>Lever</th><th>Value</th><th>Impact</th><th>Weight</th><th>Status</th><th>Action</th></tr></thead>
-              <tbody>
-                {customLevers.map((row) => (
-                  <tr key={row.id}>
-                    <td><input value={row.name} onChange={(event) => updateCustomLever(row.id, 'name', event.currentTarget.value)} /></td>
-                    <td><input value={row.value} onChange={(event) => updateCustomLever(row.id, 'value', event.currentTarget.value)} /></td>
-                    <td><input value={row.impact} onChange={(event) => updateCustomLever(row.id, 'impact', event.currentTarget.value)} /></td>
-                    <td><input type="number" min="0" max="10" value={row.weight} onChange={(event) => updateCustomLever(row.id, 'weight', Number(event.currentTarget.value))} /></td>
-                    <td>
-                      <select value={row.status} onChange={(event) => updateCustomLever(row.id, 'status', event.currentTarget.value)}>
-                        <option>Assumption</option>
-                        <option>User-added</option>
-                        <option>Needs review</option>
-                        <option>Validated</option>
-                      </select>
-                    </td>
-                    <td><button type="button" onClick={() => removeCustomLever(row.id)}>Remove</button></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </section>
-          <section className="atlas-scenario-debrief-loop" aria-label="Debrief updates scenario prediction">
-            <header>
-              <div>
-                <span>Debrief memory</span>
-                <h3>Capture what happened so the next model is smarter.</h3>
-              </div>
-              {latestScenarioDebrief ? <strong>Prediction updated</strong> : <strong>Not yet captured</strong>}
-            </header>
-            <div className="atlas-scenario-debrief-grid">
-              <div className="atlas-scenario-debrief-form">
-                <textarea value={scenarioDebriefText} onChange={(event) => setScenarioDebriefText(event.currentTarget.value)} placeholder="What happened in the room? Add buyer ask, objections, concessions, and outcome." />
-                <div>
-                  <label><span>Buyer counter</span><input value={scenarioDebriefBuyerCounter} onChange={(event) => setScenarioDebriefBuyerCounter(event.currentTarget.value)} placeholder="ex: 2.1%" /></label>
-                  <label><span>Final landed</span><input value={scenarioDebriefFinalLanded} onChange={(event) => setScenarioDebriefFinalLanded(event.currentTarget.value)} placeholder="ex: 2.6%" /></label>
-                  <label>
-                    <span>Behavior pattern</span>
-                    <select value={scenarioDebriefBehavior} onChange={(event) => setScenarioDebriefBehavior(event.currentTarget.value)}>
-                      <option>Asked for trade support before accepting price</option>
-                      <option>Delayed decision until Finance evidence was shown</option>
-                      <option>Challenged volume risk and category pressure</option>
-                      <option>Accepted price after prior-year outcome proof</option>
-                    </select>
-                  </label>
-                  <label><span>Attachment note</span><input value={scenarioDebriefAttachments} onChange={(event) => setScenarioDebriefAttachments(event.currentTarget.value)} placeholder="ex: room notes, signed CMA" /></label>
-                </div>
-                <input value={scenarioDebriefNextCycle} onChange={(event) => setScenarioDebriefNextCycle(event.currentTarget.value)} placeholder="Next-cycle learning, ex: lead with prior-year concession evidence" />
-                <button type="button" onClick={saveScenarioDebrief}>Save debrief to memory</button>
-              </div>
-              <aside>
-                {latestScenarioDebrief ? (
-                  <>
-                    <span>{new Date(latestScenarioDebrief.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
-                    <strong>{latestScenarioDebrief.predictionImpact}</strong>
-                    <p>Counter: {latestScenarioDebrief.buyerCounter || 'not entered'} / Landed: {latestScenarioDebrief.finalLanded || 'not entered'}</p>
-                  </>
-                ) : (
-                  <>
-                    <span>Closed loop</span>
-                    <strong>Debriefs update buyer-counter predictions and report evidence.</strong>
-                    <p>Use this after a round to capture what changed and what should influence the next scenario.</p>
-                  </>
-                )}
-                {scenarioDebriefStatus ? <em>{scenarioDebriefStatus}</em> : null}
-              </aside>
+        <div className="atlas-scenario-full-grid">
+          <article className="atlas-scenario-full-primary">
+            <div className="atlas-scenario-card-heading">
+              <span>{scenario.origin === 'manual' ? 'Manual' : 'ATLAS generated'}</span>
+              <span>{scenario.scenarioStyle}</span>
+              <span>{scenarioContext.market}</span>
             </div>
-          </section>
-      </details> : null}
-    </section>
+            <h2>What ATLAS modeled</h2>
+            <p>{scenarioBasis}</p>
+            <dl className="atlas-scenario-full-metrics">
+              {detailModeledNumbers.map((item) => (<div key={item.label}><dt>{item.label}</dt><dd>{item.value}</dd></div>))}
+            </dl>
+          </article>
+          <aside className="atlas-scenario-full-read">
+            <h2>Scenario read</h2>
+            <section>
+              <h3>Expected buyer response</h3>
+              <p>{scenario.buyerResponse}</p>
+              <div className="atlas-scenario-progress"><i style={{ width: `${scenario.likelihood}%` }} /></div>
+              <small>{scenario.likelihood}% likelihood to land · {scenario.evidenceStrength}% evidence strength</small>
+            </section>
+            <section>
+              <h3>Recommended CNO action</h3>
+              <p>{scenario.recommendedEdit}</p>
+              <small>{scenario.relationshipRisk} relationship risk</small>
+            </section>
+          </aside>
+        </div>
+        <section className="atlas-scenario-full-impact" aria-label="Scenario impact and actions">
+          <div>
+            <h2>Expected impact</h2>
+            <dl className="atlas-scenario-full-metrics">
+              {detailImpactNumbers.map((item) => (<div key={item.label}><dt>{item.label}</dt><dd>{item.value}</dd></div>))}
+            </dl>
+          </div>
+          <div className="atlas-scenario-full-actions">
+            <a href={buyerProfileHref}>Save to buyer profile</a>
+            <a href={scenarioReportHref} rel="noreferrer" target="_blank">Download report</a>
+            <a href={scenarioEditHref(scenario.id)}>Adjust levers</a>
+          </div>
+        </section>
+        <section className="atlas-scenario-full-source" aria-label="Scenario source trail">
+          <h2>Source trail</h2>
+          <p>ATLAS tied this run to buyer history, current scenario inputs, market signals, and finance guardrail context.</p>
+          <SourceTrustMini source={scenarioSource} />
+        </section>
+      </section>
+    );
+  }
+
+  return (
+    <div className="atlas-scenario-builder" aria-label="Scenario Lab builder">
+
+      {/* ── Sticky header ── */}
+      <header className="atlas-scenario-builder-header">
+        <nav className="atlas-scenario-builder-nav" aria-label="Scenario Lab navigation">
+          <div className="atlas-scenario-builder-nav-title">
+            <h1>Scenario Lab{scenarioOwnerName ? ` · ${scenarioOwnerName}` : ''}</h1>
+            <small>{scenarioLiveHeaderCopy}</small>
+          </div>
+          <div className="atlas-scenario-builder-nav-actions">
+            <a className="atlas-scenario-builder-nav-btn ghost" href="/scenario-lab">All scenarios</a>
+            <a className="atlas-scenario-builder-nav-btn secondary" href={`/scenario-lab/compare?${compareParams.toString()}`}>Compare</a>
+            <button className="atlas-scenario-builder-nav-btn primary" onClick={saveScenarioToBuyingGroup} type="button">Save to buyer profile</button>
+          </div>
+        </nav>
+        {/* Scenario-selector tabs */}
+        <div className="atlas-scenario-tabs-strip" role="tablist" aria-label="Select scenario">
+          {builderTabs.map((tab) => (
+            <button
+              className={`atlas-scenario-tab${selectedBuilderTab === tab.id ? ' active' : ''}`}
+              key={tab.id}
+              onClick={() => selectBuilderTab(tab.id)}
+              role="tab"
+              aria-selected={selectedBuilderTab === tab.id}
+              type="button"
+            >
+              <span className="atlas-scenario-tab-label">
+                {tab.label} <span className={`atlas-scenario-tab-badge ${tab.badge}`}>{tab.badge === 'counter' ? 'counter' : tab.badge}</span>
+              </span>
+              <span className="atlas-scenario-tab-sub">{tab.sub}</span>
+            </button>
+          ))}
+        </div>
+      </header>
+
+      {/* ── Metrics bar (tab-driven) ── */}
+      <div className="atlas-scenario-metrics-bar" role="region" aria-label="Scenario metrics">
+        {builderMetrics.map((metric) => (
+          <div className="atlas-scenario-metric-card" key={metric.label}>
+            <span className="atlas-scenario-metric-label">{metric.label}</span>
+            <span className={`atlas-scenario-metric-value${metric.tone ? ` ${metric.tone}` : ''}`}>{metric.value}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* ── Body ── */}
+      <div className="atlas-scenario-builder-body">
+
+        {/* Left panel */}
+        <aside className="atlas-scenario-panel-left" aria-label="Scenario adjustments">
+          <div className="atlas-scenario-panel-left-header">
+            <strong>Scenario Adjustments</strong>
+            <button className="atlas-scenario-panel-add-btn" type="button" aria-label="Add lever">+</button>
+          </div>
+          <div className="atlas-scenario-panel-sliders">
+            {[...visibleScenarioControls, ...advancedScenarioControls].map(({ key, label, max, min, step, affects }) => {
+              const currentVal = Number(pendingInputs[key]);
+              const filledPct = Math.min(100, Math.max(0, ((currentVal - min) / Math.max(max - min, 0.001)) * 100));
+              return (
+                <div className="atlas-scenario-slider-row" key={key}>
+                  <div className="atlas-scenario-slider-row-top">
+                    <span>{label}</span>
+                    <strong>{formatScenarioInputValue(key, currentVal)}</strong>
+                  </div>
+                  <input
+                    className="atlas-scenario-slider-input"
+                    type="range"
+                    min={min}
+                    max={max}
+                    step={step}
+                    value={currentVal}
+                    style={{ background: `linear-gradient(to right, #85b3e4 ${filledPct}%, #ebebeb ${filledPct}%)` }}
+                    onChange={(event) => updatePendingInput(key, Number(event.target.value) as ScenarioInputs[typeof key])}
+                    aria-label={label}
+                  />
+                  <div className="atlas-scenario-slider-meta">
+                    <span>{formatScenarioInputValue(key, min)} – {formatScenarioInputValue(key, max)}</span>
+                    <span className="atlas-scenario-slider-hint">{affects.split(',')[0].trim()}</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <div className="atlas-scenario-panel-footer">
+            <button
+              className={`atlas-scenario-update-btn${hasPendingChanges ? ' has-pending' : ''}`}
+              onClick={commitPendingInputs}
+              type="button"
+              style={{ opacity: hasPendingChanges ? 1 : 0.55 }}
+            >
+              {hasPendingChanges ? '● Update Parameters' : 'Update Parameters'}
+            </button>
+            <button className="atlas-scenario-save-btn" onClick={saveAdjustedScenarioToTable} type="button">
+              ↻ Save as New Scenario
+            </button>
+          </div>
+        </aside>
+
+        {/* Scrollable center */}
+        <div className="atlas-scenario-content-scroll" role="region" aria-label="Scenario editor">
+          <div className={`atlas-scenario-editor${isAnimating ? ' animating' : ''}`}>
+
+            {/* NeedleChart */}
+            <NeedleChartDynamic posture={displayPosture} animating={isAnimating} />
+
+            {/* Posture panel */}
+            <div className="atlas-scenario-posture-panel">
+              <div>
+                <p className="atlas-scenario-posture-overline">Strategy posture</p>
+                <h2 className="atlas-scenario-posture-title">{displayPosture.clock} {displayPosture.label}</h2>
+                <p className="atlas-scenario-posture-sub">{displayPosture.sub || activeTabScenario.description}</p>
+              </div>
+              <div className="atlas-scenario-strategy-badges">
+                <div className="atlas-scenario-strategy-badge selected">
+                  <span className="atlas-scenario-badge-check">
+                    <svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l2.5 2.5L9 1" stroke="#0563c7" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                  </span>
+                  Selected Scenario
+                </div>
+                <div className="atlas-scenario-strategy-badge selected" style={{ borderColor: '#bd7d00' }}>
+                  <span className="atlas-scenario-badge-check" style={{ borderColor: '#bd7d00', background: 'rgba(255,200,0,0.1)' }}>
+                    <svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l2.5 2.5L9 1" stroke="#bd7d00" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                  </span>
+                  Markus Webber
+                </div>
+                <div className="atlas-scenario-strategy-badge">
+                  <span className="atlas-scenario-badge-check" />
+                  Other Scenarios
+                </div>
+              </div>
+              <div className="atlas-scenario-buyer-response-box">
+                <div className="atlas-scenario-buyer-response-header">
+                  <strong>ATLAS predicted buyer response</strong>
+                  <button className="atlas-scenario-ask-atlas-btn" type="button">✦ Ask Atlas</button>
+                </div>
+                <div className="atlas-scenario-buyer-response-body">
+                  <p>{activeTabScenario.buyerResponse}</p>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '0 4px' }}>
+                  <div style={{ flex: 1, height: 4, borderRadius: 4, background: '#e0e8f0', overflow: 'hidden' }}>
+                    <div style={{ width: `${activeTabScenario.likelihood}%`, height: '100%', background: 'linear-gradient(to right, #85b3e4, #0563c7)', borderRadius: 4, transition: 'width 0.6s ease' }} />
+                  </div>
+                  <small style={{ fontSize: 11, color: '#707172', whiteSpace: 'nowrap' }}>{activeTabScenario.likelihood}% likely · {activeTabScenario.evidenceStrength}% evidence</small>
+                </div>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {scenarioDecisionRows.map((row) => (
+                  <div key={row.label} style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                    <span style={{ fontSize: 11, color: '#707172', textTransform: 'uppercase', letterSpacing: '0.4px', fontWeight: 700 }}>{row.label}</span>
+                    <span style={{ fontSize: 13, color: '#31373d', letterSpacing: '-0.06px' }}>{row.value}</span>
+                    <small style={{ fontSize: 11, color: '#707172' }}>{row.detail}</small>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Scenario table below builder */}
+          {scenarioSaveStatus ? <span className="atlas-scenario-save-status" style={{ margin: '0 88px 8px' }}>{scenarioSaveStatus}</span> : null}
+          <div style={{ margin: '0 88px 48px' }}>
+            <div className="atlas-scenario-table-stack">
+              <section className="atlas-scenario-table-section atlas-scenario-table-section-flat">
+                <div className="atlas-scenario-table-toolbar">
+                  <div className="atlas-scenario-table-filters" aria-label="Scenario table filters">
+                    <ScenarioFilterDropdown
+                      id="scenario-type"
+                      label="Scenario type"
+                      onChange={(value) => { setScenarioTypeFilter(value); setScenarioTablePage(1); }}
+                      options={[{ value: 'all', label: 'All scenarios' }, { value: 'atlas', label: 'ATLAS generated' }, { value: 'custom', label: 'Custom' }]}
+                      value={scenarioTypeFilter}
+                    />
+                    <ScenarioFilterDropdown
+                      id="buying-group"
+                      label="Buying group"
+                      onChange={(value) => { setScenarioTableBuyingGroupFilter(value); setScenarioTablePage(1); }}
+                      options={[{ value: '', label: 'All buying groups' }, ...mvpScenarioBuyingGroups.map((group) => ({ value: group.id, label: group.name }))]}
+                      value={scenarioTableBuyingGroupFilter}
+                    />
+                    <ScenarioFilterDropdown
+                      id="market"
+                      label="Market"
+                      onChange={(value) => { setScenarioTableMarketFilter(value); setScenarioTablePage(1); }}
+                      options={[{ value: '', label: 'All markets' }, ...railMarkets.map((market) => ({ value: market.id, label: market.name }))]}
+                      value={scenarioTableMarketFilter}
+                    />
+                  </div>
+                  <a className="atlas-scenario-create-action" href={scenarioCreateHref()}>Create scenario</a>
+                </div>
+                <div className="atlas-scenario-table-wrap">
+                  <table className="atlas-scenario-review-table">
+                    <colgroup>
+                      <col className="scenario-col" /><col className="status-col" /><col className="type-col" /><col className="created-col" /><col className="buyer-col" /><col className="market-col" />
+                    </colgroup>
+                    <thead>
+                      <tr>
+                        <th>Scenario</th>
+                        <th><ScenarioTableSortableHeader label="Impact" sort="impact" /></th>
+                        <th>Scenario type</th>
+                        <th><ScenarioTableSortableHeader label="Created" sort="created" /></th>
+                        <th>Buying group</th>
+                        <th>Market</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {scenarioTableVisibleRows.map((scenario) => {
+                        const impact = scenarioTableImpact(scenario);
+                        const scope = scenarioTableScope(scenario);
+                        const marketNames = 'marketNames' in scope && scope.marketNames ? scope.marketNames : scope.market.split(' / ').map((m) => m.trim()).filter(Boolean);
+                        const hasMultipleMarkets = marketNames.length > 1;
+                        return (
+                          <tr
+                            className={`impact-${impact.tone}`}
+                            key={scenario.id}
+                            onClick={() => { window.location.href = scenarioDetailHref(scenario.id); }}
+                            onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); window.location.href = scenarioDetailHref(scenario.id); } }}
+                            role="link"
+                            tabIndex={0}
+                          >
+                            <td className="atlas-scenario-table-name"><a href={scenarioDetailHref(scenario.id)}><strong>{scenarioTableTitle(scenario)}</strong></a></td>
+                            <td><span className={`atlas-scenario-impact-read impact-${impact.tone}`}><strong>{impact.label}</strong><small>{impact.detail}</small></span></td>
+                            <td><span className="atlas-scenario-type-text">{scenario.origin === 'manual' ? 'Manual' : 'ATLAS generated'}</span></td>
+                            <td>{scenarioTableCreatedLabel(scenario.createdAt)}</td>
+                            <td><span className="atlas-scenario-scope-text">{scope.buyingGroup}</span></td>
+                            <td>
+                              {hasMultipleMarkets ? (
+                                <span className="atlas-scenario-market-badge" aria-label={`Markets: ${marketNames.join(', ')}`}>
+                                  <span className="atlas-scenario-market-badge-label">{marketNames.length} markets</span>
+                                  <span className="atlas-scenario-market-tooltip" role="tooltip">{marketNames.join(', ')}</span>
+                                </span>
+                              ) : (
+                                <span className="atlas-scenario-scope-text">{scope.market}</span>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+                <nav className="atlas-scenario-table-pagination" aria-label="Scenario table pages">
+                  <span>Showing {scenarioTableStartIndex + 1}–{Math.min(scenarioTableStartIndex + scenarioTablePageSize, scenarioTableRows.length)} of {scenarioTableRows.length}</span>
+                  <div>
+                    {scenarioTableCurrentPage > 1 ? <button onClick={() => setScenarioTablePage(scenarioTableCurrentPage - 1)} type="button">Previous</button> : <span aria-disabled="true">Previous</span>}
+                    {Array.from({ length: scenarioTableTotalPages }, (_, i) => i + 1).map((page) => (
+                      page === scenarioTableCurrentPage
+                        ? <span aria-current="page" className="active" key={page}>{page}</span>
+                        : <button onClick={() => setScenarioTablePage(page)} type="button" key={page}>{page}</button>
+                    ))}
+                    {scenarioTableCurrentPage < scenarioTableTotalPages ? <button onClick={() => setScenarioTablePage(scenarioTableCurrentPage + 1)} type="button">Next</button> : <span aria-disabled="true">Next</span>}
+                  </div>
+                </nav>
+              </section>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
+
+
+
+
 
 function ScenarioCompareView({
   buyingGroupId,
