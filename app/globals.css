@@ -86545,10 +86545,17 @@ html body main.atlas-hub-shell .atlas-hub-main .spotlight-kpi-item strong.neg {
 }
 
 html body main.atlas-hub-shell .atlas-hub-main .spotlight-levers-strip {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-bottom: 14px;
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 6px !important;
+  margin-bottom: 14px !important;
+  opacity: 0.75 !important;
+  transition: opacity 0.2s ease-in-out !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .spotlight-levers-strip:hover,
+html body main.atlas-hub-shell .atlas-hub-main .spotlight-card:hover .spotlight-levers-strip {
+  opacity: 1 !important;
 }
 
 html body main.atlas-hub-shell .atlas-hub-main .lever-pill,
