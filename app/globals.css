@@ -86282,7 +86282,7 @@ html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-spotlight-shelf {
   border-left: none !important;
   border-radius: 24px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
-  margin-bottom: 32px;
+  margin-bottom: 0 !important;
   padding: 44px 36px !important;
 }
 
