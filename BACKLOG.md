@@ -2,7 +2,14 @@
 
 ## V1 must-have
 
-- [x] Brand search / selector.
+- [x] Simplify header to only H2 `Negotiation Timeline` title and top-right primary action button.
+- [x] Set `atlas-bg-timeline-card` max-width to `~80%` of panel container.
+- [x] EDEKA Negotiation Timeline Refinement & Figma SSOT Alignment.
+- [x] Removal of font-size overrides on `.atlas-bg-timeline-header h2`.
+- [x] 1:1 Match of `atlas-bg-source-button` with Figma SSOT tertiary button component (`node-id=9-7471`).
+- [x] 1:1 Match of `atlas-bg-timeline-add-btn` with Figma SSOT primary button component (`node-id=9-7366`).
+- [x] Refactored inner layout for `.atlas-bg-timeline-header`.
+- [x] Purge of generic colors (`purple`, `red`, `yellow`) in favor of `DESIGN.md` design system color tokens.
 - [x] Start Here grounding education page.
 - [x] JSON-backed Start Here modules and comprehension check.
 - [x] Prominent Start Here entry/reminder from the diagnostic page.

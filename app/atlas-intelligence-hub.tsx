@@ -6,29 +6,43 @@ import {
   AlertTriangle,
   ArrowRight,
   BarChart3,
+  BadgeCheck,
   BookOpen,
+  Briefcase,
   Brain,
   ChevronDown,
   ChevronUp,
   CheckCircle2,
   CircleDollarSign,
   Clock3,
+  ClipboardList,
   Download,
+  Flag,
   FileSearch,
+  FileText,
   Filter,
+  GitCompare,
   Globe2,
   Layers3,
   LineChart,
   Loader2,
   Mic,
+  MoveRight,
   Newspaper,
+  PieChart,
+  Plus,
+  RefreshCw,
+  ScanSearch,
   Search,
   Send,
   ShieldCheck,
   Sparkles,
   Square,
+  Tag,
   Target,
+  TrendingDown,
   TrendingUp,
+  User,
   X
 } from 'lucide-react';
 import {
@@ -9538,12 +9552,13 @@ function BuyingGroupProfileSourceButton({
 }) {
   return (
     <button
-      className="atlas-bg-source-button"
+      className="atlas-bg-source-button atlas-bg-source-button--tertiary"
       title={`${sourceDisplayName(source)} / Confidence ${source.confidence}`}
       type="button"
       onClick={() => onOpen(source)}
     >
-      Sources
+      <FileText size={12} />
+      <span>Sources</span>
     </button>
   );
 }
@@ -9562,6 +9577,7 @@ function BuyingGroupProfileMiniView({
   const markets = workspace.markets.map((market) => market.name).join(' / ');
   const [openSource, setOpenSource] = useState<SourceMeta | null>(null);
   const [expandedSignalId, setExpandedSignalId] = useState<string | null>(flaggedInsights[0]?.id ?? null);
+  const [profileTab, setProfileTab] = useState<'signals' | 'behavior'>('signals');
 
   return (
     <>
@@ -9570,7 +9586,10 @@ function BuyingGroupProfileMiniView({
           <article className="atlas-bg-profile-lead">
             <header className="atlas-bg-profile-section-header">
               <div>
-                <span>Buyer response read</span>
+                <div className="atlas-bg-profile-lead-eyebrow">
+                  <Brain size={14} />
+                  <span>Buyer response read</span>
+                </div>
                 <h2>{workspace.buyingGroup.name} usually responds through {negotiator.style.toLowerCase()} behavior.</h2>
                 <p>{negotiator.watch}</p>
               </div>
@@ -9578,125 +9597,176 @@ function BuyingGroupProfileMiniView({
                 Open negotiation <ArrowRight size={14} />
               </a>
             </header>
-            <dl className="atlas-bg-profile-facts">
-              <div><dt>Markets</dt><dd>{markets}</dd></div>
-              <div><dt>Stage</dt><dd>{workspace.buyingGroup.negotiationStage}</dd></div>
-              <div><dt>Current risk</dt><dd>{workspace.buyingGroup.riskLevel}</dd></div>
-              <div><dt>Latest ask</dt><dd>{profileRead.currentState.latestBuyerAsk}</dd></div>
-            </dl>
+            <div className="atlas-bg-profile-facts-grid">
+              <div className="atlas-bg-profile-fact-card">
+                <span className="atlas-bg-cycle-stat-icon"><Globe2 size={15} /></span>
+                <span className="atlas-bg-cycle-stat-label">Markets</span>
+                <strong className="atlas-bg-cycle-stat-value">{markets}</strong>
+              </div>
+              <div className="atlas-bg-profile-fact-card">
+                <span className="atlas-bg-cycle-stat-icon"><Clock3 size={15} /></span>
+                <span className="atlas-bg-cycle-stat-label">Stage</span>
+                <strong className="atlas-bg-cycle-stat-value">{workspace.buyingGroup.negotiationStage}</strong>
+              </div>
+              <div className="atlas-bg-profile-fact-card">
+                <span className="atlas-bg-cycle-stat-icon"><AlertTriangle size={15} /></span>
+                <span className="atlas-bg-cycle-stat-label">Current risk</span>
+                <strong className="atlas-bg-cycle-stat-value">{workspace.buyingGroup.riskLevel}</strong>
+              </div>
+              <div className="atlas-bg-profile-fact-card">
+                <span className="atlas-bg-cycle-stat-icon"><Tag size={15} /></span>
+                <span className="atlas-bg-cycle-stat-label">Latest ask</span>
+                <strong className="atlas-bg-cycle-stat-value">{profileRead.currentState.latestBuyerAsk}</strong>
+              </div>
+            </div>
           </article>
 
           <article className="atlas-bg-negotiator-card">
-            <div className="atlas-bg-card-header">
-              <span>Negotiator read</span>
-              <BuyingGroupProfileSourceButton onOpen={setOpenSource} source={latestMemory?.source ?? workspace.buyingGroup.source} />
+            <div className="atlas-bg-negotiator-card-top">
+              <div className="atlas-bg-card-header">
+                <span>Negotiator read</span>
+                <BuyingGroupProfileSourceButton onOpen={setOpenSource} source={latestMemory?.source ?? workspace.buyingGroup.source} />
+              </div>
+              <h3>{negotiator.name}</h3>
+              <p>{negotiator.role}</p>
             </div>
-            <h3>{negotiator.name}</h3>
-            <p>{negotiator.role}</p>
-            <dl>
-              <div><dt>Style</dt><dd>{negotiator.style}</dd></div>
-              <div><dt>Expected cadence</dt><dd>{negotiator.cadence}</dd></div>
-            </dl>
+            <div className="atlas-bg-negotiator-card-bottom">
+              <dl>
+                <div><dt>Style</dt><dd>{negotiator.style}</dd></div>
+                <div><dt>Expected cadence</dt><dd>{negotiator.cadence}</dd></div>
+              </dl>
+            </div>
           </article>
         </div>
 
-        <section className="atlas-bg-profile-signal-feed">
-          <header className="atlas-bg-profile-feed-header">
+        {/* Combined Panel with Minimal Tabs for Signals (#) and Buyer Behavior (#) */}
+        <section className="atlas-bg-profile-combined-panel">
+          <header className="atlas-bg-profile-combined-header">
             <div>
-              <div className="atlas-bg-profile-feed-title-row">
-                <AlertCircle size={18} />
-                <h3>{flaggedInsights.length} Signals</h3>
-              </div>
-              <p>External and historical signals this buyer may bring into the room, ranked for CNO preparation.</p>
+              <h3>Intelligence & Buyer Behaviors</h3>
+              <p>
+                {profileTab === 'signals'
+                  ? 'External and historical signals this buyer may bring into the room, ranked for CNO preparation.'
+                  : 'Expected buyer behaviors to account for before the next response.'}
+              </p>
+            </div>
+
+            <div className="atlas-bg-profile-minimal-tabs" role="tablist">
+              <button
+                aria-selected={profileTab === 'signals'}
+                className={`atlas-bg-profile-tab-btn${profileTab === 'signals' ? ' is-active' : ''}`}
+                onClick={() => setProfileTab('signals')}
+                role="tab"
+                type="button"
+              >
+                <AlertCircle size={14} />
+                <span>Signals ({flaggedInsights.length})</span>
+              </button>
+
+              <button
+                aria-selected={profileTab === 'behavior'}
+                className={`atlas-bg-profile-tab-btn${profileTab === 'behavior' ? ' is-active' : ''}`}
+                onClick={() => setProfileTab('behavior')}
+                role="tab"
+                type="button"
+              >
+                <BookOpen size={14} />
+                <span>Buyer Behavior ({patterns.length})</span>
+              </button>
             </div>
           </header>
-          <div className="atlas-bg-profile-signal-list">
-            {flaggedInsights.map((insight, index) => {
-              const isExpanded = expandedSignalId === insight.id;
-              return (
-              <article className={`atlas-bg-profile-signal-accordion${isExpanded ? ' is-expanded' : ''}`} key={insight.id}>
-                <div className="atlas-bg-profile-signal-accordion-main">
-                  <div className="atlas-bg-profile-signal-title-block">
-                    <p>{insight.label}</p>
-                    <h4>{insight.strategyUse}</h4>
-                  </div>
-                  <dl className="atlas-bg-profile-signal-metrics">
-                    <div>
-                      <dt>Rank</dt>
-                      <dd>{String(index + 1).padStart(2, '0')}</dd>
-                    </div>
-                    <div>
-                      <dt>Signal</dt>
-                      <dd>{insight.change}</dd>
-                    </div>
-                    <div>
-                      <dt>Source</dt>
-                      <dd>{sourceDisplayName(insight.source)}</dd>
-                    </div>
-                  </dl>
-                  <button
-                    aria-expanded={isExpanded}
-                    aria-label={`${isExpanded ? 'Collapse' : 'Expand'} ${insight.strategyUse}`}
-                    className="atlas-bg-profile-signal-chevron"
-                    onClick={() => setExpandedSignalId(isExpanded ? null : insight.id)}
-                    type="button"
-                  >
-                    {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
-                  </button>
-                </div>
 
-                <div className="atlas-bg-profile-signal-reaction-row">
-                  <div className="atlas-bg-profile-signal-reaction">
-                    <img src="/images/backgrounds/isotope_orbs 1.png" alt="Atlas" />
-                    <p><span>Atlas read:</span> {insight.implication}</p>
-                  </div>
-                  <BuyingGroupProfileSourceButton onOpen={setOpenSource} source={insight.source} />
-                </div>
+          {profileTab === 'signals' ? (
+            <div className="atlas-triage-alert-list atlas-triage-alert-list-v2">
+              {flaggedInsights.map((insight, index) => {
+                const isExpanded = expandedSignalId === insight.id;
+                return (
+                  <article className={`atlas-triage-alert-row atlas-triage-alert-row-v2 tone-${index % 2 === 0 ? 'medium' : 'low'}${isExpanded ? ' is-expanded' : ''}`} key={insight.id}>
+                    <div className="atlas-triage-alert-main">
+                      <div className="atlas-triage-alert-copy">
+                        <div className="atlas-triage-alert-title-block">
+                          <p className="atlas-triage-alert-eyebrow-label">{insight.label}</p>
+                          <h3>{insight.strategyUse}</h3>
+                        </div>
+                        <dl className="atlas-triage-row-metrics">
+                          <div>
+                            <dt>Rank</dt>
+                            <dd>{String(index + 1).padStart(2, '0')}</dd>
+                          </div>
+                          <div>
+                            <dt>Signal</dt>
+                            <dd>{insight.change}</dd>
+                          </div>
+                          <div>
+                            <dt>Source</dt>
+                            <dd>{sourceDisplayName(insight.source)}</dd>
+                          </div>
+                        </dl>
+                      </div>
+                      <button
+                        className="atlas-triage-chevron-btn"
+                        aria-label={`${isExpanded ? 'Collapse' : 'Expand'} ${insight.strategyUse}`}
+                        aria-expanded={isExpanded}
+                        onClick={() => setExpandedSignalId(isExpanded ? null : insight.id)}
+                        type="button"
+                      >
+                        {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                      </button>
+                    </div>
 
-                <div className="atlas-bg-profile-signal-detail-wrapper">
-                  <section className="atlas-bg-profile-signal-detail">
-                    <div>
-                      <span>CNO move</span>
-                      <p>{insight.action}</p>
+                    <div className={`atlas-triage-alert-footer-row${isExpanded ? ' is-expanded' : ''}`}>
+                      <div className="atlas-triage-alert-reaction-info">
+                        <img src="/images/backgrounds/isotope_orbs 1.png" alt="Atlas" className="atlas-triage-reaction-logo" />
+                        <div className="atlas-triage-reaction-text">
+                          <span>Atlas read:</span>
+                          <span>{insight.implication}</span>
+                        </div>
+                      </div>
+                      <div className="atlas-triage-alert-cta-row">
+                        <BuyingGroupProfileSourceButton onOpen={setOpenSource} source={insight.source} />
+                      </div>
                     </div>
-                    <div>
-                      <span>Buyer read</span>
-                      <p>{insight.response}</p>
-                    </div>
-                    <div>
-                      <span>Source context</span>
-                      <p>{sourceDisplayName(insight.source)} · {formatAtlasDate(insight.source.sourceDate, { includeYear: true })} · {insight.source.confidence} confidence</p>
-                    </div>
-                  </section>
-                </div>
-              </article>
-              );
-            })}
-          </div>
-        </section>
 
-        <section className="atlas-bg-profile-pattern-section">
-          <header className="atlas-bg-profile-section-header">
-            <div>
-              <span>Pattern library</span>
-              <h3>Expected buyer behaviors to account for before the next response</h3>
-              <p>These patterns translate prior rounds and comparable pressure into practical moves for the next negotiation room.</p>
+                    <div className="atlas-triage-alert-detail-wrapper">
+                      <div className="atlas-triage-alert-detail-inner">
+                        <section className="atlas-triage-alert-detail">
+                          <div className="atlas-triage-alert-detail-copy">
+                            <div>
+                              <span>CNO move</span>
+                              <p>{insight.action}</p>
+                            </div>
+                            <div>
+                              <span>Buyer read</span>
+                              <p>{insight.response}</p>
+                            </div>
+                            <div>
+                              <span>Source context</span>
+                              <p>{sourceDisplayName(insight.source)} · {formatAtlasDate(insight.source.sourceDate, { includeYear: true })} · {insight.source.confidence} confidence</p>
+                            </div>
+                          </div>
+                        </section>
+                      </div>
+                    </div>
+                  </article>
+                );
+              })}
             </div>
-          </header>
-          <div className="atlas-bg-behavior-grid">
-            {patterns.map((pattern) => (
-              <BuyingGroupIntelligenceCard
-                action={pattern.action}
-                detail={pattern.detail}
-                eyebrow={pattern.label}
-                expectedResponse={pattern.expectedResponse}
-                key={pattern.label}
-                onOpenSource={setOpenSource}
-                source={pattern.source}
-                title={pattern.value}
-              />
-            ))}
-          </div>
+          ) : (
+            <div className="atlas-bg-behavior-grid">
+              {patterns.map((pattern) => (
+                <BuyingGroupIntelligenceCard
+                  action={pattern.action}
+                  detail={pattern.detail}
+                  eyebrow={pattern.label}
+                  expectedResponse={pattern.expectedResponse}
+                  key={pattern.label}
+                  onOpenSource={setOpenSource}
+                  source={pattern.source}
+                  title={pattern.value}
+                />
+              ))}
+            </div>
+          )}
         </section>
       </section>
       {openSource ? <SourceDetailDrawer onClose={() => setOpenSource(null)} source={openSource} /> : null}
@@ -9711,9 +9781,14 @@ function BuyingGroupCurrentNegotiationMiniView({
   profileRead: BuyerProfileRead;
   workspace: BuyingGroupWorkspacePacket;
 }) {
+  const [indicatorsTab, setIndicatorsTab] = useState<'indicators' | 'prepare'>('indicators');
+  const [activeScenarioId, setActiveScenarioId] = useState<string>('');
   const exposure = profileRead.exposure;
   const currentState = profileRead.currentState;
   const scenarios = buyerScenarioRead(workspace);
+  const selectedScenarioId = activeScenarioId || scenarios[0]?.id || '';
+  const activeScenario = scenarios.find((s) => s.id === selectedScenarioId) ?? scenarios[0];
+
   const latestEvent = workspace.timelineEvents[0];
   const primarySignal = workspace.signals[0];
   const competitor = workspace.competitorMoves[0];
@@ -9813,123 +9888,311 @@ function BuyingGroupCurrentNegotiationMiniView({
           <h2>{workspace.buyingGroup.name} is in {currentState.negotiationRound.toLowerCase()} with a {askGap.toFixed(1)} pt ask gap.</h2>
           <p>Use this read to decide whether to hold the current position, trade support, or move into a fallback scenario before the next room.</p>
           <div className="atlas-bg-current-cycle-strip">
-            {cycleCards.map((card) => (
-              <article key={card.label}>
-                <span>{card.label}</span>
-                <strong>{card.value}</strong>
-                <p>{card.detail}</p>
-              </article>
-            ))}
+            <article className="atlas-bg-cycle-stat" key="cycle-state">
+              <span className="atlas-bg-cycle-stat-icon"><RefreshCw size={15} /></span>
+              <span className="atlas-bg-cycle-stat-label">{cycleCards[0].label}</span>
+              <strong className="atlas-bg-cycle-stat-value">{cycleCards[0].value}</strong>
+              <p className="atlas-bg-cycle-stat-detail">{cycleCards[0].detail}</p>
+            </article>
+            <article className="atlas-bg-cycle-stat" key="last-buyer-move">
+              <span className="atlas-bg-cycle-stat-icon"><MoveRight size={15} /></span>
+              <span className="atlas-bg-cycle-stat-label">{cycleCards[1].label}</span>
+              <strong className="atlas-bg-cycle-stat-value">{cycleCards[1].value}</strong>
+              <p className="atlas-bg-cycle-stat-detail">{cycleCards[1].detail}</p>
+            </article>
+            <article className="atlas-bg-cycle-stat" key="next-milestone">
+              <span className="atlas-bg-cycle-stat-icon"><Flag size={15} /></span>
+              <span className="atlas-bg-cycle-stat-label">{cycleCards[2].label}</span>
+              <strong className="atlas-bg-cycle-stat-value">{cycleCards[2].value}</strong>
+              <p className="atlas-bg-cycle-stat-detail">{cycleCards[2].detail}</p>
+            </article>
           </div>
         </div>
         <aside className="atlas-bg-current-room-action">
-          <span>Recommended next move</span>
-          <strong>{primaryScenario?.recommendedAction ?? guardrailStatus}</strong>
-          <p>{likelyObjection}</p>
+          <div className="atlas-bg-room-action-copy">
+            <span>Recommended next move</span>
+            <strong>{primaryScenario?.recommendedAction ?? guardrailStatus}</strong>
+            <p>{likelyObjection}</p>
+          </div>
           <a href={`/generated-views?${scenarioBriefParams.toString()}`}>Open room brief <ArrowRight size={13} /></a>
         </aside>
       </section>
 
-      <section className="atlas-bg-current-numbers">
-        <header>
-          <span>Numbers and guardrails</span>
-          <h2>Use the current corridor before changing the negotiation position.</h2>
-          <p>These are the sourced baseline numbers CNOs need before selecting a scenario or trading support.</p>
+      <section className="atlas-bg-current-numbers atlas-bg-indicators-prepare">
+        <header className="atlas-bg-indicators-prepare-header">
+          <div className="atlas-bg-indicators-prepare-title">
+            <span>Room intelligence</span>
+            <h2>Numbers and preparation in one place.</h2>
+          </div>
+          <div className="atlas-bg-indicators-prepare-tabs" role="tablist">
+            <button
+              aria-selected={indicatorsTab === 'indicators'}
+              className={`atlas-bg-indicators-tab${indicatorsTab === 'indicators' ? ' atlas-bg-indicators-tab--active' : ''}`}
+              onClick={() => setIndicatorsTab('indicators')}
+              role="tab"
+              type="button"
+            >
+              Indicators
+            </button>
+            <button
+              aria-selected={indicatorsTab === 'prepare'}
+              className={`atlas-bg-indicators-tab${indicatorsTab === 'prepare' ? ' atlas-bg-indicators-tab--active' : ''}`}
+              onClick={() => setIndicatorsTab('prepare')}
+              role="tab"
+              type="button"
+            >
+              Prepare
+            </button>
+          </div>
         </header>
-        <div className="atlas-bg-current-number-workspace">
-          <div className="atlas-bg-current-corridor-panel">
-            <div className="atlas-bg-current-number-grid atlas-bg-current-number-grid--corridor">
-              {numberCards.slice(0, 4).map((card) => (
-                <article key={card.label}>
-                  <span>{card.label}</span>
-                  <strong>{card.value}</strong>
-                  <p>{card.detail}</p>
-                </article>
-              ))}
+
+        {indicatorsTab === 'indicators' && (
+          <div className="atlas-bg-indicators-panel">
+            {/* Corridor metric rows (fluid 2x2 grid layout) */}
+            <div className="atlas-bg-corridor-rows">
+              <div className="atlas-bg-corridor-row">
+                <span className="atlas-bg-corridor-row-icon"><Target size={15} /></span>
+                <div className="atlas-bg-corridor-row-copy">
+                  <span className="atlas-bg-corridor-row-label">Buyer ask</span>
+                  <span className="atlas-bg-corridor-row-detail">{numberCards[0].detail}</span>
+                </div>
+                <strong className="atlas-bg-corridor-row-value">{numberCards[0].value}</strong>
+              </div>
+              <div className="atlas-bg-corridor-row">
+                <span className="atlas-bg-corridor-row-icon"><BarChart3 size={15} /></span>
+                <div className="atlas-bg-corridor-row-copy">
+                  <span className="atlas-bg-corridor-row-label">PepsiCo position</span>
+                  <span className="atlas-bg-corridor-row-detail">{numberCards[1].detail}</span>
+                </div>
+                <strong className="atlas-bg-corridor-row-value">{numberCards[1].value}</strong>
+              </div>
+              <div className="atlas-bg-corridor-row">
+                <span className="atlas-bg-corridor-row-icon"><TrendingUp size={15} /></span>
+                <div className="atlas-bg-corridor-row-copy">
+                  <span className="atlas-bg-corridor-row-label">Target</span>
+                  <span className="atlas-bg-corridor-row-detail">{numberCards[2].detail}</span>
+                </div>
+                <strong className="atlas-bg-corridor-row-value">{numberCards[2].value}</strong>
+              </div>
+              <div className="atlas-bg-corridor-row">
+                <span className="atlas-bg-corridor-row-icon"><TrendingDown size={15} /></span>
+                <div className="atlas-bg-corridor-row-copy">
+                  <span className="atlas-bg-corridor-row-label">Red line</span>
+                  <span className="atlas-bg-corridor-row-detail">{numberCards[3].detail}</span>
+                </div>
+                <strong className="atlas-bg-corridor-row-value">{numberCards[3].value}</strong>
+              </div>
+            </div>
+
+            {/* Guardrail callout strip */}
+            <div className="atlas-bg-guardrail-strip">
+              <span className="atlas-bg-guardrail-strip-icon"><ShieldCheck size={16} /></span>
+              <div className="atlas-bg-guardrail-strip-body">
+                <div className="atlas-bg-guardrail-strip-header">
+                  <span className="atlas-bg-guardrail-strip-label">Guardrail read</span>
+                  <strong className="atlas-bg-guardrail-strip-status">{guardrailStatus}</strong>
+                </div>
+                <p className="atlas-bg-guardrail-strip-note">{firstApproval}</p>
+              </div>
+            </div>
+
+            {/* Exposure chips row */}
+            <div className="atlas-bg-exposure-chips">
+              <div className="atlas-bg-exposure-chips-left">
+                <span className="atlas-bg-exposure-chip-icon"><PieChart size={14} /></span>
+                <div className="atlas-bg-exposure-chip">
+                  <span>{numberCards[4].label}:</span>
+                  <strong>{numberCards[4].value}</strong>
+                </div>
+                <span className="atlas-bg-exposure-chip-dot">•</span>
+                <div className="atlas-bg-exposure-chip">
+                  <span>{numberCards[5].label}:</span>
+                  <strong>{numberCards[5].value}</strong>
+                </div>
+              </div>
+              <div className="atlas-bg-exposure-chip-source">
+                <SourceTrustMini source={profileRead.source} />
+              </div>
             </div>
           </div>
-          <aside className="atlas-bg-guardrail-note">
-            <span>Guardrail read</span>
-            <strong>{guardrailStatus}</strong>
-            <p>{firstApproval}</p>
-          </aside>
-        </div>
-        <div className="atlas-bg-current-exposure-row">
-          {numberCards.slice(4).map((card) => (
-            <article key={card.label}>
-              <span>{card.label}</span>
-              <strong>{card.value}</strong>
-              <p>{card.detail}</p>
-            </article>
-          ))}
-        </div>
-        <div className="atlas-bg-current-number-source">
-          <SourceTrustMini source={profileRead.source} />
-        </div>
+        )}
+
+        {indicatorsTab === 'prepare' && (
+          <div className="atlas-bg-prepare-panel">
+            <div className="atlas-bg-prep-list">
+              <div className="atlas-bg-prep-row">
+                <span className="atlas-bg-prep-row-icon"><FileText size={15} /></span>
+                <div className="atlas-bg-prep-row-body">
+                  <div className="atlas-bg-prep-row-meta">
+                    <span className="atlas-bg-prep-row-label">{preparationCards[0].label}</span>
+                    <a className="atlas-bg-prep-row-link" href={preparationCards[0].actionHref}>{preparationCards[0].actionLabel} <ArrowRight size={12} /></a>
+                  </div>
+                  <strong className="atlas-bg-prep-row-title">{preparationCards[0].title}</strong>
+                  <p className="atlas-bg-prep-row-detail">{preparationCards[0].detail}</p>
+                </div>
+              </div>
+              <div className="atlas-bg-prep-row">
+                <span className="atlas-bg-prep-row-icon"><GitCompare size={15} /></span>
+                <div className="atlas-bg-prep-row-body">
+                  <div className="atlas-bg-prep-row-meta">
+                    <span className="atlas-bg-prep-row-label">{preparationCards[1].label}</span>
+                    <a className="atlas-bg-prep-row-link" href={preparationCards[1].actionHref}>{preparationCards[1].actionLabel} <ArrowRight size={12} /></a>
+                  </div>
+                  <strong className="atlas-bg-prep-row-title">{preparationCards[1].title}</strong>
+                  <p className="atlas-bg-prep-row-detail">{preparationCards[1].detail}</p>
+                </div>
+              </div>
+              <div className="atlas-bg-prep-row">
+                <span className="atlas-bg-prep-row-icon"><ScanSearch size={15} /></span>
+                <div className="atlas-bg-prep-row-body">
+                  <div className="atlas-bg-prep-row-meta">
+                    <span className="atlas-bg-prep-row-label">{preparationCards[2].label}</span>
+                    <a className="atlas-bg-prep-row-link" href={preparationCards[2].actionHref}>{preparationCards[2].actionLabel} <ArrowRight size={12} /></a>
+                  </div>
+                  <strong className="atlas-bg-prep-row-title">{preparationCards[2].title}</strong>
+                  <p className="atlas-bg-prep-row-detail">{preparationCards[2].detail}</p>
+                </div>
+              </div>
+              <div className="atlas-bg-prep-row">
+                <span className="atlas-bg-prep-row-icon"><User size={15} /></span>
+                <div className="atlas-bg-prep-row-body">
+                  <div className="atlas-bg-prep-row-meta">
+                    <span className="atlas-bg-prep-row-label">{preparationCards[3].label}</span>
+                    <a className="atlas-bg-prep-row-link" href={preparationCards[3].actionHref}>{preparationCards[3].actionLabel} <ArrowRight size={12} /></a>
+                  </div>
+                  <strong className="atlas-bg-prep-row-title">{preparationCards[3].title}</strong>
+                  <p className="atlas-bg-prep-row-detail">{preparationCards[3].detail}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+
       </section>
 
-      <section className="atlas-bg-prep-section">
-        <header>
-          <span>Prepare for the room</span>
-          <h2>ATLAS has prepared the assets the CNO should review before responding.</h2>
-          <p>The heavy lifting is already done: response draft, modeled scenarios, evidence trail, and buyer behavior read.</p>
+      <section className="atlas-bg-scenario-section atlas-bg-scenarios-tabbed">
+        <header className="atlas-bg-scenarios-header">
+          <div className="atlas-bg-scenarios-title">
+            <h2>Scenarios for this profile</h2>
+            <p>Modeled buyer responses, financial impacts, and CNO recommended actions.</p>
+          </div>
         </header>
-        <div className="atlas-bg-prep-grid">
-          {preparationCards.map((card) => (
-            <article key={card.label}>
-              <span>{card.label}</span>
-              <h3>{card.title}</h3>
-              <p>{card.detail}</p>
-              <div className="atlas-bg-prep-row-source">
-                <SourceTrustMini linked={false} source={card.source} />
-              </div>
-              <footer>
-                <a href={card.actionHref}>{card.actionLabel} <ArrowRight size={13} /></a>
-              </footer>
-            </article>
-          ))}
-        </div>
-      </section>
 
-      <section className="atlas-bg-scenario-section">
-        <header>
-          <h2>Scenarios to keep ready before responding</h2>
-          <p>Each scenario connects the current numbers to expected buyer response, financial impact, and the recommended CNO move.</p>
-        </header>
-        <div className="atlas-bg-scenario-list">
-          {scenarios.map((scenario) => (
-            <article key={scenario.id}>
-              <div className="atlas-bg-scenario-summary">
-                <span>{scenario.priority}</span>
-                <h3>{scenario.name}</h3>
-                <p>Based on {scenario.basis}, ATLAS modeled {pct(scenario.inputs.priceIncreasePercent)} ask / {pct(scenario.inputs.expectedRealizationPercent)} expected realization.</p>
+        {activeScenario && (
+          <div className="atlas-bg-scenario-single-panel">
+            {/* Top header row inside panel with badge on its own line + tabs on top-right */}
+            <div className="atlas-bg-scenario-panel-top">
+              <div className="atlas-bg-scenario-name-block">
+                <span className="atlas-bg-scenario-badge">{activeScenario.priority}</span>
+                <h3>{activeScenario.name}</h3>
               </div>
-              <dl>
-                <div><dt>Land</dt><dd>{scenario.likelihood}%</dd></div>
-                <div><dt>NR</dt><dd>{euros(scenario.outputs.revenueImpact)}</dd></div>
-                <div><dt>GM</dt><dd>{euros(scenario.outputs.marginImpact)}</dd></div>
-                <div><dt>Trade</dt><dd>{euros(scenario.outputs.tradeSpendImpact)}</dd></div>
-              </dl>
-              <div className="atlas-bg-scenario-read">
-                <section>
-                  <span>Buyer response</span>
-                  <p>{scenario.response}</p>
-                </section>
-                <section>
-                  <span>CNO action</span>
-                  <strong>{scenario.recommendedAction}</strong>
-                </section>
+              <div className="atlas-bg-scenarios-tabs" role="tablist">
+                {scenarios.map((scenario, index) => {
+                  const label =
+                    index === 0
+                      ? 'Recommended'
+                      : index === 1
+                      ? 'Likely Buyer Counter'
+                      : 'Watch out';
+                  const isActive = (activeScenario?.id ?? scenarios[0]?.id) === scenario.id;
+                  return (
+                    <button
+                      aria-selected={isActive}
+                      className={`atlas-bg-scenario-tab${isActive ? ' atlas-bg-scenario-tab--active' : ''}`}
+                      key={scenario.id}
+                      onClick={() => setActiveScenarioId(scenario.id)}
+                      role="tab"
+                      type="button"
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
               </div>
-              <footer>
-                <a href={currentNegotiationScenarioHref(scenario.id)}>Open scenario <ArrowRight size={13} /></a>
-                <SourceTrustMini source={scenario.source} />
-              </footer>
-            </article>
-          ))}
-        </div>
+            </div>
+
+            <p className="atlas-bg-scenario-basis-note">
+              <ScanSearch size={14} /> Based on {activeScenario.basis}, ATLAS modeled {pct(activeScenario.inputs.priceIncreasePercent)} ask / {pct(activeScenario.inputs.expectedRealizationPercent)} expected realization.
+            </p>
+
+            {/* Flat icon metric cards */}
+            <div className="atlas-bg-scenario-metrics-strip">
+              <div className="atlas-bg-scenario-metric-card">
+                <span className="atlas-bg-scenario-metric-icon"><Target size={15} /></span>
+                <div className="atlas-bg-scenario-metric-copy">
+                  <span className="atlas-bg-scenario-metric-label">Land likelihood</span>
+                  <strong className="atlas-bg-scenario-metric-value">{activeScenario.likelihood}%</strong>
+                </div>
+              </div>
+
+              <div className="atlas-bg-scenario-metric-card">
+                <span className="atlas-bg-scenario-metric-icon"><TrendingUp size={15} /></span>
+                <div className="atlas-bg-scenario-metric-copy">
+                  <span className="atlas-bg-scenario-metric-label">Net revenue (NR)</span>
+                  <strong className="atlas-bg-scenario-metric-value">{euros(activeScenario.outputs.revenueImpact)}</strong>
+                </div>
+              </div>
+
+              <div className="atlas-bg-scenario-metric-card">
+                <span className="atlas-bg-scenario-metric-icon"><BarChart3 size={15} /></span>
+                <div className="atlas-bg-scenario-metric-copy">
+                  <span className="atlas-bg-scenario-metric-label">Gross margin (GM)</span>
+                  <strong className="atlas-bg-scenario-metric-value">{euros(activeScenario.outputs.marginImpact)}</strong>
+                </div>
+              </div>
+
+              <div className="atlas-bg-scenario-metric-card">
+                <span className="atlas-bg-scenario-metric-icon"><PieChart size={15} /></span>
+                <div className="atlas-bg-scenario-metric-copy">
+                  <span className="atlas-bg-scenario-metric-label">Trade spend</span>
+                  <strong className="atlas-bg-scenario-metric-value">{euros(activeScenario.outputs.tradeSpendImpact)}</strong>
+                </div>
+              </div>
+            </div>
+
+            {/* Read sections (Buyer response & CNO action) */}
+            <div className="atlas-bg-scenario-reads-grid">
+              <div className="atlas-bg-scenario-read-card">
+                <span className="atlas-bg-scenario-read-icon"><User size={15} /></span>
+                <div className="atlas-bg-scenario-read-body">
+                  <span className="atlas-bg-scenario-read-label">Expected buyer response</span>
+                  <p>{activeScenario.response}</p>
+                </div>
+              </div>
+
+              <div className="atlas-bg-scenario-read-card atlas-bg-scenario-read-card--action">
+                <span className="atlas-bg-scenario-read-icon atlas-bg-scenario-read-icon--action"><ShieldCheck size={15} /></span>
+                <div className="atlas-bg-scenario-read-body">
+                  <span className="atlas-bg-scenario-read-label">CNO recommended action</span>
+                  <strong>{activeScenario.recommendedAction}</strong>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer action & source trust badge */}
+            <footer className="atlas-bg-scenario-panel-footer">
+              <a className="atlas-bg-scenario-action-btn" href={currentNegotiationScenarioHref(activeScenario.id)}>
+                Open scenario in Scenario Lab <ArrowRight size={13} />
+              </a>
+              <div className="atlas-bg-scenario-source-trust">
+                <SourceTrustMini source={activeScenario.source} />
+              </div>
+            </footer>
+          </div>
+        )}
       </section>
     </section>
   );
+}
+
+function getTimelineCategory(eventType: string, label: string) {
+  const norm = `${eventType} ${label}`.toLowerCase();
+  if (/buyer|round|ask|movement/.test(norm)) return { category: 'buyer', colorClass: 'buyer', icon: User };
+  if (/finance|guardrail|decision|lock|financial/.test(norm)) return { category: 'finance', colorClass: 'finance', icon: ShieldCheck };
+  if (/competitor|market|signal|external/.test(norm)) return { category: 'market', colorClass: 'market', icon: BarChart3 };
+  if (/debrief|learning|document|source|update/.test(norm)) return { category: 'document', colorClass: 'document', icon: FileText };
+  return { category: 'document', colorClass: 'document', icon: Clock3 };
 }
 
 function BuyingGroupTimelineMiniView({
@@ -9939,6 +10202,27 @@ function BuyingGroupTimelineMiniView({
   profileUpdates: BuyerProfileDocumentUpdate[];
   workspace: BuyingGroupWorkspacePacket;
 }) {
+  const [openSource, setOpenSource] = useState<SourceMeta | null>(null);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !('IntersectionObserver' in window)) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('is-revealed');
+          }
+        });
+      },
+      { threshold: 0.1, rootMargin: '0px 0px -20px 0px' }
+    );
+
+    const rows = document.querySelectorAll('.atlas-bg-timeline-row');
+    rows.forEach((row) => observer.observe(row));
+
+    return () => observer.disconnect();
+  }, [workspace.buyingGroup.id]);
+
   const negotiationEventTypes: TimelineEvent['eventType'][] = [
     'competitor_move',
     'negotiation_update',
@@ -9957,6 +10241,7 @@ function BuyingGroupTimelineMiniView({
     return {
       date: event.timestamp,
       detail: event.summary,
+      eventType: event.eventType,
       id: event.id,
       impact: financialImpact,
       label: timelineMemoryLabel(event.eventType),
@@ -9967,6 +10252,7 @@ function BuyingGroupTimelineMiniView({
     };
   })
     .sort((a, b) => b.date.localeCompare(a.date));
+
   const latestRow = timelineRows[0];
   const currentYear = latestRow?.date.slice(0, 4) ?? '2026';
   const timelineYears = timelineRows.reduce<Array<{ rows: typeof timelineRows; year: string }>>((years, row) => {
@@ -9981,59 +10267,102 @@ function BuyingGroupTimelineMiniView({
   }, []);
 
   return (
-    <section className="atlas-bg-mini-view atlas-bg-timeline-view atlas-bg-timeline-view-v2">
-      <header className="atlas-bg-timeline-header">
-        <div>
-          <span>Negotiation memory</span>
-          <h2>{workspace.buyingGroup.name} negotiation timeline</h2>
-          <p>Only the moments that changed the negotiation read stay visible: buyer movement, finance guardrails, decisions, and debrief learning.</p>
-        </div>
-        <a href={`/intelligence?buyingGroup=${workspace.buyingGroup.id}&action=add-debrief`}>Add debrief</a>
-      </header>
-
-      <section className="atlas-bg-timeline-ledger">
-        <header>
-          <span>Cycle timeline</span>
-          <h3>Negotiation events ATLAS uses for predictions</h3>
+    <>
+      <section className="atlas-bg-mini-view atlas-bg-timeline-view atlas-bg-timeline-view-v2">
+        <header className="atlas-bg-timeline-header">
+          <h3>Negotiation Timeline</h3>
+          <a
+            className="atlas-bg-timeline-add-btn"
+            href={`/buying-groups/${workspace.buyingGroup.id}?action=add-brief`}
+            style={{ color: '#ffffff', textTransform: 'none', backgroundColor: '#237fe1' }}
+          >
+            <Plus size={16} style={{ color: '#ffffff', stroke: '#ffffff' }} />
+            <span style={{ color: '#ffffff', textTransform: 'none' }}>Add Brief</span>
+          </a>
         </header>
-        <div className="atlas-bg-timeline-list">
+
+        <section className="atlas-bg-timeline-ledger">
           {timelineYears.map((yearGroup) => (
-            <details className="atlas-bg-timeline-year-group" key={yearGroup.year} open={yearGroup.year === currentYear}>
-              <summary>
-                <div>
-                  <span>{yearGroup.year}</span>
-                  <strong>{yearGroup.year === currentYear ? 'Current negotiation cycle' : 'Prior-cycle memory'}</strong>
-                </div>
-                <em>{yearGroup.rows.length} events</em>
-              </summary>
-              <div className="atlas-bg-timeline-year-events">
-                {yearGroup.rows.map((row, index) => (
-                  <article key={row.id} className={row.id === latestRow?.id ? 'is-latest' : undefined}>
-                    <time>{formatAtlasDate(row.date, { includeYear: true })}</time>
-                    <div className="atlas-bg-timeline-marker" aria-hidden="true">
-                      <span>{index + 1}</span>
-                    </div>
-                    <div className="atlas-bg-timeline-content">
-                      <div className="atlas-bg-timeline-row-kicker">
-                        <span>{row.label}</span>
-                        {row.id === latestRow?.id ? <em>Latest</em> : null}
-                      </div>
-                      <h3>{row.title}</h3>
-                      <p>{row.detail}</p>
-                      <p className="atlas-bg-timeline-impact-line">
-                        <strong>{row.impact}</strong>
-                        <span>{row.predictionEffect}</span>
-                      </p>
-                      <p className="atlas-bg-timeline-source-line">Source: {row.sourceLine}</p>
-                    </div>
-                  </article>
-                ))}
+            <div className="atlas-bg-timeline-year-block" key={yearGroup.year}>
+              {/* Date Header Pill (Inspired by the mock's black date pills: Today, Friday 15th January, etc) */}
+              <div className="atlas-bg-timeline-date-pill">
+                <span>{yearGroup.year}</span>
+                <small>{yearGroup.year === currentYear ? 'Current negotiation cycle' : 'Prior-cycle memory'}</small>
+                <em className="atlas-bg-timeline-count-badge">{yearGroup.rows.length} events</em>
               </div>
-            </details>
+
+              {/* Vertical timeline track with items */}
+              <div className="atlas-bg-timeline-track">
+                {yearGroup.rows.map((row, index) => {
+                  const { icon: CategoryIcon, colorClass } = getTimelineCategory(row.eventType, row.label);
+                  return (
+                    <article
+                      className={`atlas-bg-timeline-row atlas-bg-timeline-row--${colorClass}${row.id === latestRow?.id ? ' is-latest' : ''}`}
+                      key={row.id}
+                      style={{ '--item-index': index } as React.CSSProperties}
+                    >
+                      {/* Left timestamp label */}
+                      <time className="atlas-bg-timeline-time">
+                        {formatAtlasDate(row.date, { includeYear: false, includeTime: false })}
+                      </time>
+
+                      {/* Node marker icon on timeline vertical axis */}
+                      <div className={`atlas-bg-timeline-node atlas-bg-timeline-node--${colorClass}`} aria-hidden="true">
+                        <CategoryIcon size={14} />
+                      </div>
+
+                      {/* Main Timeline Card */}
+                      <div className="atlas-bg-timeline-card">
+                        <div className="atlas-bg-timeline-card-header">
+                          <div className="atlas-bg-timeline-badge-group">
+                            <span className={`atlas-bg-timeline-type-badge atlas-bg-timeline-type-badge--${colorClass}`}>
+                              <CategoryIcon size={12} />
+                              {row.label}
+                            </span>
+                            {row.id === latestRow?.id ? <span className="atlas-bg-timeline-latest-tag">Latest</span> : null}
+                          </div>
+                          <BuyingGroupProfileSourceButton onOpen={setOpenSource} source={row.source} />
+                        </div>
+
+                        <h3>{row.title}</h3>
+                        <p className="atlas-bg-timeline-card-detail">{row.detail}</p>
+
+                        {/* HIGHLIGHT CALLOUT BOX (Key feature from inspiration mockup!) */}
+                        <div className={`atlas-bg-timeline-callout atlas-bg-timeline-callout--${colorClass}`}>
+                          {row.impact ? (
+                            <div className="atlas-bg-timeline-callout-impact">
+                              <TrendingUp size={12} />
+                              <span>{row.impact}</span>
+                            </div>
+                          ) : null}
+                          <p className="atlas-bg-timeline-callout-effect">
+                            <strong>Atlas effect:</strong> {row.predictionEffect}
+                          </p>
+                        </div>
+
+                        {/* Card Footer */}
+                        <div className="atlas-bg-timeline-card-footer">
+                          <span className="atlas-bg-timeline-source-info">
+                            Source: {row.sourceLine}
+                          </span>
+                          <a
+                            className="atlas-bg-timeline-action-link"
+                            href={`/intelligence?buyingGroup=${workspace.buyingGroup.id}&view=memory`}
+                          >
+                            View memory <ArrowRight size={12} />
+                          </a>
+                        </div>
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+            </div>
           ))}
-        </div>
+        </section>
       </section>
-    </section>
+      {openSource ? <SourceDetailDrawer onClose={() => setOpenSource(null)} source={openSource} /> : null}
+    </>
   );
 }
 
@@ -10164,28 +10493,39 @@ function BuyingGroupReimaginedWorkspace({
         </aside>
       </header>
 
-      <nav className="atlas-bg-mini-tabs" aria-label={`${workspace.buyingGroup.name} views`}>
-        {miniViews.map((view) => (
-          <button
-            aria-current={activeView === view.id ? 'page' : undefined}
-            className={activeView === view.id ? 'active' : ''}
-            key={view.id}
-            onClick={() => selectView(view.id)}
-            title={view.helper}
-            type="button"
-          >
-            <strong>{view.label}</strong>
-            <small>{view.helper}</small>
-          </button>
-        ))}
-      </nav>
+      <div className="atlas-bg-body-grid">
+        {/* Sidebar — mirrors atlas-triage-side-nav */}
+        <aside className="atlas-bg-side-nav" aria-label={`${workspace.buyingGroup.name} views`}>
+          <span>View</span>
+          <nav>
+            {miniViews.map((view) => (
+              <button
+                aria-current={activeView === view.id ? 'page' : undefined}
+                className={activeView === view.id ? 'is-active' : ''}
+                key={view.id}
+                onClick={() => selectView(view.id)}
+                type="button"
+              >
+                <div>
+                  <strong>{view.label}</strong>
+                  <small>{view.helper}</small>
+                </div>
+              </button>
+            ))}
+          </nav>
+        </aside>
 
-      {activeView === 'profile' ? <BuyingGroupProfileMiniView profileRead={profileRead} workspace={workspace} /> : null}
-      {activeView === 'current' ? <BuyingGroupCurrentNegotiationMiniView profileRead={profileRead} workspace={workspace} /> : null}
-      {activeView === 'timeline' ? <BuyingGroupTimelineMiniView profileUpdates={profileUpdates} workspace={workspace} /> : null}
+        {/* Central content pane — dynamic per selected view */}
+        <div className="atlas-bg-content-pane">
+          {activeView === 'profile' ? <BuyingGroupProfileMiniView profileRead={profileRead} workspace={workspace} /> : null}
+          {activeView === 'current' ? <BuyingGroupCurrentNegotiationMiniView profileRead={profileRead} workspace={workspace} /> : null}
+          {activeView === 'timeline' ? <BuyingGroupTimelineMiniView profileUpdates={profileUpdates} workspace={workspace} /> : null}
+        </div>
+      </div>
     </section>
   );
 }
+
 
 function BuyingGroupWorkspaceView({
   buyingGroupId,

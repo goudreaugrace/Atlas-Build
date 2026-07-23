@@ -1,5 +1,46 @@
 # STATUS.md
 
+2026-07-22 EDEKA Profile View Refinements:
+- **Title Typography**: Explicitly set `.atlas-bg-profile-combined-header h3` font-family to `"Libre Franklin", sans-serif !important` in `app/globals.css` to prevent overrides.
+- **Negotiator Card Gradient-02**: Updated `.atlas-bg-negotiator-card` background to `Gradient-02` (`linear-gradient(107.873deg, rgb(226, 238, 250) 0%, rgb(230, 236, 217) 100%)`).
+- **Buyer Response Read Card 1:1 Match**: Styled `.atlas-bg-profile-lead` card to match `.atlas-bg-current-room-copy` 1:1 with soft off-white surface (`#f5f5f5`), `24px` border-radius, `28px` padding, and a fluid unboxed metrics strip (`.atlas-bg-profile-facts-grid` / `.atlas-bg-profile-fact-card`) with circular icon badges (`Globe2`, `Clock3`, `AlertTriangle`, `Tag`).
+- **Verification**: `npx tsc --noEmit` passed with 0 errors; visually verified layout in browser subagent.
+
+2026-07-22 EDEKA Accordion & Negotiator Card Refinements:
+- **Accordion Metrics Width**: Updated `.atlas-triage-row-metrics > div` in `app/globals.css` to extend to 30% width (`flex: 1 1 30% !important; width: 30% !important`).
+- **Accordion Detail Copy Layout**: Updated `.atlas-triage-alert-detail-copy > div` in `app/globals.css` to align horizontally in a row with a `12px` gap.
+- **Negotiator Card Structure & Gradient-01**: Updated `app/atlas-intelligence-hub.tsx` to group `.atlas-bg-card-header`, `h3`, and `p` into a top container (`.atlas-bg-negotiator-card-top` with 8px gap) aligned to the top, and bottom elements (`<dl>`) in `.atlas-bg-negotiator-card-bottom`. Applied `Gradient-01` (`linear-gradient(107.873deg, rgb(241, 238, 231) 0%, rgb(229, 240, 252) 100%)`) from `DESIGN.md`.
+- **Verification**: Passed `npx tsc --noEmit` with 0 errors; visually verified all rendering and card layouts in browser subagent.
+
+2026-07-22 EDEKA Signals Tab Triage Accordion Structure & Styling Reuse:
+- **Reverted Transparent Override**: Reverted `background: transparent !important` override in `app/globals.css`.
+- **Full Triage Accordion Reuse**: Replaced Signals tab accordion markup in `app/atlas-intelligence-hub.tsx` to reuse 100% of the exact HTML structure and CSS classes from the Triage page (`atlas-triage-alert-list-v2`, `atlas-triage-alert-row-v2`, `atlas-triage-alert-main`, `atlas-triage-alert-copy`, `atlas-triage-alert-title-block`, `atlas-triage-row-metrics`, `atlas-triage-chevron-btn`, `atlas-triage-alert-footer-row`, and `atlas-triage-alert-detail-wrapper`).
+- **Verification**: `npx tsc --noEmit` passed with 0 errors; verified full expand/collapse interactivity and Triage styling via browser subagent.
+
+2026-07-22 EDEKA Buying Profile Refinement (Fluid Lead Panel & Matched Minimal Tab Switcher):
+- **Fluid Profile Lead Panel**: Refactored `.atlas-bg-profile-lead` in `app/atlas-intelligence-hub.tsx` and `app/globals.css` into an executive, fluid container with `#ffffff` surface, rounded corners (`18px`), `Brain` eyebrow icon, and a scannable grid of fact cards featuring intuitive icons (`Globe2` for Markets, `Clock3` for Stage, `AlertTriangle` for Current Risk, and `Tag` for Latest Ask).
+- **Matched Minimal Tab Controls**: Merged Signals and Pattern Library sections into `.atlas-bg-profile-combined-panel` with tab controls labeled `Signals (3)` and `Buyer Behavior (3)` styled 1:1 with the Current Negotiation "Indicators" and "Prepare" tabs (white `#ffffff` pill track with `1px solid #d9dbe0`, active primary blue `#0b57d0` pill background, white icons/text, `28px` height, and `0 16px` padding).
+- **Verification & QA**: Passed `npx tsc --noEmit` with 0 errors; visually verified layout and tab switching via browser subagent.
+- **Font Size Reduction**: Scaled down `.atlas-bg-timeline-callout-impact` font size by ~15% (from `13px` to `11px`, `700` weight) across all text elements within.
+- **Icon Proportion**: Scaled down `TrendingUp` icon size from `14px` to `12px` to maintain visual proportion.
+- **Verification**: `npx tsc --noEmit` passed cleanly; visually verified callout badges via browser subagent.
+- **Button Replacement**: Removed old `Add debrief` button completely.
+- **New Primary Button (`Add Brief`)**: Inserted clean primary button labeled `Add Brief` with white `Plus` icon and primary blue pill container (`#237FE1`).
+- **Dynamic Link**: Linked button dynamically to active buying group context page (`/buying-groups/${workspace.buyingGroup.id}?action=add-brief`).
+- **QA & Verification**: Passed `npx tsc --noEmit` with 0 errors; verified rendering and click navigation in browser subagent.
+- **Clean Header Layout**: Simplified header layout to display `<h2>Negotiation Timeline</h2>` with no distracting eyebrow or subtext.
+- **Top-Right Action Button**: Placed primary `+ Add debrief` pill button in top-right corner, styled strictly per Figma SSOT (`node-id=9-7366`) with primary blue fill `#237FE1`, white text, and `Plus` icon.
+- **Card Width & Spacing**: Set `.atlas-bg-timeline-card` `max-width` to `80%` of panel width with `24px` bottom margin spacing.
+- **Title Typography**: Scaled down event card heading font size by ~15% to `13.5px` (`600` weight) for tighter, more scannable typography.
+- **TypeScript & QA**: `npx tsc --noEmit` passed with 0 errors; visually verified in browser subagent.
+2026-07-22 EDEKA Negotiation Timeline & Figma SSOT Alignment:
+- **Font-Size Override Removal**: Removed `.atlas-bg-timeline-header h2` font-size override; capped header title font-size strictly at `24px` to eliminate oversized headings.
+- **Figma SSOT Primary Button Alignment (`node-id=9-7366`)**: Matched `.atlas-bg-timeline-add-btn` 1:1 with Figma SSOT primary button component (`#237FE1` primary blue fill, white 12px text, 20px pill border-radius, `padding: 8px 16px`, `Plus` icon, `text-transform: none`).
+- **Figma SSOT Tertiary Button Alignment (`node-id=9-7471`)**: Matched `.atlas-bg-source-button` 1:1 with Figma SSOT tertiary button component (ghost background, primary blue text/icon, rounded pill shape, clean hover state).
+- **Header Inner Layout Refactor**: Refactored `.atlas-bg-timeline-header` to align header title, metadata badge track (`2026 Current negotiation cycle`), and right action button with clean flex layout (`align-items: center`, `justify-content: space-between`).
+- **Color Token Standardization**: Purged legacy/generic hardcoded CSS colors (`purple`, `red`, `yellow`) across timeline components (`atlas-bg-timeline-track`) and locked all colors to official design system tokens (`DESIGN.md`).
+- **Verification**: `npx tsc --noEmit` passed with zero errors; visual layout verified via browser subagent screenshots.
+
 2026-07-20 Atlas Command Surface Refactor & Polish:
 - Fixed overlapping component issue caused by duplicate `<AtlasCommandSurface>` elements rendered in child views (`EuropeOverview`, `MarketsView`, `MemoryView`, `TimelineView`, `SignalsView`, `CompetitorsView`, `CrossMarketPatternsView`) alongside the global layout wrapper shell; removed redundant child calls so only one instance is active.
 - Added smooth CSS3 cubic-bezier transitions (`background-color`, `border-color`, `box-shadow`, `transform`) between default and focused states on the command surface card and input wrapper.
