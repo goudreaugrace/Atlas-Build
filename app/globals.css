@@ -87291,21 +87291,6 @@ html body main.atlas-hub-shell .atlas-hub-main .atlas-intent-brief dl div,
   gap: 14px !important;
 }
 
-.atlas-library-control-badge {
-  display: inline-flex !important;
-  align-items: center !important;
-  gap: 6px !important;
-  padding: 4px 10px !important;
-  background: #eef5fc !important;
-  color: #0563c7 !important;
-  font-family: var(--font-body, "Inter"), sans-serif !important;
-  font-size: 11px !important;
-  font-weight: 600 !important;
-  border-radius: 9999px !important;
-  text-transform: uppercase !important;
-  letter-spacing: 0.04em !important;
-}
-
 .atlas-library-control-title-group h3 {
   margin: 0 !important;
   font-family: var(--font-display, "Libre Franklin"), sans-serif !important;
@@ -87366,16 +87351,18 @@ html body main.atlas-hub-shell .atlas-hub-main .atlas-intent-brief dl div,
 .atlas-control-read-toggle-btn {
   display: inline-flex !important;
   align-items: center !important;
+  justify-content: center !important;
   gap: 6px !important;
-  padding: 6px 14px !important;
+  padding: 7px 14px !important;
   background: #f8fafc !important;
   border: 1px solid #e4ebf3 !important;
   border-radius: 9999px !important;
   color: #0b1f33 !important;
   font-family: var(--font-body, "Inter"), sans-serif !important;
   font-size: 12px !important;
-  font-weight: 500 !important;
+  font-weight: 600 !important;
   cursor: pointer !important;
+  line-height: 1 !important;
   transition: all 0.15s ease !important;
 }
 
@@ -87385,12 +87372,111 @@ html body main.atlas-hub-shell .atlas-hub-main .atlas-intent-brief dl div,
   color: #0563c7 !important;
 }
 
+.atlas-control-read-toggle-btn .toggle-btn-icon,
+.atlas-control-read-toggle-btn svg {
+  width: 14px !important;
+  height: 14px !important;
+  min-width: 14px !important;
+  min-height: 14px !important;
+  flex-shrink: 0 !important;
+  display: block !important;
+}
+
 .atlas-library-control-body {
-  padding: 20px 24px 24px 24px !important;
+  padding: 24px !important;
   border-top: 1px solid #e4ebf3 !important;
   background: #fafbfc !important;
   display: grid !important;
-  gap: 20px !important;
+  gap: 24px !important;
+}
+
+.atlas-library-control-section {
+  display: grid !important;
+  gap: 12px !important;
+}
+
+.atlas-library-section-title {
+  font-family: var(--font-display, "Libre Franklin"), sans-serif !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  color: #51565a !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.06em !important;
+  margin: 0 !important;
+}
+
+.atlas-library-control-body .atlas-source-governance-summary {
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 16px !important;
+  margin: 0 !important;
+  max-width: 100% !important;
+}
+
+.atlas-library-control-body .atlas-source-governance-summary article {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+  padding: 16px 18px !important;
+  border-radius: 18px !important;
+  border: 1px solid #e4ebf3 !important;
+  background: #ffffff !important;
+  min-height: 135px !important;
+}
+
+.atlas-library-control-body .atlas-source-governance-summary article.tone-good {
+  background: #f4fbf7 !important;
+  border-color: #c3e9d0 !important;
+}
+
+.atlas-library-control-body .atlas-source-governance-summary article.tone-watch {
+  background: #fffbf5 !important;
+  border-color: #f7e2ca !important;
+}
+
+.atlas-library-control-body .atlas-source-governance-summary article.tone-draft {
+  background: #f5f9fe !important;
+  border-color: #d0e4f9 !important;
+}
+
+.atlas-library-control-body .atlas-source-governance-summary article.tone-blocked {
+  background: #fdf5f5 !important;
+  border-color: #f7d2d2 !important;
+}
+
+.atlas-library-control-body .atlas-source-governance-summary span {
+  font-family: var(--font-body, "Inter"), sans-serif !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  color: #707172 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+}
+
+.atlas-library-control-body .atlas-source-governance-summary h4 {
+  font-family: var(--font-display, "Libre Franklin"), sans-serif !important;
+  font-size: 28px !important;
+  font-weight: 600 !important;
+  color: #0b1f33 !important;
+  line-height: 1 !important;
+  margin: 0 !important;
+}
+
+.atlas-library-control-body .atlas-source-governance-summary p {
+  font-family: var(--font-body, "Inter"), sans-serif !important;
+  font-size: 12px !important;
+  color: #51565a !important;
+  line-height: 1.4 !important;
+  margin: 0 !important;
+}
+
+.atlas-library-control-body .atlas-source-governance-summary em {
+  margin-top: auto !important;
+  font-family: var(--font-body, "Inter"), sans-serif !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  font-style: normal !important;
+  color: #0563c7 !important;
 }
 
 /* 3. Refined 'All ATLAS Source Records' Table Panel */

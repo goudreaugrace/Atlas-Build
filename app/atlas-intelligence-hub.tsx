@@ -1209,7 +1209,7 @@ function IntentBrief({
   metrics,
   title
 }: {
-  action: string;
+  action?: string;
   body?: string;
   eyebrow?: string;
   metrics?: Array<{ label: string; value: string; tone?: 'risk' | 'good' | 'watch' }>;
@@ -1232,7 +1232,6 @@ function IntentBrief({
           ))}
         </dl>
       ) : null}
-      <strong>{action}</strong>
     </section>
   );
 }
@@ -14609,9 +14608,6 @@ function SourceDatabaseView({ initialPrompt }: { initialPrompt?: string }) {
       <section className={`atlas-library-control-disclosure${isControlReadExpanded ? ' is-expanded' : ''}`}>
         <header className="atlas-library-control-header">
           <div className="atlas-library-control-title-group">
-            <span className="atlas-library-control-badge">
-              <HeroShieldCheckIcon className="w-4 h-4" /> Governance
-            </span>
             <div>
               <h3>Library Control & Governance Read</h3>
               <p>Audit memory decisions, canonical source status, and watchout alerts across active records.</p>
@@ -14630,25 +14626,32 @@ function SourceDatabaseView({ initialPrompt }: { initialPrompt?: string }) {
               onClick={() => setIsControlReadExpanded(!isControlReadExpanded)}
               type="button"
             >
-              <span>{isControlReadExpanded ? 'Hide Governance Read' : 'View Governance Read'}</span>
-              {isControlReadExpanded ? <HeroChevronUpIcon className="w-4 h-4" /> : <HeroChevronDownIcon className="w-4 h-4" />}
+              <span className="btn-label">{isControlReadExpanded ? 'Hide Governance Read' : 'View Governance Read'}</span>
+              {isControlReadExpanded ? <HeroChevronUpIcon className="toggle-btn-icon" /> : <HeroChevronDownIcon className="toggle-btn-icon" />}
             </button>
           </div>
         </header>
 
         {isControlReadExpanded ? (
           <div className="atlas-library-control-body">
-            <MemoryDecisionPanel documents={packet.documents} events={packet.latestTimelineEvents} title="Library control read" />
-            <section className="atlas-source-governance-summary" aria-label="Source governance summary">
-              {governanceCards.map((card) => (
-                <article className={`tone-${card.tone}`} key={card.label}>
-                  <span>{card.label}</span>
-                  <h4>{card.value}</h4>
-                  <p>{card.detail}</p>
-                  <em>{card.action}</em>
-                </article>
-              ))}
-            </section>
+            <div className="atlas-library-control-section">
+              <h4 className="atlas-library-section-title">Source Governance Summary</h4>
+              <section className="atlas-source-governance-summary" aria-label="Source governance summary">
+                {governanceCards.map((card) => (
+                  <article className={`tone-${card.tone}`} key={card.label}>
+                    <span>{card.label}</span>
+                    <h4>{card.value}</h4>
+                    <p>{card.detail}</p>
+                    <em>{card.action}</em>
+                  </article>
+                ))}
+              </section>
+            </div>
+
+            <div className="atlas-library-control-section">
+              <h4 className="atlas-library-section-title">Memory Decision Read</h4>
+              <MemoryDecisionPanel documents={packet.documents} events={packet.latestTimelineEvents} title="Library control read" />
+            </div>
           </div>
         ) : null}
       </section>
