@@ -76043,6 +76043,14 @@ html body .atlas-generated-report-primary {
   transform: translateY(0) !important;
 }
 
+.atlas-panel-in-view,
+html body .atlas-panel-in-view {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+  padding: 16px !important;
+}
+
 /* Buying group page: action footer for CNO prep assets. */
 html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-current-view-v2 .atlas-bg-prep-grid article footer {
   align-items: center !important;
