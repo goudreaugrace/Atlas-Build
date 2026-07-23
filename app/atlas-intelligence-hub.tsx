@@ -10907,7 +10907,7 @@ function BuyingGroupTriageTable({ activeSort = 'priority', groups }: { activeSor
         <thead>
           <tr>
             <th>Buying group</th>
-            <th><BuyingGroupSortableHeader activeSort={activeSort} label="Risk" sort="priority" /></th>
+            <th className="atlas-buyer-triage-center-col"><BuyingGroupSortableHeader activeSort={activeSort} label="Risk" sort="priority" /></th>
             <th className="atlas-buyer-triage-center-col"><BuyingGroupSortableHeader activeSort={activeSort} label="Margin at risk" sort="margin" /></th>
             <th className="atlas-buyer-triage-center-col"><BuyingGroupSortableHeader activeSort={activeSort} label="Target gap" sort="gap" /></th>
             <th>Recommended scenarios</th>
@@ -10937,7 +10937,7 @@ function BuyingGroupTriageTable({ activeSort = 'priority', groups }: { activeSor
                   <strong>{group.name}</strong>
                   <small>{markets} · {buyerRoundLabel(group)} · {group.negotiationStage}</small>
                 </td>
-                <td>
+                <td className="atlas-buyer-triage-center-col">
                   <span className="atlas-buyer-risk-explain" title={buyerRiskReason(group)}>
                     <span className={`atlas-buyer-risk-table-pill risk-${group.riskLevel}`}>{group.riskLevel}</span>
                     <span className="atlas-risk-tooltip" role="tooltip">{buyerRiskReason(group)}</span>

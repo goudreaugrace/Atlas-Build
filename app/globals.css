@@ -75888,6 +75888,35 @@ html body main.atlas-hub-shell .atlas-hub-main .atlas-buyer-list-head-multi .atl
   backdrop-filter: blur(12px) !important;
 }
 
+html body main.atlas-hub-shell .atlas-hub-main .atlas-buyer-list-head,
+html body main.atlas-hub-shell .atlas-hub-main .atlas-buyer-list-head-multi,
+.atlas-buyer-list-head,
+.atlas-buyer-list-head-multi {
+  justify-items: start !important;
+  padding: 64px 44px !important;
+  text-align: left !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-buyer-list-head > div:first-child,
+html body main.atlas-hub-shell .atlas-hub-main .atlas-buyer-list-head-multi > div:first-child,
+.atlas-buyer-list-head > div:first-child,
+.atlas-buyer-list-head-multi > div:first-child {
+  justify-items: start !important;
+  max-width: 585px !important;
+  text-align: left !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-buyer-list-head h1,
+html body main.atlas-hub-shell .atlas-hub-main .atlas-buyer-list-head-multi h1,
+html body main.atlas-hub-shell .atlas-hub-main .atlas-buyer-list-head p,
+html body main.atlas-hub-shell .atlas-hub-main .atlas-buyer-list-head-multi p,
+.atlas-buyer-list-head h1,
+.atlas-buyer-list-head-multi h1,
+.atlas-buyer-list-head p,
+.atlas-buyer-list-head-multi p {
+  max-width: 585px !important;
+}
+
 html body main.atlas-hub-shell .atlas-hub-main .atlas-buyer-list-shell .atlas-buyer-table-sort::before,
 html body main.atlas-hub-shell .atlas-hub-main .atlas-buyer-list-shell .atlas-buyer-table-sort a {
   font-family: var(--font-body) !important;
@@ -75903,6 +75932,19 @@ html body main.atlas-hub-shell .atlas-hub-main .atlas-buyer-list-shell .atlas-bu
   font-size: 12px !important;
   font-weight: 600 !important;
   letter-spacing: normal !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-buyer-list-shell .atlas-buyer-triage-table-wrap,
+html body main.atlas-hub-shell .atlas-hub-main .atlas-buyer-triage-table-wrap,
+.atlas-buyer-list-shell .atlas-buyer-triage-table-wrap,
+.atlas-buyer-triage-table-wrap {
+  background: #ffffff !important;
+  border: 1px solid #ebebeb !important;
+  border-radius: 24px !important;
+  box-shadow: 0 1px 3px rgba(16, 42, 67, .04) !important;
+  box-sizing: border-box !important;
+  overflow-x: auto !important;
+  padding: 24px !important;
 }
 
 html body main.atlas-hub-shell .atlas-hub-main .atlas-buyer-list-shell .atlas-buyer-triage-table {
@@ -75933,6 +75975,11 @@ html body main.atlas-hub-shell .atlas-hub-main .atlas-buyer-list-shell .atlas-bu
 
 html body main.atlas-hub-shell .atlas-hub-main .atlas-buyer-list-shell .atlas-buyer-triage-table th.atlas-buyer-triage-center-col a {
   justify-content: center !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-buyer-list-shell .atlas-buyer-triage-table th:first-child,
+html body main.atlas-hub-shell .atlas-hub-main .atlas-buyer-list-shell .atlas-buyer-triage-table td:first-child {
+  text-align: left !important;
 }
 
 html body main.atlas-hub-shell .atlas-hub-main .atlas-buyer-list-shell .atlas-buyer-triage-table td:first-child strong {
@@ -87230,4 +87277,52 @@ html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-empty-state butto
   padding: 8px 16px;
   border-radius: 20px;
   cursor: pointer;
+}
+
+/* Buyer profile header badge stabilization. */
+html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-hero .atlas-bg-hero-meta span,
+html body main.atlas-hub-shell .atlas-hub-main .atlas-buying-group-hero .atlas-buyer-risk-badge {
+  -webkit-backdrop-filter: none !important;
+  align-items: center !important;
+  backface-visibility: hidden !important;
+  backdrop-filter: none !important;
+  background: rgba(245, 245, 245, .2) !important;
+  background-clip: padding-box !important;
+  border: 1px solid rgba(255, 255, 255, .38) !important;
+  color: #ffffff !important;
+  display: inline-flex !important;
+  justify-content: center !important;
+  line-height: 1 !important;
+  opacity: 1 !important;
+  transform: translateZ(0) !important;
+  transition: none !important;
+  will-change: auto !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-hero .atlas-bg-hero-meta .atlas-bg-hero-risk-pill--critical,
+html body main.atlas-hub-shell .atlas-hub-main .atlas-buying-group-hero .atlas-buyer-risk-badge.risk-critical {
+  background: rgba(255, 232, 225, .92) !important;
+  border-color: rgba(255, 192, 169, .96) !important;
+  color: #b33812 !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-hero .atlas-bg-hero-meta .atlas-bg-hero-risk-pill--high,
+html body main.atlas-hub-shell .atlas-hub-main .atlas-buying-group-hero .atlas-buyer-risk-badge.risk-high {
+  background: rgba(255, 244, 220, .94) !important;
+  border-color: rgba(255, 219, 145, .96) !important;
+  color: #9a6500 !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-hero .atlas-bg-hero-meta .atlas-bg-hero-risk-pill--medium,
+html body main.atlas-hub-shell .atlas-hub-main .atlas-buying-group-hero .atlas-buyer-risk-badge.risk-medium {
+  background: rgba(232, 243, 255, .94) !important;
+  border-color: rgba(171, 210, 251, .96) !important;
+  color: #0b61b8 !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-hero .atlas-bg-hero-meta .atlas-bg-hero-risk-pill--low,
+html body main.atlas-hub-shell .atlas-hub-main .atlas-buying-group-hero .atlas-buyer-risk-badge.risk-low {
+  background: rgba(238, 247, 220, .94) !important;
+  border-color: rgba(207, 225, 168, .96) !important;
+  color: #4f7416 !important;
 }
