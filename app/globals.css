@@ -87297,6 +87297,17 @@ html body main.atlas-hub-shell .atlas-hub-main--database .atlas-source-database 
   gap: 24px !important;
 }
 
+html body main.atlas-hub-shell .atlas-hub-main--database .atlas-source-database > header > div:first-child {
+  display: grid !important;
+  gap: 6px !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main--database .atlas-source-database > header > div:first-child p {
+  margin: 0 !important;
+  max-width: 520px !important;
+  text-align: left !important;
+}
+
 html body main.atlas-hub-shell .atlas-hub-main--database .atlas-source-database-tools {
   align-items: flex-end !important;
   display: grid !important;

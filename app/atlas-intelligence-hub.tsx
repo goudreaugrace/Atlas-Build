@@ -14562,6 +14562,7 @@ function SourceDatabaseView({ initialPrompt }: { initialPrompt?: string }) {
         <header>
           <div>
             <h3>{initialPrompt ? 'Filtered source records' : 'All ATLAS source records'}</h3>
+            <p>{rows.length} shown / {allRows.length} total. {sourceWatchouts.length} source watchouts / {approvedRows.length} usable records.</p>
           </div>
           <div className="atlas-source-database-tools">
             <label className="atlas-source-database-search">
@@ -14574,7 +14575,6 @@ function SourceDatabaseView({ initialPrompt }: { initialPrompt?: string }) {
                 value={sourceSearchQuery}
               />
             </label>
-            <p>{rows.length} shown / {allRows.length} total. {sourceWatchouts.length} source watchouts / {approvedRows.length} usable records.</p>
           </div>
         </header>
         {initialPrompt ? <p className="atlas-source-database-filter">Asked: “{initialPrompt}”</p> : null}
