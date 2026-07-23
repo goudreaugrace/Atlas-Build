@@ -18,6 +18,7 @@
     "eval:agent": "node scripts/eval-agent.mjs"
   },
   "dependencies": {
+    "@heroicons/react": "^2.2.0",
     "@openai/agents": "^0.11.6",
     "lucide-react": "latest",
     "next": "latest",
