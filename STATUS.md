@@ -1,5 +1,12 @@
 # STATUS.md
 
+2026-07-23 Scenario Lab UX Redesign (/scenario-lab):
+- **Priority Decision Shelf**: Built a top spotlight section highlighting high-priority and recommended scenarios (`✦ Recommended` and `⚠ Guardrail Breach`) with instant financial KPIs (Risk-Adjusted Net Value, Revenue, Margin) and buyer acceptance probability progress meters.
+- **Segmented Origin Control**: Implemented tab controls allowing instant filtering between `All Scenarios`, `✦ ATLAS Generated`, and `👤 Custom / User Authored` scenarios with live counts.
+- **Status Priority Chips**: Added status chips (`All Statuses`, `✦ Recommended`, `⚠ Guardrail Watch`, `⚡ Needs Validation`, `🔒 Approved`) for targeted workflow filtering.
+- **Rich Card & Matrix Dual View**: Created a responsive grid card view showing lever snapshot pills (`Price +X%`, `Vol Risk -Y%`, `Trade €Z`), financial KPI grids, and scope tags, with a toggle for dense Matrix table comparison.
+- **Verification**: Next.js build compiled successfully (`npm run build`) in 4.7s with 0 errors. App running on `http://localhost:3000/scenario-lab`.
+
 2026-07-22 EDEKA Profile View Refinements:
 - **Title Typography**: Explicitly set `.atlas-bg-profile-combined-header h3` font-family to `"Libre Franklin", sans-serif !important` in `app/globals.css` to prevent overrides.
 - **Negotiator Card Gradient-02**: Updated `.atlas-bg-negotiator-card` background to `Gradient-02` (`linear-gradient(107.873deg, rgb(226, 238, 250) 0%, rgb(230, 236, 217) 100%)`).
