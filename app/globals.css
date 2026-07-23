@@ -54459,7 +54459,7 @@ summary {
 .atlas-scenario-save-modal header {
   align-items: center;
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   margin-bottom: 18px;
 }
 
@@ -54478,18 +54478,21 @@ summary {
   background: rgba(255, 255, 255, .28);
   border: 1.5px solid #31373d;
   border-radius: 999px;
+  box-sizing: border-box;
   color: #31373d;
   cursor: pointer;
   display: inline-flex;
-  height: 34px;
+  flex: 0 0 30px;
+  height: 30px;
   justify-content: center;
+  padding: 0;
   transition: background-color .16s ease, transform .16s ease;
-  width: 34px;
+  width: 30px;
 }
 
 .atlas-scenario-save-modal header button svg {
-  height: 15px;
-  width: 15px;
+  height: 14px;
+  width: 14px;
 }
 
 .atlas-scenario-save-modal header button:hover {
