@@ -54428,14 +54428,14 @@ summary {
 }
 
 .atlas-scenario-save-modal > section {
-  background:
-    linear-gradient(135deg, rgba(255, 255, 255, .96) 0%, rgba(250, 252, 253, .90) 58%, rgba(255, 255, 255, .94) 100%);
-  backdrop-filter: blur(10px) saturate(1.08);
-  -webkit-backdrop-filter: blur(10px) saturate(1.08);
-  border: 1px solid rgba(255, 255, 255, .82);
+  background: #ffffff;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border: 1px solid rgba(49, 55, 61, .12);
   border-radius: 30px;
-  box-shadow: 0 26px 70px rgba(49, 55, 61, .22), inset 0 1px 0 rgba(255, 255, 255, .82);
+  box-shadow: 0 26px 70px rgba(49, 55, 61, .22), inset 0 1px 0 rgba(255, 255, 255, .86);
   color: #31373d;
+  isolation: isolate;
   max-width: 460px;
   padding: 22px;
   position: relative;
@@ -54443,15 +54443,17 @@ summary {
 }
 
 .atlas-scenario-save-modal > section::before {
-  backdrop-filter: blur(18px) saturate(1.16);
-  -webkit-backdrop-filter: blur(18px) saturate(1.16);
-  border: 1.5px solid rgba(255, 255, 255, .82);
+  background: #f5f5f5f7;
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1.5px solid rgba(255, 255, 255, .72);
   border-radius: 36px;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .62);
+  box-shadow: 0 20px 48px rgba(16, 42, 67, .16), inset 0 1px 0 rgba(255, 255, 255, .72);
   content: "";
   inset: -12px;
   pointer-events: none;
   position: absolute;
+  z-index: -1;
 }
 
 .atlas-scenario-save-modal header {
@@ -54497,7 +54499,7 @@ summary {
 
 .atlas-scenario-save-modal-body {
   align-items: center;
-  background: rgba(255, 255, 255, .24);
+  background: #ffffff;
   border: 0;
   border-radius: 20px;
   display: grid;
