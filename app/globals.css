@@ -539,8 +539,10 @@ html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-screen-tabs butto
   color: #5d6670 !important;
   cursor: pointer !important;
   display: grid !important;
-  gap: 1px 10px !important;
+  column-gap: 10px !important;
+  row-gap: 2px !important;
   grid-template-columns: 20px minmax(0, 1fr) !important;
+  grid-template-rows: 34px 14px !important;
   justify-content: start !important;
   min-height: 72px !important;
   padding: 14px 22px !important;
@@ -563,11 +565,14 @@ html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-screen-tabs butto
 }
 
 html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-screen-tabs button strong {
+  align-items: flex-end !important;
   color: #31373d !important;
+  display: flex !important;
   font-size: 14px !important;
   font-weight: 600 !important;
   letter-spacing: 0 !important;
-  line-height: 18px !important;
+  line-height: 16px !important;
+  min-height: 34px !important;
 }
 
 html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-screen-tabs button small {
@@ -579,7 +584,7 @@ html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-screen-tabs butto
   gap: 5px !important;
   letter-spacing: 0 !important;
   line-height: 14px !important;
-  margin-top: -1px !important;
+  margin-top: 0 !important;
   min-width: 0 !important;
 }
 
