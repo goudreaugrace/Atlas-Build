@@ -317,7 +317,7 @@ html body main.atlas-hub-shell:has(.atlas-scenario-screen) .atlas-hub-main {
 html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-screen {
   --scenario-content-bg: #FAFAFA;
   --scenario-masthead-top: 68px;
-  --scenario-header-height: 142px;
+  --scenario-header-height: 132px;
   --scenario-tabs-height: 85px;
   --scenario-sticky-content-top: calc(var(--scenario-masthead-top) + var(--scenario-header-height) + var(--scenario-tabs-height));
   background: #dfeaf4 !important;
@@ -344,7 +344,7 @@ html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-screen-header {
   gap: 18px !important;
   grid-template-columns: 42px minmax(0, 1fr) auto !important;
   min-height: var(--scenario-header-height) !important;
-  padding: 42px 54px 40px !important;
+  padding: 42px 54px 30px !important;
   position: sticky !important;
   top: var(--scenario-masthead-top) !important;
   z-index: 230 !important;
