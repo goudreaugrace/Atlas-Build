@@ -72329,9 +72329,16 @@ html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-modeler:has(.atla
   white-space: nowrap !important;
 }
 
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-table-wrap,
 html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-modeler:has(.atlas-scenario-overview) .atlas-scenario-table-wrap {
-  overflow-x: hidden !important;
+  background: #FFFFFF !important;
+  background-color: #FFFFFF !important;
+  border: 1px solid #EBEBEB !important;
+  border-radius: 24px !important;
+  padding: 20px !important;
+  overflow: hidden !important;
   width: 100% !important;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.03) !important;
 }
 
 html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-modeler:has(.atlas-scenario-overview) .atlas-scenario-review-table {
@@ -86533,14 +86540,14 @@ html body main.atlas-hub-shell .atlas-hub-main .lever-pill,
 html body main.atlas-hub-shell .atlas-hub-main .lever-pill.pill-navy,
 html body main.atlas-hub-shell .atlas-hub-main .lever-pill.pill-amber,
 html body main.atlas-hub-shell .atlas-hub-main .lever-pill.pill-blue {
-  font-family: var(--font-body, "Inter"), sans-serif;
-  font-size: 12px;
-  font-weight: 500;
-  padding: 4px 10px;
-  border-radius: 9999px;
+  font-family: var(--font-body, "Inter"), sans-serif !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  padding: 4px 10px !important;
+  border-radius: 9999px !important;
   background: transparent !important;
-  border: 1px solid rgba(255, 255, 255, 0.25) !important;
-  color: #FFFFFF !important;
+  border: 1px solid #707172 !important;
+  color: #707172 !important;
 }
 
 html body main.atlas-hub-shell .atlas-hub-main .spotlight-card-foot {
