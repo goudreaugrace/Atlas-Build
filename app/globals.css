@@ -54418,9 +54418,9 @@ summary {
 
 .atlas-scenario-save-modal {
   align-items: center;
-  background: rgba(49, 55, 61, .16);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  background: rgba(49, 55, 61, .24);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
   display: flex;
   inset: 0;
   justify-content: center;
@@ -54430,10 +54430,12 @@ summary {
 }
 
 .atlas-scenario-save-modal > section {
-  background: #f5f5f5;
-  border: 2px solid #d9dadb;
+  background: rgba(245, 245, 245, .76);
+  backdrop-filter: blur(24px) saturate(1.12);
+  -webkit-backdrop-filter: blur(24px) saturate(1.12);
+  border: 1.5px solid rgba(255, 255, 255, .72);
   border-radius: 30px;
-  box-shadow: 0 26px 70px rgba(49, 55, 61, .18);
+  box-shadow: 0 26px 70px rgba(49, 55, 61, .22), inset 0 1px 0 rgba(255, 255, 255, .72);
   color: #31373d;
   max-width: 460px;
   padding: 22px;
@@ -54444,7 +54446,7 @@ summary {
   align-items: center;
   display: flex;
   justify-content: space-between;
-  margin-bottom: 22px;
+  margin-bottom: 18px;
 }
 
 .atlas-scenario-save-modal header span {
@@ -54459,16 +54461,21 @@ summary {
 
 .atlas-scenario-save-modal header button {
   align-items: center;
-  background: transparent;
-  border: 2px solid #31373d;
+  background: rgba(255, 255, 255, .28);
+  border: 1.5px solid #31373d;
   border-radius: 999px;
   color: #31373d;
   cursor: pointer;
   display: inline-flex;
-  height: 48px;
+  height: 34px;
   justify-content: center;
   transition: background-color .16s ease, transform .16s ease;
-  width: 48px;
+  width: 34px;
+}
+
+.atlas-scenario-save-modal header button svg {
+  height: 15px;
+  width: 15px;
 }
 
 .atlas-scenario-save-modal header button:hover {
@@ -54478,13 +54485,14 @@ summary {
 
 .atlas-scenario-save-modal-body {
   align-items: center;
-  border: 1.5px dashed #237fe1;
-  border-radius: 2px;
+  background: rgba(255, 255, 255, .24);
+  border: 0;
+  border-radius: 20px;
   display: grid;
   gap: 10px;
   justify-items: center;
-  min-height: 180px;
-  padding: 28px 24px;
+  min-height: 154px;
+  padding: 24px;
   text-align: center;
 }
 
