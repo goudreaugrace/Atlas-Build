@@ -522,7 +522,7 @@ html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-screen-tabs {
   background: #dfeaf4 !important;
   display: grid !important;
   gap: 10px !important;
-  grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+  grid-template-columns: repeat(var(--scenario-tab-count, 4), minmax(0, 1fr)) !important;
   min-height: var(--scenario-tabs-height) !important;
   padding: 0 48px 0 !important;
   position: sticky !important;

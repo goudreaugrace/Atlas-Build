@@ -12924,7 +12924,7 @@ function ScenarioModelsView({
 	            </div>
 	          </section>
 	        ) : (
-	        <nav className="atlas-scenario-screen-tabs" aria-label="Scenario options">
+	        <nav className="atlas-scenario-screen-tabs" aria-label="Scenario options" style={{ '--scenario-tab-count': scenarioTabs.length } as CSSProperties}>
 	          {scenarioTabs.map((tabItem) => {
 	            const isActive = scenario.id === tabItem.id;
 	            return (
