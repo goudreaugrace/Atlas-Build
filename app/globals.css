@@ -54418,9 +54418,9 @@ summary {
 
 .atlas-scenario-save-modal {
   align-items: center;
-  background: rgba(49, 55, 61, .24);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  background: rgba(49, 55, 61, .16);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   display: flex;
   inset: 0;
   justify-content: center;
@@ -54430,10 +54430,10 @@ summary {
 }
 
 .atlas-scenario-save-modal > section {
-  background: rgba(245, 245, 245, .96);
-  border: 1px solid rgba(255, 255, 255, .82);
-  border-radius: 24px;
-  box-shadow: 0 26px 70px rgba(49, 55, 61, .22);
+  background: #f5f5f5;
+  border: 2px solid #d9dadb;
+  border-radius: 30px;
+  box-shadow: 0 26px 70px rgba(49, 55, 61, .18);
   color: #31373d;
   max-width: 460px;
   padding: 22px;
@@ -54444,37 +54444,57 @@ summary {
   align-items: center;
   display: flex;
   justify-content: space-between;
-  margin-bottom: 14px;
+  margin-bottom: 22px;
 }
 
 .atlas-scenario-save-modal header span {
-  color: #237fe1;
-  font-size: 11px;
+  color: #31373d;
+  font-family: var(--font-display);
+  font-size: 22px;
   font-weight: 700;
-  letter-spacing: .02em;
-  text-transform: uppercase;
+  letter-spacing: 0;
+  line-height: 1.2;
+  text-transform: none;
 }
 
 .atlas-scenario-save-modal header button {
   align-items: center;
-  background: #ffffff;
-  border: 1px solid rgba(49, 55, 61, .14);
+  background: transparent;
+  border: 2px solid #31373d;
   border-radius: 999px;
   color: #31373d;
   cursor: pointer;
   display: inline-flex;
-  height: 32px;
+  height: 48px;
   justify-content: center;
-  width: 32px;
+  transition: background-color .16s ease, transform .16s ease;
+  width: 48px;
+}
+
+.atlas-scenario-save-modal header button:hover {
+  background: rgba(49, 55, 61, .06);
+  transform: translateY(-1px);
+}
+
+.atlas-scenario-save-modal-body {
+  align-items: center;
+  border: 1.5px dashed #237fe1;
+  border-radius: 2px;
+  display: grid;
+  gap: 10px;
+  justify-items: center;
+  min-height: 180px;
+  padding: 28px 24px;
+  text-align: center;
 }
 
 .atlas-scenario-save-modal h2 {
   color: #31373d;
-  font-size: 24px;
+  font-size: 22px;
   font-weight: 650;
   letter-spacing: 0;
-  line-height: 1.16;
-  margin: 0 0 10px;
+  line-height: 1.2;
+  margin: 0;
 }
 
 .atlas-scenario-save-modal p {
@@ -54483,6 +54503,7 @@ summary {
   font-weight: 400;
   line-height: 1.5;
   margin: 0;
+  max-width: 340px;
 }
 
 .atlas-scenario-save-modal footer {
@@ -54490,7 +54511,7 @@ summary {
   display: flex;
   gap: 10px;
   justify-content: flex-end;
-  margin-top: 24px;
+  margin-top: 22px;
 }
 
 .atlas-scenario-save-modal footer button,

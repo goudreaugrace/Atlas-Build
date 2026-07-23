@@ -12619,8 +12619,10 @@ function ScenarioModelsView({
           <span>Scenario saved</span>
           <button aria-label="Close scenario saved confirmation" onClick={() => setScenarioSaveConfirmation(null)} type="button"><X size={17} /></button>
         </header>
-        <h2>{scenarioSaveConfirmation.title} has been saved.</h2>
-        <p>The scenario is now attached to the buyer profile and will appear in the scenario memory section for {scenarioSaveConfirmation.buyingGroupName}.</p>
+        <div className="atlas-scenario-save-modal-body">
+          <h2>{scenarioSaveConfirmation.title} has been saved.</h2>
+          <p>The scenario is now attached to the buyer profile and will appear in the scenario memory section for {scenarioSaveConfirmation.buyingGroupName}.</p>
+        </div>
         <footer>
           <button type="button" onClick={() => setScenarioSaveConfirmation(null)}>Close popup</button>
           <a href={scenarioSaveConfirmation.href}>Go to buying group <ArrowRight size={14} /></a>
