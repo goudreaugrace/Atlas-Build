@@ -86701,7 +86701,6 @@ html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-view-switcher but
 
 /* Active Pill Tab (Figma node 9:11760) */
 html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-segmented-control button.active,
-html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-status-chips button.active,
 html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-view-switcher button.active {
   background: #0563C7 !important;
   border: 1px solid #0563C7 !important;
@@ -86716,6 +86715,22 @@ html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-view-switcher but
   box-shadow: 0 2px 8px rgba(5, 99, 199, 0.25) !important;
 }
 
+/* Active Status Chip (White background, blue text and icon, 1px blue border) */
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-status-chips button.active {
+  background: #FFFFFF !important;
+  background-color: #FFFFFF !important;
+  border: 1px solid #0563C7 !important;
+  color: #0563C7 !important;
+  border-radius: 28px !important;
+  padding: 8px 16px !important;
+  font-family: var(--font-display, "Libre Franklin"), sans-serif !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  letter-spacing: -0.12px !important;
+  line-height: 22px !important;
+  box-shadow: 0 2px 8px rgba(5, 99, 199, 0.12) !important;
+}
+
 html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-segmented-control button svg,
 html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-segmented-control button .atlas-tab-icon {
   width: 16px !important;
@@ -86725,9 +86740,14 @@ html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-segmented-control
 
 html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-segmented-control button.active svg,
 html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-segmented-control button.active .atlas-tab-icon,
-html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-status-chips button.active svg,
 html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-view-switcher button.active svg {
   color: #F5F5F5 !important;
+  fill: currentColor;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-status-chips button.active svg,
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-status-chips button.active .atlas-tab-icon {
+  color: #0563C7 !important;
   fill: currentColor;
 }
 
@@ -86773,10 +86793,10 @@ html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-table-toolbar {
 }
 
 html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-status-chips {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
+  display: flex !important;
+  align-items: center !important;
+  gap: 0px !important;
+  flex-wrap: wrap !important;
 }
 
 html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-right-controls {
