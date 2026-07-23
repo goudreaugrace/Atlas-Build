@@ -534,7 +534,7 @@ html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-screen-tabs butto
   align-items: center !important;
   background: rgba(255, 255, 255, .26) !important;
   border: 1px solid rgba(49, 55, 61, .13) !important;
-  border-bottom-color: rgba(49, 55, 61, .10) !important;
+  border-bottom: 0 !important;
   border-radius: 16px 16px 0 0 !important;
   box-sizing: border-box !important;
   color: #5d6670 !important;
@@ -639,7 +639,7 @@ html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-screen-tabs butto
 html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-screen-tabs button.active {
   background: var(--scenario-content-bg) !important;
   border-color: rgba(49, 55, 61, .14) !important;
-  border-bottom-color: var(--scenario-content-bg) !important;
+  border-bottom: 0 !important;
   box-shadow: 0 -8px 22px rgba(27, 39, 51, .045) !important;
   color: #0f73d8 !important;
   transform: none !important;
@@ -87223,4 +87223,3 @@ html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-empty-state butto
   border-radius: 20px;
   cursor: pointer;
 }
-
