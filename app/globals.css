@@ -86565,6 +86565,14 @@ html body main.atlas-hub-shell .atlas-hub-main .lever-pill.pill-blue {
   color: #707172 !important;
 }
 
+html body main.atlas-hub-shell .atlas-hub-main .spotlight-levers-strip .lever-pill,
+html body main.atlas-hub-shell .atlas-hub-main .spotlight-levers-strip .lever-pill.pill-inverse,
+html body main.atlas-hub-shell .atlas-hub-main .lever-pill.pill-inverse {
+  color: #FFFFFF !important;
+  border-color: #FFFFFF !important;
+  background: transparent !important;
+}
+
 html body main.atlas-hub-shell .atlas-hub-main .spotlight-card-foot {
   display: flex;
   align-items: center;

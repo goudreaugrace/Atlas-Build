@@ -13308,7 +13308,7 @@ function ScenarioModelsView({
 
                           <div className="spotlight-levers-strip">
                             {leverPills.map((pill, idx) => (
-                              <span key={idx} className={`lever-pill pill-${pill.tone}`}>{pill.label}</span>
+                              <span key={idx} className={`lever-pill pill-${pill.tone} pill-inverse`}>{pill.label}</span>
                             ))}
                           </div>
 
