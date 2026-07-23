@@ -1201,7 +1201,7 @@ function IntentBrief({
   metrics,
   title
 }: {
-  action: string;
+  action?: string;
   body?: string;
   eyebrow?: string;
   metrics?: Array<{ label: string; value: string; tone?: 'risk' | 'good' | 'watch' }>;
@@ -1224,7 +1224,7 @@ function IntentBrief({
           ))}
         </dl>
       ) : null}
-      <strong>{action}</strong>
+      {action ? <strong>{action}</strong> : null}
     </section>
   );
 }
@@ -11169,6 +11169,7 @@ function ScenarioModelsView({
   const [scenarioAdjustmentEditing, setScenarioAdjustmentEditing] = useState(false);
   const [scenarioAdjustmentBaselineInputs, setScenarioAdjustmentBaselineInputs] = useState<ScenarioInputs | null>(null);
   const [scenarioInputOverrides, setScenarioInputOverrides] = useState<Record<string, ScenarioInputs>>({});
+  const [scenarioClockBaselineInputs, setScenarioClockBaselineInputs] = useState<Record<string, ScenarioInputs>>({});
   const [scenarioAdjustmentAddedLeversByScenario, setScenarioAdjustmentAddedLeversByScenario] = useState<Record<string, ScenarioAdjustmentAddedLeverRow[]>>({});
   const [scenarioAdjustmentLeverMenuOpen, setScenarioAdjustmentLeverMenuOpen] = useState(false);
   const [scenarioBreakdownCollapsed, setScenarioBreakdownCollapsed] = useState(false);
@@ -12281,7 +12282,11 @@ function ScenarioModelsView({
   }
 
   function updateScenarioParametersForCurrentTab(scenarioId: string) {
+    const clockBaseline = scenarioAdjustmentBaselineInputs ?? scenarioClockBaselineInputs[scenarioId];
     setScenarioInputOverrides((current) => ({ ...current, [scenarioId]: inputs }));
+    if (clockBaseline) {
+      setScenarioClockBaselineInputs((current) => ({ ...current, [scenarioId]: current[scenarioId] ?? clockBaseline }));
+    }
     setSelectedScenarioId(scenarioId);
     setScenarioAdjustmentEditing(false);
     setScenarioAdjustmentBaselineInputs(null);
@@ -12291,7 +12296,11 @@ function ScenarioModelsView({
   }
 
   function saveScenarioParametersAsCustom() {
+    const clockBaseline = scenarioAdjustmentBaselineInputs ?? scenarioClockBaselineInputs.custom;
     setCustomScenarioInputs(inputs);
+    if (clockBaseline) {
+      setScenarioClockBaselineInputs((current) => ({ ...current, custom: current.custom ?? clockBaseline }));
+    }
     setSelectedScenarioId('custom');
     setScenarioAdjustmentEditing(false);
     setScenarioAdjustmentBaselineInputs(null);
@@ -12844,9 +12853,10 @@ function ScenarioModelsView({
 	    const createClockBaselineInputs = createBuyingGroup
 	      ? buildCreateScenarioInputs(createBuyingGroup, createMarkets.length ? createMarkets : [])
 	      : scenario.inputs;
+	    const savedClockBaselineInputs = scenarioClockBaselineInputs[displayScenario.id];
 	    const clockBaselineInputs = isCreateScenarioMode
-	      ? scenarioAdjustmentBaselineInputs ?? createClockBaselineInputs
-	      : scenario.inputs;
+	      ? savedClockBaselineInputs ?? scenarioAdjustmentBaselineInputs ?? createClockBaselineInputs
+	      : savedClockBaselineInputs ?? scenarioAdjustmentBaselineInputs ?? scenario.inputs;
 	    const selectedClockHour = clockHourFromInputs(displayScenario.inputs, clockBaselineInputs, displayScenario.id);
 	    const negotiatorClockOffset = negotiatorClockOffsetByBuyingGroup[scenarioContext.buyingGroupId] ?? (displayScenario.relationshipRisk === 'High' ? .32 : .18);
 	    const buyerClockHour = Math.min(5.5, Math.max(1.8, selectedClockHour + negotiatorClockOffset));
@@ -14519,43 +14529,11 @@ function filterSourceDatabaseRows(rows: SourceDatabaseRow[], ask?: string) {
 
 function SourceDatabaseView({ initialPrompt }: { initialPrompt?: string }) {
   const [sourceDatabasePage, setSourceDatabasePage] = useState(1);
+  const [sourceSearchQuery, setSourceSearchQuery] = useState('');
   const allRows = buildSourceDatabaseRows();
-  const rows = filterSourceDatabaseRows(allRows, initialPrompt);
-  const sourceWatchouts = allRows.filter((row) => row.source.status === 'stale' || row.source.status === 'needs_validation' || row.source.status === 'missing');
-  const approvedRows = allRows.filter((row) => row.source.status === 'approved' || row.source.status === 'ready');
+  const promptFilteredRows = filterSourceDatabaseRows(allRows, initialPrompt);
+  const rows = filterSourceDatabaseRows(promptFilteredRows, sourceSearchQuery);
   const highConfidenceRows = allRows.filter((row) => row.source.confidence === 'high');
-  const modeledRows = allRows.filter((row) => row.source.status === 'modeled' || row.source.sourceType === 'ai_generated' || row.source.sourceType === 'user_entered');
-  const nonCanonicalRows = allRows.filter((row) => row.source.governance.canonicalUseAllowed !== 'yes');
-  const governanceCards = [
-    {
-      action: 'Use first',
-      detail: 'Approved or ready records can be retrieved before ATLAS creates new work.',
-      label: 'Approved / ready',
-      tone: 'good',
-      value: String(approvedRows.length)
-    },
-    {
-      action: 'Resolve before official use',
-      detail: 'Stale, missing, or source-review records should not silently drive outputs.',
-      label: 'Source watchouts',
-      tone: 'watch',
-      value: String(sourceWatchouts.length)
-    },
-    {
-      action: 'Treat as assumption',
-      detail: 'Modeled, user-entered, and generated records remain working context until validated.',
-      label: 'Modeled / generated',
-      tone: 'draft',
-      value: String(modeledRows.length)
-    },
-    {
-      action: 'Do not treat as source truth',
-      detail: 'Non-canonical records need owner validation or replacement before governed use.',
-      label: 'Non-canonical',
-      tone: 'blocked',
-      value: String(nonCanonicalRows.length)
-    }
-  ];
   const sourceDatabasePageSize = 10;
   const sourceDatabaseTotalPages = Math.max(1, Math.ceil(rows.length / sourceDatabasePageSize));
   const sourceDatabaseCurrentPage = Math.min(Math.max(1, sourceDatabasePage), sourceDatabaseTotalPages);
@@ -14564,41 +14542,37 @@ function SourceDatabaseView({ initialPrompt }: { initialPrompt?: string }) {
 
   useEffect(() => {
     setSourceDatabasePage(1);
-  }, [initialPrompt]);
+  }, [initialPrompt, sourceSearchQuery]);
 
   return (
     <>
       <IntentBrief
         eyebrow="Intelligence Library"
-        title={`${rows.length} memory, source, and scenario records / ${sourceWatchouts.length} watchouts.`}
-        body={`${approvedRows.length} approved or ready / ${highConfidenceRows.length} high confidence records.`}
-        action="Use this library to validate sources, approve memory, and audit prediction confidence."
+        title={`${rows.length} memory, source, and scenario records.`}
+        body={`${highConfidenceRows.length} high confidence records across buying groups, markets, and scenario outputs.`}
         metrics={[
           { label: 'Records', value: String(rows.length) },
-          { label: 'High confidence', value: String(highConfidenceRows.length), tone: 'good' },
-          { label: 'Source watchouts', value: String(sourceWatchouts.length), tone: 'watch' }
+          { label: 'High confidence', value: String(highConfidenceRows.length), tone: 'good' }
         ]}
       />
-      <div className="atlas-source-decision-governance-panel">
-        <MemoryDecisionPanel documents={packet.documents} events={packet.latestTimelineEvents} title="Library control read" />
-        <section className="atlas-source-governance-summary" aria-label="Source governance summary">
-          {governanceCards.map((card) => (
-            <article className={`tone-${card.tone}`} key={card.label}>
-              <span>{card.label}</span>
-              <h4>{card.value}</h4>
-              <p>{card.detail}</p>
-              <em>{card.action}</em>
-            </article>
-          ))}
-        </section>
-      </div>
-      <SavedGeneratedViewsShelf />
       <section className="atlas-source-database">
         <header>
           <div>
             <h3>{initialPrompt ? 'Filtered source records' : 'All ATLAS source records'}</h3>
+            <p>{rows.length} shown / {allRows.length} total records.</p>
           </div>
-          <p>{rows.length} shown / {allRows.length} total. {sourceWatchouts.length} source watchouts / {approvedRows.length} usable records.</p>
+          <div className="atlas-source-database-tools">
+            <label className="atlas-source-database-search">
+              <Search size={15} aria-hidden="true" />
+              <input
+                aria-label="Search source records"
+                onChange={(event) => setSourceSearchQuery(event.currentTarget.value)}
+                placeholder="Search records, sources, markets..."
+                type="search"
+                value={sourceSearchQuery}
+              />
+            </label>
+          </div>
         </header>
         {initialPrompt ? <p className="atlas-source-database-filter">Asked: “{initialPrompt}”</p> : null}
         <div className="atlas-source-database-table" role="table" aria-label="ATLAS source database">
