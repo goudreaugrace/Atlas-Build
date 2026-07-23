@@ -54416,9 +54416,9 @@ summary {
 
 .atlas-scenario-save-modal {
   align-items: center;
-  background: rgba(49, 55, 61, .24);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
+  background: rgba(49, 55, 61, .18);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
   display: flex;
   inset: 0;
   justify-content: center;
@@ -87223,5 +87223,4 @@ html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-empty-state butto
   border-radius: 20px;
   cursor: pointer;
 }
-
 
