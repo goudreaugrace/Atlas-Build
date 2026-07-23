@@ -1,6 +1,7 @@
 'use client';
 
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
+import type { CSSProperties } from 'react';
 import {
   AlertCircle,
   AlertTriangle,
@@ -29,6 +30,9 @@ import {
   Mic,
   MoveRight,
   Newspaper,
+
+  PanelRightClose,
+  PanelRightOpen,
   PieChart,
   Plus,
   RefreshCw,
@@ -6516,6 +6520,11 @@ type ScenarioCustomLeverRow = {
   value: string;
   weight: number;
 };
+type ScenarioNumericInputKey = Exclude<keyof ScenarioInputs, 'competitorPressureLevel'>;
+type ScenarioAdjustmentAddedLeverRow = {
+  id: string;
+  key: ScenarioNumericInputKey;
+};
 type ScenarioDebriefEntry = {
   attachments: string;
   behavior: string;
@@ -10963,14 +10972,20 @@ function scenarioFocusLabel(focus: ScenarioFocus) {
 
 function ScenarioModelsView({
   buyingGroupId,
+
+  initialScenarioCaseId: _initialScenarioCaseId,
   initialScenarioId,
   initialScenarioLabMode,
   initialScenarioPage,
   initialSort,
   initialPrompt,
-  marketId
+
+  marketId,
+  returnLabel: _returnLabel,
+  returnTo: _returnTo
 }: {
   buyingGroupId?: string;
+  initialScenarioCaseId?: string;
   initialScenarioId?: string;
   initialScenarioLabMode?: string;
   initialScenarioPage?: string;
@@ -10978,6 +10993,8 @@ function ScenarioModelsView({
   initialPrompt?: string;
   initialView?: string;
   marketId?: string;
+  returnLabel?: string;
+  returnTo?: string;
 }) {
   const defaultScenario = packet.scenarioModels[0];
   const attachedBuyingGroup = buyingGroupId ? getBuyingGroup(buyingGroupId) : undefined;
@@ -11002,6 +11019,13 @@ function ScenarioModelsView({
   const [scenarioTablePage, setScenarioTablePage] = useState(Number.parseInt(initialScenarioPage || '1', 10));
   const [scenarioTableSort, setScenarioTableSort] = useState(initialSort || 'impact');
   const [scenarioNewSinceLastVisitCount, setScenarioNewSinceLastVisitCount] = useState<number | null>(null);
+
+  const [scenarioAdjustmentEditing, setScenarioAdjustmentEditing] = useState(false);
+  const [scenarioAdjustmentBaselineInputs, setScenarioAdjustmentBaselineInputs] = useState<ScenarioInputs | null>(null);
+  const [scenarioInputOverrides, setScenarioInputOverrides] = useState<Record<string, ScenarioInputs>>({});
+  const [scenarioAdjustmentAddedLeversByScenario, setScenarioAdjustmentAddedLeversByScenario] = useState<Record<string, ScenarioAdjustmentAddedLeverRow[]>>({});
+  const [scenarioAdjustmentLeverMenuOpen, setScenarioAdjustmentLeverMenuOpen] = useState(false);
+  const [scenarioBreakdownCollapsed, setScenarioBreakdownCollapsed] = useState(false);
   const [expandedScenarioPriorityGroups, setExpandedScenarioPriorityGroups] = useState({ planning: false, traceability: false });
   const [expandedScenarioRowIds, setExpandedScenarioRowIds] = useState<string[]>([]);
   const [compareScenarioIds, setCompareScenarioIds] = useState<string[]>([]);
@@ -11475,6 +11499,10 @@ function ScenarioModelsView({
     tradeSpendChange: Math.round(initialInputs.tradeSpendChange * 0.88),
     volumeChangePercent: initialInputs.volumeChangePercent - 0.55
   };
+  const recommendedWorkingInputs = scenarioInputOverrides.recommended ?? recommendedScenarioInputs;
+  const conservativeWorkingInputs = scenarioInputOverrides.conservative ?? conservativeScenarioInputs;
+  const aggressiveWorkingInputs = scenarioInputOverrides.aggressive ?? aggressiveScenarioInputs;
+  const buyerCounterWorkingInputs = scenarioInputOverrides['buyer-counter'] ?? buyerCounterInputs;
   const planningScenarioOptions = [
     {
       createdAt: scenarioLabCreatedAt(0, 13, 42),
@@ -11728,10 +11756,11 @@ function ScenarioModelsView({
     scenarioStyle: scenario.scenarioStyle
   }));
 	  const scenarioOptions = [
-    { ...predictiveScenario('recommended', 'Balanced evidence-backed ask', 'Best current move based on buyer history, finance guardrails, and market signals.', recommendedScenarioInputs, 'Best default when the team needs a sourced starting point.'), createdAt: scenarioLabCreatedAt(0, 14, 18), origin: 'atlas' as const, scenarioStyle: 'Recommended' },
-    { ...predictiveScenario('conservative', 'Lower-risk landing path', 'Protect landing probability with a smaller price move and controlled support.', conservativeScenarioInputs, 'Best when relationship risk or source confidence makes the full move harder to land.'), createdAt: scenarioLabCreatedAt(1, 17, 5), origin: 'atlas' as const, scenarioStyle: 'Conservative' },
-    { ...predictiveScenario('aggressive', 'Value capture stretch', 'Push for more price realization with less trade support and higher buyer resistance.', aggressiveScenarioInputs, 'Use when margin protection is more important than relationship safety.'), createdAt: scenarioLabCreatedAt(0, 13, 5), origin: 'atlas' as const, scenarioStyle: 'Aggressive' },
-    { ...predictiveScenario('buyer-counter', 'Likely buyer counter', 'Models the buyer pushing back with lower realization and more trade support.', buyerCounterInputs, 'Use to prepare the downside case and pushback response.'), createdAt: scenarioLabCreatedAt(0, 12, 47), origin: 'atlas' as const, scenarioStyle: 'Buyer counter' },
+
+    { ...predictiveScenario('recommended', 'Balanced evidence-backed ask', 'Best current move based on buyer history, finance guardrails, and market signals.', recommendedWorkingInputs, 'Best default when the team needs a sourced starting point.'), createdAt: scenarioLabCreatedAt(0, 14, 18), origin: 'atlas' as const, scenarioStyle: 'Recommended' },
+    { ...predictiveScenario('conservative', 'Lower-risk landing path', 'Protect landing probability with a smaller price move and controlled support.', conservativeWorkingInputs, 'Best when relationship risk or source confidence makes the full move harder to land.'), createdAt: scenarioLabCreatedAt(1, 17, 5), origin: 'atlas' as const, scenarioStyle: 'Conservative' },
+    { ...predictiveScenario('aggressive', 'Value capture stretch', 'Push for more price realization with less trade support and higher buyer resistance.', aggressiveWorkingInputs, 'Use when margin protection is more important than relationship safety.'), createdAt: scenarioLabCreatedAt(0, 13, 5), origin: 'atlas' as const, scenarioStyle: 'Aggressive' },
+    { ...predictiveScenario('buyer-counter', 'Likely buyer counter', 'Models the buyer pushing back with lower realization and more trade support.', buyerCounterWorkingInputs, 'Use to prepare the downside case and pushback response.'), createdAt: scenarioLabCreatedAt(0, 12, 47), origin: 'atlas' as const, scenarioStyle: 'Buyer counter' },
     { ...predictiveScenario('custom', 'Current working model', 'Uses the current levers, scenario level, SKU rows, and custom assumptions.', inputs, 'Updates as the CNO changes the model.'), createdAt: scenarioLabCreatedAt(0, 11, 12), origin: 'atlas' as const, scenarioStyle: 'Custom' },
     ...highImpactScenarioOptions,
     ...planningScenarioOptions,
@@ -11991,6 +12020,25 @@ function ScenarioModelsView({
     setScenarioSaveStatus('Manual scenario added to the scenario table.');
   }
 
+  function updateScenarioParametersForCurrentTab(scenarioId: string) {
+    setScenarioInputOverrides((current) => ({ ...current, [scenarioId]: inputs }));
+    setSelectedScenarioId(scenarioId);
+    setScenarioAdjustmentEditing(false);
+    setScenarioAdjustmentBaselineInputs(null);
+    setScenarioAdjustmentLeverMenuOpen(false);
+    setScenarioSaveStatus('Parameters updated for this scenario.');
+    if (typeof window !== 'undefined') window.history.replaceState(null, '', scenarioDetailHref(scenarioId));
+  }
+
+  function saveScenarioParametersAsCustom() {
+    setSelectedScenarioId('custom');
+    setScenarioAdjustmentEditing(false);
+    setScenarioAdjustmentBaselineInputs(null);
+    setScenarioAdjustmentLeverMenuOpen(false);
+    setScenarioSaveStatus('Saved as Custom scenario.');
+    if (typeof window !== 'undefined') window.history.replaceState(null, '', scenarioDetailHref('custom'));
+  }
+
   function saveScenarioToBuyingGroup() {
     if (!attachedBuyingGroup) {
       setScenarioSaveStatus('Select a buying group before saving this scenario.');
@@ -12075,8 +12123,10 @@ function ScenarioModelsView({
 	    .sort((a, b) => riskRank(b.pressureLevel) - riskRank(a.pressureLevel) || b.marginAtRisk - a.marginAtRisk)
 	    .slice(0, 5);
 	  const scenarioTrigger = scenarioAlerts[0];
-	  const fullViewScenario = initialScenarioId && initialScenarioLabMode !== 'create'
-	    ? scenarioOptions.find((scenario) => scenario.id === initialScenarioId)
+
+	  const isScenarioDetailMode = Boolean(initialScenarioId) && initialScenarioLabMode !== 'create';
+	  const fullViewScenario = isScenarioDetailMode
+	    ? scenarioOptions.find((scenario) => scenario.id === (selectedScenarioId || initialScenarioId))
 	    : undefined;
 	  function scenarioDetailHref(scenarioId: string) {
 	    const params = new URLSearchParams();
@@ -12308,105 +12358,399 @@ function ScenarioModelsView({
 
 	  if (fullViewScenario) {
 	    const scenario = fullViewScenario;
-	    const scenarioContext = scenarioBuyingGroupContext(scenario);
+
+	    const scenarioWorkingInputs = scenarioAdjustmentEditing ? inputs : scenario.inputs;
+	    const scenarioWorkingRead = predictiveScenario(scenario.id, scenario.name, scenario.description, scenarioWorkingInputs, scenario.why);
+	    const displayScenario: ScenarioLabOption = {
+	      ...scenario,
+	      ...scenarioWorkingRead,
+	      createdAt: scenario.createdAt,
+	      origin: scenario.origin,
+	      scenarioStyle: scenario.scenarioStyle
+	    };
+	    const scenarioContext = attachedBuyingGroup
+	      ? scenarioBuyingGroupContext(scenario)
+	      : { buyingGroup: 'EDEKA', buyingGroupId: 'edeka', market: 'Germany', marketId: 'germany', multi: false };
 	    const attentionReason = scenarioAttentionReason(scenario);
-	    const scenarioBasis = scenario.origin === 'manual'
+	    const scenarioBasis = displayScenario.origin === 'manual'
 	      ? 'This scenario uses CNO-adjusted assumptions plus current buyer context and saved local inputs.'
-	      : `${scenario.why}${scenarioTrigger ? ` It was refreshed after ATLAS reviewed ${scenarioTrigger.title.toLowerCase()}.` : ''}`;
-	    const detailModeledNumbers = [
-	      { label: 'Price ask', value: pct(scenario.inputs.priceIncreasePercent) },
-	      { label: 'Expected realization', value: pct(scenario.inputs.expectedRealizationPercent) },
-	      { label: 'Trade spend', value: euros(scenario.inputs.tradeSpendChange) },
-	      { label: 'Volume risk', value: pct(scenario.inputs.volumeChangePercent) },
-	      { label: 'Buyer acceptance', value: `${scenario.likelihood}%` }
+	      : `${displayScenario.why}${scenarioTrigger ? ` It was refreshed after ATLAS reviewed ${scenarioTrigger.title.toLowerCase()}.` : ''}`;
+	    const scenarioTabNote = (ask: string, realization: string) => (
+	      <>
+	        <span>{ask} Ask</span>
+	        <i aria-hidden="true" />
+	        <span>{realization} Realization</span>
+	      </>
+	    );
+	    const scenarioTabs = [
+	      { id: 'recommended', label: 'Balanced (Recommended)', note: scenarioTabNote(pct(recommendedScenarioInputs.priceIncreasePercent), pct(recommendedScenarioInputs.expectedRealizationPercent)), icon: <Target size={18} /> },
+	      { id: 'conservative', label: 'Conservative', note: scenarioTabNote(pct(conservativeScenarioInputs.priceIncreasePercent), pct(conservativeScenarioInputs.expectedRealizationPercent)), icon: <ShieldCheck size={18} /> },
+	      { id: 'aggressive', label: 'Aggressive', note: scenarioTabNote(pct(aggressiveScenarioInputs.priceIncreasePercent), pct(aggressiveScenarioInputs.expectedRealizationPercent)), icon: <TrendingUp size={18} /> },
+	      { id: 'buyer-counter', label: 'Likely Buyer Counter', note: scenarioTabNote(pct(buyerCounterInputs.priceIncreasePercent), pct(buyerCounterInputs.expectedRealizationPercent)), icon: <Sparkles size={18} /> },
+	      { id: 'custom', label: 'Custom', note: scenarioTabNote(pct(inputs.priceIncreasePercent), pct(inputs.expectedRealizationPercent)), icon: <Layers3 size={18} /> }
 	    ];
-	    const detailImpactNumbers = [
-	      { label: 'NR impact', value: scenarioDeltaLabel(scenario.outputs.revenueImpact) },
-	      { label: 'GM impact', value: scenarioDeltaLabel(scenario.outputs.marginImpact) },
-	      { label: 'Trade impact', value: scenarioDeltaLabel(scenario.outputs.tradeSpendImpact) },
-	      { label: 'Risk-adjusted value', value: euros(scenario.valueProtected) }
+	    const detailMetricNumbers = [
+	      { label: 'Margin Impact', value: scenarioDeltaLabel(displayScenario.outputs.marginImpact) },
+	      { label: 'Ask', value: pct(displayScenario.inputs.priceIncreasePercent) },
+	      { label: 'Realization', value: pct(displayScenario.inputs.expectedRealizationPercent) },
+	      { label: 'Land', value: `${displayScenario.likelihood}%` },
+	      { label: 'Decision', value: displayScenario.id === 'recommended' ? 'Recommended' : displayScenario.guardrailRisk === 'Guardrail breach' ? 'Needs review' : 'Ready' }
 	    ];
+	    const baseClockHourForScenario = (scenarioId: string) => {
+	      if (scenarioId === 'aggressive') return 2.05;
+	      if (scenarioId === 'conservative') return 5;
+	      if (scenarioId === 'buyer-counter') return 4.5;
+	      if (scenarioId === 'custom') return 3.5;
+	      return 3;
+	    };
+	    const clockHourFromInputs = (nextInputs: ScenarioInputs, baselineInputs: ScenarioInputs, scenarioId: string) => {
+	      const postureHour = baseClockHourForScenario(scenarioId)
+	        + (nextInputs.priceIncreasePercent - baselineInputs.priceIncreasePercent) * .18
+	        + (baselineInputs.expectedRealizationPercent - nextInputs.expectedRealizationPercent) * .16
+	        + (baselineInputs.volumeChangePercent - nextInputs.volumeChangePercent) * .08
+	        + ((nextInputs.tradeSpendChange - baselineInputs.tradeSpendChange) / 1_000_000) * .35
+	        + ((baselineInputs.buyerAcceptanceProbability - nextInputs.buyerAcceptanceProbability) / 100) * .55;
+	      return Math.min(5.35, Math.max(2.15, postureHour));
+	    };
+	    const clockTimeFromHour = (clockHour: number) => {
+	      const hour = Math.floor(clockHour);
+	      const minutes = Math.round((clockHour - hour) * 60 / 5) * 5;
+	      const normalizedHour = minutes === 60 ? hour + 1 : hour;
+	      const normalizedMinutes = minutes === 60 ? 0 : minutes;
+	      return `${normalizedHour}:${String(normalizedMinutes).padStart(2, '0')}`;
+	    };
+	    const clockLabelFromHour = (clockHour: number) => {
+	      if (clockHour < 2.75) return 'Bartering';
+	      if (clockHour < 3.45) return 'Haggling';
+	      if (clockHour < 4.65) return 'Hard Bargaining';
+	      return 'Dealing';
+	    };
+	    const selectedClockHour = clockHourFromInputs(displayScenario.inputs, scenario.inputs, displayScenario.id);
+	    const buyerClockHour = Math.min(5.5, selectedClockHour + (displayScenario.relationshipRisk === 'High' ? .32 : .18));
+	    const postureTime = clockTimeFromHour(selectedClockHour);
+	    const buyerTime = clockTimeFromHour(buyerClockHour);
+	    const postureLabel = clockLabelFromHour(selectedClockHour);
+	    const clockMarkerStyle = (clockTime: string, radius = 39) => {
+	      const [hourValue, minuteValue = '0'] = clockTime.split(':');
+	      const hour = Number(hourValue) % 12;
+	      const minute = Number(minuteValue);
+	      const angle = ((hour + minute / 60) * 30 - 90) * (Math.PI / 180);
+	      return {
+	        '--clock-marker-x': `${50 + Math.cos(angle) * radius}%`,
+	        '--clock-marker-y': `${50 + Math.sin(angle) * radius}%`
+	      } as CSSProperties;
+	    };
+	    const clockContextMarkers = [
+	      { label: 'Bartering pressure', time: '1:00', radius: 34 },
+	      { label: 'Competitive buyer read', time: '2:00', radius: 36 },
+	      { label: 'Fallback path', time: '5:00', radius: 36 }
+	    ];
+	    const scenarioDecisionTone = detailMetricNumbers[4].value.toLowerCase().replace(/\s+/g, '-');
 	    const scenarioCompareParams = new URLSearchParams();
-	    scenarioCompareParams.append('scenario', scenario.id);
-	    scenarioCompareParams.append('scenario', scenario.id === 'buyer-counter' ? 'recommended' : 'buyer-counter');
+	    scenarioCompareParams.append('scenario', displayScenario.id);
+	    scenarioCompareParams.append('scenario', displayScenario.id === 'buyer-counter' ? 'recommended' : 'buyer-counter');
 	    if (scenarioContext.buyingGroupId) scenarioCompareParams.set('buyingGroup', scenarioContext.buyingGroupId);
 	    if (scenarioContext.marketId) scenarioCompareParams.set('market', scenarioContext.marketId);
 	    const buyerProfileHref = scenarioContext.buyingGroupId ? `/buying-groups/${scenarioContext.buyingGroupId}?view=current` : scenarioHref();
-	    const scenarioFullSummary = `Based on ${scenario.scenarioStyle.toLowerCase()} logic, ATLAS modeled ${pct(scenario.inputs.priceIncreasePercent)} ask / ${pct(scenario.inputs.expectedRealizationPercent)} realization with ${scenarioDeltaLabel(scenario.outputs.revenueImpact)} NR impact and ${scenario.likelihood}% likelihood to land.`;
+	    const scenarioFullSummary = `${scenarioContext.buyingGroup} movement changed the expected landing range for the current negotiation.`;
+	    const scenarioAddedLeverRows = scenarioAdjustmentAddedLeversByScenario[displayScenario.id] ?? [];
+	    const scenarioAddedLeverKeys = new Set(scenarioAddedLeverRows.map((row) => row.key));
+	    const scenarioAddedLeverOptions = advancedScenarioControls.filter((row): row is typeof row & { key: ScenarioNumericInputKey } => row.key !== 'competitorPressureLevel');
+	    const availableScenarioAddedLeverOptions = scenarioAddedLeverOptions.filter((row) => !scenarioAddedLeverKeys.has(row.key));
+	    function startScenarioAdjustmentEditing() {
+	      setScenarioAdjustmentBaselineInputs(displayScenario.inputs);
+	      setInputs(displayScenario.inputs);
+	      setScenarioAdjustmentEditing(true);
+	    }
+	    function addScenarioAdjustmentLever(nextKey: ScenarioNumericInputKey) {
+	      const nextControl = availableScenarioAddedLeverOptions.find((row) => row.key === nextKey);
+	      if (!nextControl) return;
+	      if (!scenarioAdjustmentEditing) {
+	        startScenarioAdjustmentEditing();
+	      }
+	      setScenarioAdjustmentLeverMenuOpen(false);
+	      setScenarioAdjustmentAddedLeversByScenario((current) => ({
+	        ...current,
+	        [displayScenario.id]: [
+	          ...(current[displayScenario.id] ?? []),
+	          { id: `scenario-adjustment-lever-${Date.now().toString(36)}`, key: nextKey }
+	        ]
+	      }));
+	    }
+	    function changeScenarioAdjustmentLever(rowId: string, nextKey: ScenarioNumericInputKey) {
+	      const currentRow = scenarioAddedLeverRows.find((row) => row.id === rowId);
+	      const savedInputs = scenarioAdjustmentBaselineInputs ?? displayScenario.inputs;
+	      if (currentRow && currentRow.key !== nextKey) {
+	        setInputs((current) => ({ ...current, [currentRow.key]: savedInputs[currentRow.key], [nextKey]: current[nextKey] }));
+	      }
+	      setScenarioAdjustmentAddedLeversByScenario((current) => ({
+	        ...current,
+	        [displayScenario.id]: (current[displayScenario.id] ?? []).map((row) => row.id === rowId ? { ...row, key: nextKey } : row)
+	      }));
+	    }
+	    function removeScenarioAdjustmentLever(rowId: string) {
+	      const currentRow = scenarioAddedLeverRows.find((row) => row.id === rowId);
+	      const savedInputs = scenarioAdjustmentBaselineInputs ?? displayScenario.inputs;
+	      if (currentRow) {
+	        setInputs((current) => ({ ...current, [currentRow.key]: savedInputs[currentRow.key] }));
+	      }
+	      setScenarioAdjustmentAddedLeversByScenario((current) => ({
+	        ...current,
+	        [displayScenario.id]: (current[displayScenario.id] ?? []).filter((row) => row.id !== rowId)
+	      }));
+	    }
+	    function resetScenarioInputToSavedValue<K extends keyof ScenarioInputs>(key: K) {
+	      const savedInputs = scenarioAdjustmentBaselineInputs ?? displayScenario.inputs;
+	      setInputs((current) => ({ ...current, [key]: savedInputs[key] }));
+	    }
+	    function updateScenarioNumericInput(key: ScenarioNumericInputKey, rawValue: string, min: number, max: number) {
+	      const parsedValue = Number(rawValue);
+	      if (!Number.isFinite(parsedValue)) return;
+	      const nextValue = Math.min(max, Math.max(min, parsedValue));
+	      setInputs((current) => ({ ...current, [key]: nextValue }));
+	    }
 	    return (
-	      <section className="atlas-scenario-full-view" aria-label={`${scenario.name} full scenario view`}>
-	        <header className="atlas-scenario-full-header">
-	          <a href={scenarioHref()}>Back to Scenario Lab</a>
+	      <section className="atlas-scenario-screen" aria-label={`${scenario.name} scenario screen`}>
+	        <header className="atlas-scenario-screen-header">
+	          <a className="atlas-scenario-screen-back" href={scenarioHref()} aria-label="Back to Scenario Lab">←</a>
 	          <div>
-	            <span>{attentionReason} · {scenarioContext.buyingGroup}</span>
-	            <h1>{scenario.name.replace(/^[A-C]\.\s*/, '')}</h1>
-	            <p>{scenarioFullSummary}</p>
+	            <span>{attentionReason} · {scenarioContext.buyingGroup} · {scenarioContext.market}</span>
+	            <h1>{scenarioContext.buyingGroup} price realization pressure</h1>
 	          </div>
-	          <div className="atlas-scenario-full-header-actions">
-	            <a href={scenarioEditHref(scenario.id)}>Edit scenario</a>
-	            <a href={`/scenario-lab/compare?${scenarioCompareParams.toString()}`}>Compare</a>
+	          <div className="atlas-scenario-screen-actions">
+	            <a className="atlas-scenario-download-report" href={scenarioReportHref} rel="noreferrer" target="_blank" aria-label="Download scenario report"><Download size={15} /><span>Download scenario report</span></a>
+	            <a className="atlas-scenario-save-buying-group" href={buyerProfileHref}>Save to Buying Group <ArrowRight size={13} /></a>
 	          </div>
 	        </header>
 
-	        <div className="atlas-scenario-full-grid">
-	          <article className="atlas-scenario-full-primary">
-	            <div className="atlas-scenario-card-heading">
-	              <span>{scenario.origin === 'manual' ? 'Manual' : 'ATLAS generated'}</span>
-	              <span>{scenario.scenarioStyle}</span>
-	              <span>{scenarioContext.market}</span>
+	        <nav className="atlas-scenario-screen-tabs" aria-label="Scenario options">
+	          {scenarioTabs.map((tabItem) => {
+	            const isActive = scenario.id === tabItem.id;
+	            return (
+	              <button
+	                aria-current={isActive ? 'page' : undefined}
+	                className={isActive ? 'active' : ''}
+	                key={tabItem.id}
+	                onClick={() => {
+	                  const nextScenario = scenarioOptions.find((item) => item.id === tabItem.id);
+	                  if (!nextScenario) return;
+	                  setScenarioAdjustmentEditing(false);
+	                  setScenarioAdjustmentBaselineInputs(null);
+	                  setScenarioAdjustmentLeverMenuOpen(false);
+	                  setSelectedScenarioId(nextScenario.id);
+	                  setInputs(nextScenario.inputs);
+	                  if (typeof window !== 'undefined') window.history.replaceState(null, '', scenarioDetailHref(nextScenario.id));
+	                }}
+	                type="button"
+	              >
+	                {tabItem.icon}
+	                <strong>{tabItem.label}</strong>
+	                <small>{tabItem.note}</small>
+	              </button>
+	            );
+	          })}
+	        </nav>
+
+	        <div className="atlas-scenario-screen-shell">
+	          <aside className={`atlas-scenario-lever-rail${scenarioAdjustmentEditing ? ' is-editing' : ''}`} aria-label="Scenario adjustments">
+	            <header>
+	              <span>Scenario adjustments</span>
+	              <div className="atlas-scenario-add-lever-menu">
+	                <button
+	                  aria-expanded={scenarioAdjustmentLeverMenuOpen}
+	                  aria-haspopup="menu"
+	                  type="button"
+	                  onClick={() => setScenarioAdjustmentLeverMenuOpen((open) => !open)}
+	                  disabled={availableScenarioAddedLeverOptions.length === 0}
+	                >
+	                  Add lever
+	                </button>
+	                {scenarioAdjustmentLeverMenuOpen ? (
+	                  <div role="menu" aria-label="Choose lever to add">
+	                    {availableScenarioAddedLeverOptions.map((option) => (
+	                      <button key={option.key} role="menuitem" type="button" onClick={() => addScenarioAdjustmentLever(option.key)}>
+	                        {option.label.replace(' €', '').replace(' %', '')}
+	                      </button>
+	                    ))}
+	                  </div>
+	                ) : null}
+	              </div>
+	            </header>
+	            <div className="atlas-scenario-lever-list">
+	              {visibleScenarioControls.map(({ key, label, max, min, step }) => {
+	                const currentValue = Number(displayScenario.inputs[key]);
+	                const progress = max === min ? 0 : Math.min(100, Math.max(0, ((currentValue - min) / (max - min)) * 100));
+	                return (
+	                  <label key={key} style={{ '--scenario-lever-progress': `${progress}%` } as CSSProperties}>
+	                    <span>{label.replace(' increase %', ' Ask').replace(' change €', '').replace(' probability', '')}</span>
+	                    <strong>{formatScenarioInputValue(key, currentValue)}</strong>
+	                    <input disabled={!scenarioAdjustmentEditing} type="range" min={min} max={max} step={step} value={currentValue} onChange={(event) => updateScenarioNumericInput(key as ScenarioNumericInputKey, event.currentTarget.value, min, max)} />
+	                    <b aria-hidden="true">=</b>
+	                    <small>
+	                      <em>{formatScenarioInputValue(key, min)} - {formatScenarioInputValue(key, max)}</em>
+	                      {scenarioAdjustmentEditing ? (
+	                        <button type="button" onClick={(event) => { event.preventDefault(); resetScenarioInputToSavedValue(key); }}>Reset to default</button>
+	                      ) : null}
+	                    </small>
+	                  </label>
+	                );
+	              })}
+	              {scenarioAddedLeverRows.map((addedLever) => {
+	                const control = scenarioAddedLeverOptions.find((row) => row.key === addedLever.key);
+	                if (!control) return null;
+	                const selectableOptions = scenarioAddedLeverOptions.filter((row) => row.key === addedLever.key || !scenarioAddedLeverKeys.has(row.key));
+	                const { key, label, max, min, step } = control;
+	                const currentValue = Number(displayScenario.inputs[key]);
+	                const progress = max === min ? 0 : Math.min(100, Math.max(0, ((currentValue - min) / (max - min)) * 100));
+	                return (
+	                  <label className="atlas-scenario-added-lever" key={addedLever.id} style={{ '--scenario-lever-progress': `${progress}%` } as CSSProperties}>
+	                    <select aria-label="Added lever name" disabled={!scenarioAdjustmentEditing} value={key} onChange={(event) => changeScenarioAdjustmentLever(addedLever.id, event.currentTarget.value as ScenarioNumericInputKey)}>
+	                      {selectableOptions.map((option) => (
+	                        <option key={option.key} value={option.key}>{option.label.replace(' €', '').replace(' %', '')}</option>
+	                      ))}
+	                    </select>
+	                    <strong>{formatScenarioInputValue(key, currentValue)}</strong>
+	                    <input disabled={!scenarioAdjustmentEditing} type="range" min={min} max={max} step={step} value={currentValue} onChange={(event) => updateScenarioNumericInput(key, event.currentTarget.value, min, max)} />
+	                    <b aria-hidden="true">=</b>
+	                    <small>
+	                      <em>{formatScenarioInputValue(key, min)} - {formatScenarioInputValue(key, max)}</em>
+	                      {scenarioAdjustmentEditing ? (
+	                        <button type="button" onClick={(event) => { event.preventDefault(); removeScenarioAdjustmentLever(addedLever.id); }}>Remove</button>
+	                      ) : null}
+	                    </small>
+	                  </label>
+	                );
+	              })}
 	            </div>
-	            <h2>What ATLAS modeled</h2>
-	            <p>{scenarioBasis}</p>
-	            <dl className="atlas-scenario-full-metrics">
-	              {detailModeledNumbers.map((item) => (
-	                <div key={item.label}>
-	                  <dt>{item.label}</dt>
-	                  <dd>{item.value}</dd>
-	                </div>
-	              ))}
-	            </dl>
-	          </article>
-
-	          <aside className="atlas-scenario-full-read">
-	            <h2>Scenario read</h2>
-	            <section>
-	              <h3>Expected buyer response</h3>
-	              <p>{scenario.buyerResponse}</p>
-	              <div className="atlas-scenario-progress"><i style={{ width: `${scenario.likelihood}%` }} /></div>
-	              <small>{scenario.likelihood}% likelihood to land · {scenario.evidenceStrength}% evidence strength</small>
-	            </section>
-	            <section>
-	              <h3>Recommended CNO action</h3>
-	              <p>{scenario.recommendedEdit}</p>
-	              <small>{scenario.relationshipRisk} relationship risk</small>
-	            </section>
+	            {scenarioAdjustmentEditing ? (
+	              <>
+	                <button className="atlas-scenario-update-button" type="button" onClick={() => updateScenarioParametersForCurrentTab(displayScenario.id)}>Update Parameters</button>
+	                <button className="atlas-scenario-save-button" type="button" onClick={saveScenarioParametersAsCustom}>Save as New Scenario</button>
+	              </>
+	            ) : (
+	              <button className="atlas-scenario-edit-button" type="button" onClick={startScenarioAdjustmentEditing}>Edit Parameters</button>
+	            )}
 	          </aside>
-	        </div>
 
-	        <section className="atlas-scenario-full-impact" aria-label="Scenario impact and actions">
-	          <div>
-	            <h2>Expected impact</h2>
-	            <dl className="atlas-scenario-full-metrics">
-	              {detailImpactNumbers.map((item) => (
-	                <div key={item.label}>
-	                  <dt>{item.label}</dt>
-	                  <dd>{item.value}</dd>
+	          <div className={`atlas-scenario-content-scroll${scenarioBreakdownCollapsed ? ' is-breakdown-collapsed' : ''}`}>
+	            <dl className="atlas-scenario-screen-metrics">
+	              {detailMetricNumbers.map((metric) => (
+	                <div className={metric.label === 'Decision' ? `decision-${scenarioDecisionTone}` : ''} key={metric.label}>
+	                  <dt>{metric.label}</dt>
+	                  <dd>{metric.value}</dd>
 	                </div>
 	              ))}
 	            </dl>
-	          </div>
-	          <div className="atlas-scenario-full-actions">
-	            <a href={buyerProfileHref}>Save to buyer profile</a>
-	            <a href={scenarioReportHref} rel="noreferrer" target="_blank">Download report</a>
-	            <a href={scenarioEditHref(scenario.id)}>Adjust levers</a>
-	          </div>
-	        </section>
 
-	        <section className="atlas-scenario-full-source" aria-label="Scenario source trail">
-	          <h2>Source trail</h2>
-	          <p>ATLAS tied this run to buyer history, current scenario inputs, market signals, and finance guardrail context.</p>
-	          <SourceTrustMini source={scenarioSource} />
-	        </section>
+	            <main className="atlas-scenario-decision-canvas">
+	              <section className="atlas-scenario-posture-stage">
+	                <div className="atlas-scenario-clock" aria-label={`Strategy posture ${postureTime} ${postureLabel}`}>
+	                  <img src="/images/backgrounds/clock-background.svg" alt="" aria-hidden="true" />
+	                  {clockContextMarkers.map((marker) => (
+	                    <span
+	                      aria-hidden="true"
+	                      className="atlas-scenario-clock-marker is-muted"
+	                      key={marker.label}
+	                      style={clockMarkerStyle(marker.time, marker.radius)}
+	                    />
+	                  ))}
+	                  <span
+	                    aria-hidden="true"
+	                    className="atlas-scenario-clock-marker is-buyer"
+	                    style={clockMarkerStyle(buyerTime, 40)}
+	                  />
+	                  <span
+	                    aria-hidden="true"
+	                    className="atlas-scenario-clock-marker is-active"
+	                    style={clockMarkerStyle(postureTime, 40)}
+	                  />
+	                  <div className="atlas-scenario-clock-label">
+	                    <strong>{postureTime}</strong>
+	                    <span>{postureLabel}</span>
+	                  </div>
+	                </div>
+	                <div className="atlas-scenario-posture-copy">
+	                  <span>Strategy posture</span>
+	                  <h2>{postureTime} {postureLabel}</h2>
+	                  <p>{displayScenario.name.replace(/^[A-C]\.\s*/, '')} lands at {postureTime}; Markus Weber is expected near {buyerTime}.</p>
+	                  <div>
+	                    <button className="atlas-scenario-posture-badge atlas-scenario-posture-badge--scenario selected" type="button"><span aria-hidden="true" /> Selected Scenario</button>
+	                    <button className="atlas-scenario-posture-badge atlas-scenario-posture-badge--buyer" type="button"><span aria-hidden="true" /> Markus Weber</button>
+	                    <button className="atlas-scenario-posture-badge atlas-scenario-posture-badge--other" type="button"><span aria-hidden="true" /> Other Scenarios</button>
+	                  </div>
+	                </div>
+	              </section>
+
+	              <section className="atlas-scenario-response-panel">
+	                <header>
+	                  <h2>ATLAS predicted buyer response</h2>
+	                </header>
+	                <div className="atlas-scenario-response-prompt">
+	                  <p>{displayScenario.buyerResponse}</p>
+	                  <span className="atlas-scenario-response-likelihood">{Math.round(displayScenario.inputs.buyerAcceptanceProbability)}% response likelihood</span>
+	                </div>
+	                <div className="atlas-scenario-response-grid">
+	                  <article>
+	                    <span><Square size={16} /> Why ATLAS thinks this</span>
+	                    <strong>Buyer memory</strong>
+	                    <p>{scenarioBasis}</p>
+	                    <strong>Lever read</strong>
+	                    <p>Current levers are workable, but the buyer will test the give-get. {pct(displayScenario.inputs.priceIncreasePercent)} ask, {pct(displayScenario.inputs.expectedRealizationPercent)} realization, {euros(displayScenario.inputs.tradeSpendChange)} support.</p>
+	                    <strong>Posture read</strong>
+	                    <p>Markus Weber profiles near {buyerTime}; this path lands at {postureTime} {postureLabel}.</p>
+	                  </article>
+	                  <div>
+	                    <article>
+	                      <span><BarChart3 size={16} /> CNO move</span>
+	                      <p>{displayScenario.recommendedEdit}</p>
+	                    </article>
+	                    <article>
+	                      <span><AlertCircle size={16} /> Watch for</span>
+	                      <p>{displayScenario.relationshipRisk === 'High' ? 'Buyer may pressure affordability and ask for proof before accepting a phased landed increase.' : 'Buyer may ask for proof before accepting a phased landed increase.'}</p>
+	                      <strong>Counter pressure clusters around {pct(Math.max(.4, displayScenario.inputs.expectedRealizationPercent - .5))}-{pct(displayScenario.inputs.expectedRealizationPercent)} realization.</strong>
+	                    </article>
+	                  </div>
+	                </div>
+	              </section>
+	            </main>
+
+	            <aside className="atlas-scenario-breakdown" aria-label="Atlas Breakdown">
+	              <header>
+	                <h2>Atlas Breakdown</h2>
+	                <button
+	                  aria-label="Toggle sidebar"
+	                  aria-pressed={scenarioBreakdownCollapsed}
+	                  className="atlas-scenario-breakdown-toggle"
+	                  data-tooltip="Toggle sidebar"
+	                  onClick={() => setScenarioBreakdownCollapsed((collapsed) => !collapsed)}
+	                  title="Toggle sidebar"
+	                  type="button"
+	                >
+	                  {scenarioBreakdownCollapsed ? <PanelRightOpen size={18} /> : <PanelRightClose size={18} />}
+	                  <span>{scenarioBreakdownCollapsed ? 'Open' : 'Close'}</span>
+	                </button>
+	              </header>
+	              <article>
+	                <span><AlertCircle size={20} /> Trigger</span>
+	                <p>{scenarioFullSummary}</p>
+	              </article>
+	              <article>
+	                <span><BarChart3 size={20} /> Modelling</span>
+	                <p>ATLAS modeled the response paths and recommends the {displayScenario.name.replace(/^[A-C]\.\s*/, '').toLowerCase()} before the next buyer counter.</p>
+	              </article>
+	              <article>
+	                <span><Brain size={20} /> Decision</span>
+	                <p>Should the team hold the price position, trade service value, or plan for the likely counter?</p>
+	              </article>
+	              <article>
+	                <span><Sparkles size={20} /> Atlas recommends</span>
+	                <p>{displayScenario.recommendedEdit}</p>
+	              </article>
+	              <SourceTrustMini source={scenarioSource} />
+	            </aside>
+	          </div>
+	        </div>
+	        {scenarioSaveStatus ? <span className="atlas-scenario-save-status">{scenarioSaveStatus}</span> : null}
 	      </section>
 	    );
 	  }
