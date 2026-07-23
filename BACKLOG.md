@@ -2,6 +2,7 @@
 
 ## V1 must-have
 
+- [x] Scenario Lab list page UX redesign (/scenario-lab) with Priority Spotlight, Rich Cards Grid/Matrix view, Segmented Origin Filter, and Status Priority Chips.
 - [x] Simplify header to only H2 `Negotiation Timeline` title and top-right primary action button.
 - [x] Set `atlas-bg-timeline-card` max-width to `~80%` of panel container.
 - [x] EDEKA Negotiation Timeline Refinement & Figma SSOT Alignment.

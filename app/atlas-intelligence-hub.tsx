@@ -25,7 +25,9 @@ import {
   GitCompare,
   Globe2,
   Layers3,
+  LayoutGrid,
   LineChart,
+  ListFilter,
   Loader2,
   Mic,
   Monitor,
@@ -50,6 +52,18 @@ import {
   User,
   X
 } from 'lucide-react';
+import {
+  HeroSparklesIcon,
+  HeroUserIcon,
+  HeroCheckCircleIcon,
+  HeroExclamationTriangleIcon,
+  HeroBoltIcon,
+  HeroSquares2X2Icon,
+  HeroListBulletIcon,
+  HeroPlusIcon,
+  HeroCubeIcon,
+  HeroArrowRightIcon,
+} from '@/src/components/ui/heroicons';
 import {
   atlasIntelligenceSeed,
   buildAtlasIntelligencePacket,
@@ -11141,6 +11155,8 @@ function ScenarioModelsView({
   const [selectedScenarioId, setSelectedScenarioId] = useState(initialScenarioId ?? '');
   const [scenarioLabMode, setScenarioLabMode] = useState<ScenarioLabMode>(initialScenarioLabMode === 'create' ? 'create' : 'review');
   const [scenarioTypeFilter, setScenarioTypeFilter] = useState('all');
+  const [scenarioStatusFilter, setScenarioStatusFilter] = useState('all');
+  const [scenarioViewMode, setScenarioViewMode] = useState<'grid' | 'table'>('grid');
   const [openScenarioFilter, setOpenScenarioFilter] = useState<string | null>(null);
   const [scenarioTableBuyingGroupFilter, setScenarioTableBuyingGroupFilter] = useState(buyingGroupId ?? '');
   const [scenarioTableMarketFilter, setScenarioTableMarketFilter] = useState(marketId ?? '');
@@ -12411,20 +12427,103 @@ function ScenarioModelsView({
 	    return `/scenario-lab?${params.toString()}`;
   }
   const scenarioTableActiveSort = scenarioTableSort || 'impact';
-  const scenarioTablePageSize = 10;
-  const scenarioTableRows = visibleScenarioOptions.filter((scenario) => {
-    if (scenario.id === 'custom' || scenario.origin !== 'atlas') return false;
+  const scenarioTablePageSize = scenarioViewMode === 'grid' ? 9 : 10;
+
+  const atlasOriginCount = scenarioOptions.filter((s) => s.origin === 'atlas' && s.id !== 'custom').length;
+  const customOriginCount = scenarioOptions.filter((s) => s.origin === 'manual' || s.id === 'custom' || s.scenarioStyle === 'Custom').length;
+  const totalOriginCount = scenarioOptions.length;
+
+  const spotlightScenarios = scenarioOptions.filter((scenario) => 
+    scenario.scenarioStyle === 'Recommended' || 
+    scenario.id === 'recommended' ||
+    scenario.guardrailRisk === 'Guardrail breach' ||
+    scenario.scenarioStyle === 'Buyer counter'
+  ).slice(0, 3);
+
+  function getScenarioBadge(scenario: ScenarioLabOption) {
+    if (scenario.scenarioStyle === 'Recommended' || scenario.id === 'recommended') {
+      return { label: 'Recommended', tone: 'recommended' };
+    }
+    if (scenario.guardrailRisk === 'Guardrail breach') {
+      return { label: 'Guardrail Breach', tone: 'danger' };
+    }
+    if (scenario.guardrailRisk === 'Watch') {
+      return { label: 'Guardrail Watch', tone: 'warning' };
+    }
+    if (scenario.evidenceStrength < 80) {
+      return { label: 'Needs Validation', tone: 'caution' };
+    }
+    return { label: scenario.scenarioStyle || 'Modeled', tone: 'neutral' };
+  }
+
+  function renderBadgeIcon(tone: string) {
+    if (tone === 'recommended') return <HeroSparklesIcon className="atlas-badge-heroicon" aria-hidden="true" />;
+    if (tone === 'danger') return <HeroExclamationTriangleIcon className="atlas-badge-heroicon" aria-hidden="true" />;
+    if (tone === 'warning') return <HeroExclamationTriangleIcon className="atlas-badge-heroicon" aria-hidden="true" />;
+    if (tone === 'caution') return <HeroBoltIcon className="atlas-badge-heroicon" aria-hidden="true" />;
+    if (tone === 'success') return <HeroCheckCircleIcon className="atlas-badge-heroicon" aria-hidden="true" />;
+    return <HeroCubeIcon className="atlas-badge-heroicon" aria-hidden="true" />;
+  }
+
+  function getScenarioLeverPills(scenario: ScenarioLabOption) {
+    const pills: Array<{ label: string; tone: string }> = [];
+    if (scenario.inputs.priceIncreasePercent > 0) {
+      pills.push({ label: `Price +${scenario.inputs.priceIncreasePercent.toFixed(1)}%`, tone: 'navy' });
+    }
+    if (scenario.inputs.volumeChangePercent !== 0) {
+      pills.push({ label: `Vol Risk ${scenario.inputs.volumeChangePercent.toFixed(1)}%`, tone: 'amber' });
+    }
+    if (scenario.inputs.tradeSpendChange !== 0) {
+      pills.push({ label: `Trade ${scenarioDeltaLabel(scenario.inputs.tradeSpendChange)}`, tone: 'blue' });
+    }
+    return pills;
+  }
+
+  const scenarioTableRows = scenarioOptions.filter((scenario) => {
+    // 1. Origin filter
+    if (scenarioTypeFilter === 'atlas' && scenario.origin !== 'atlas') return false;
+    if (scenarioTypeFilter === 'manual' && (scenario.origin !== 'manual' && scenario.id !== 'custom' && scenario.scenarioStyle !== 'Custom')) return false;
+
+    // 2. Scope filters
     const scope = scenarioTableScope(scenario);
     const matchesBuyingGroup = !scenarioTableBuyingGroupFilter || scope.buyingGroupId === scenarioTableBuyingGroupFilter;
     const matchesMarket = !scenarioTableMarketFilter
       || scope.marketId === scenarioTableMarketFilter
       || ('marketIds' in scope && Array.isArray(scope.marketIds) && scope.marketIds.includes(scenarioTableMarketFilter));
-    return matchesBuyingGroup && matchesMarket;
-  }).slice(0, 20).sort((a, b) => {
+    if (!matchesBuyingGroup || !matchesMarket) return false;
+
+    // 3. Status filter
+    if (scenarioStatusFilter === 'recommended') {
+      if (scenario.scenarioStyle !== 'Recommended' && scenario.id !== 'recommended') return false;
+    } else if (scenarioStatusFilter === 'needs_validation') {
+      if (scenario.evidenceStrength >= 80) return false;
+    } else if (scenarioStatusFilter === 'guardrail_watch') {
+      if (scenario.guardrailRisk !== 'Guardrail breach' && scenario.guardrailRisk !== 'Watch') return false;
+    } else if (scenarioStatusFilter === 'approved') {
+      if (scenario.evidenceStrength < 85) return false;
+    }
+
+    return true;
+  }).sort((a, b) => {
     const { direction, key } = parseSortParam(scenarioTableActiveSort, 'impact');
     const impactOrder: Record<string, number> = { high: 3, medium: 2, low: 1 };
     const impactDelta = impactOrder[scenarioTableImpact(a).tone] - impactOrder[scenarioTableImpact(b).tone];
     const createdDelta = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+
+    if (key === 'status') {
+      const badgeA = getScenarioBadge(a).label;
+      const badgeB = getScenarioBadge(b).label;
+      const statusDelta = badgeA.localeCompare(badgeB);
+      if (statusDelta !== 0) return direction === 'asc' ? statusDelta : -statusDelta;
+    }
+
+    if (key === 'acceptance') {
+      const acceptanceA = a.inputs.buyerAcceptanceProbability ?? 0;
+      const acceptanceB = b.inputs.buyerAcceptanceProbability ?? 0;
+      const acceptanceDelta = acceptanceA - acceptanceB;
+      if (acceptanceDelta !== 0) return direction === 'asc' ? acceptanceDelta : -acceptanceDelta;
+    }
+
     if (key === 'impact' && impactDelta !== 0) return direction === 'asc' ? impactDelta : -impactDelta;
     if (key === 'created' && createdDelta !== 0) return direction === 'asc' ? createdDelta : -createdDelta;
     if (impactDelta !== 0) return -impactDelta;
@@ -13172,30 +13271,167 @@ function ScenarioModelsView({
 
 	  return (
 	    <section className={`atlas-scenario-modeler${scenarioLabMode === 'create' ? ' atlas-scenario-modeler-create' : ''}`} aria-label="Scenario Lab intelligent modeler">
-	      <header className="atlas-scenario-modeler-head">
-	        <h1>{scenarioLabMode === 'create' ? 'Create scenario from buyer context' : scenarioLiveHeaderTitle}</h1>
-	        <p>{scenarioLabMode === 'create' ? 'Start with the buying group and impacted markets. ATLAS will populate the levers, model the posture, and keep the scenario ready to save.' : scenarioLiveHeaderCopy}</p>
-	      </header>
+		      {scenarioLabMode === 'review' ? (
+            <section className="atlas-scenario-overview" aria-label="Modeled scenario impact overview">
+              {/* TOP PRIORITY SPOTLIGHT SHELF */}
+              {spotlightScenarios.length > 0 && (
+                <section className="atlas-scenario-spotlight-shelf" aria-label="Top priority & recommended scenarios">
+                  <div className="atlas-scenario-spotlight-head">
+                    <div>
+                      <span className="atlas-scenario-spotlight-kicker">
+                        <HeroSparklesIcon className="atlas-kicker-icon" aria-hidden="true" /> Priority Decision Shelf
+                      </span>
+                      <h2>Recommended Scenarios</h2>
+                    </div>
+                    <small>Prioritized based on financial exposure, buyer posture & guardrail margins</small>
+                  </div>
 
-		      {scenarioLabMode === 'review' ? <section className="atlas-scenario-overview" aria-label="Modeled scenario impact overview">
-		        <div className="atlas-scenario-table-stack">
-		            <section className="atlas-scenario-table-section atlas-scenario-table-section-flat">
-                    <div className="atlas-scenario-table-toolbar">
-                      <div className="atlas-scenario-table-filters" aria-label="Scenario table filters">
-                        <ScenarioFilterDropdown
-                          id="scenario-type"
-                          label="Scenario type"
-                          onChange={(value) => {
-                            setScenarioTypeFilter(value);
-                            setScenarioTablePage(1);
-                          }}
-                          options={[
-                            { value: 'all', label: 'All scenarios' },
-                            { value: 'atlas', label: 'ATLAS generated' },
-                            { value: 'custom', label: 'Custom' }
-                          ]}
-                          value={scenarioTypeFilter}
-                        />
+                  <div className="atlas-scenario-spotlight-grid">
+                    {spotlightScenarios.map((scenario) => {
+                      const badge = getScenarioBadge(scenario);
+                      const scope = scenarioTableScope(scenario);
+                      const leverPills = getScenarioLeverPills(scenario);
+
+                      return (
+                        <article key={scenario.id} className={`atlas-scenario-spotlight-card tone-${badge.tone}`}>
+                          <header className="spotlight-card-head">
+                            <span className={`spotlight-badge badge-${badge.tone}`}>
+                              {renderBadgeIcon(badge.tone)} {badge.label}
+                            </span>
+                            <span className="spotlight-scope">{scope.buyingGroup}</span>
+                          </header>
+                          <h3 className="spotlight-title">
+                            <a href={scenarioDetailHref(scenario.id)}>{scenarioTableTitle(scenario)}</a>
+                          </h3>
+                          <p className="spotlight-description">{scenario.description}</p>
+                          
+                          <div className="spotlight-kpis">
+                            <div className="spotlight-kpi-item">
+                              <span>Risk Value</span>
+                              <strong>{euros(Math.round(scenario.outputs.riskAdjustedValue))}</strong>
+                            </div>
+                            <div className="spotlight-kpi-item">
+                              <span>Net Revenue</span>
+                              <strong className={scenario.outputs.revenueImpact >= 0 ? 'pos' : 'neg'}>
+                                {scenarioDeltaLabel(scenario.outputs.revenueImpact)}
+                              </strong>
+                            </div>
+                            <div className="spotlight-kpi-item">
+                              <span>Margin Impact</span>
+                              <strong className={scenario.outputs.marginImpact >= 0 ? 'pos' : 'neg'}>
+                                {scenarioDeltaLabel(scenario.outputs.marginImpact)}
+                              </strong>
+                            </div>
+                          </div>
+
+                          <div className="spotlight-levers-strip">
+                            {leverPills.map((pill, idx) => (
+                              <span key={idx} className={`lever-pill pill-${pill.tone} pill-inverse`}>{pill.label}</span>
+                            ))}
+                          </div>
+
+                          <footer className="spotlight-card-foot">
+                            <div className="spotlight-acceptance">
+                              <span className="acceptance-label">Acceptance Probability: <strong>{scenario.inputs.buyerAcceptanceProbability}%</strong></span>
+                              <div className="acceptance-bar"><div className="acceptance-fill" style={{ width: `${scenario.inputs.buyerAcceptanceProbability}%` }} /></div>
+                            </div>
+                            <a className="spotlight-action-btn" href={scenarioDetailHref(scenario.id)}>
+                              Open Move <HeroArrowRightIcon className="atlas-btn-arrow" aria-hidden="true" />
+                            </a>
+                          </footer>
+                        </article>
+                      );
+                    })}
+                  </div>
+                </section>
+              )}
+
+              {/* MAIN SCENARIO CATALOG & WORKSPACE */}
+              <div className="atlas-scenario-table-stack">
+                <section className="atlas-scenario-table-section">
+                  {/* ORIGIN SEGMENTED TABS & MAIN ACTION */}
+                  <div className="atlas-scenario-origin-bar">
+                    <div className="atlas-scenario-segmented-control" role="tablist" aria-label="Scenario origin tabs">
+                      <button
+                        type="button"
+                        role="tab"
+                        aria-selected={scenarioTypeFilter === 'all'}
+                        className={scenarioTypeFilter === 'all' ? 'active' : ''}
+                        onClick={() => { setScenarioTypeFilter('all'); setScenarioTablePage(1); }}
+                      >
+                        <HeroCubeIcon className="atlas-tab-icon" aria-hidden="true" />
+                        All Scenarios <span className="tab-count">({totalOriginCount})</span>
+                      </button>
+                      <button
+                        type="button"
+                        role="tab"
+                        aria-selected={scenarioTypeFilter === 'atlas'}
+                        className={scenarioTypeFilter === 'atlas' ? 'active' : ''}
+                        onClick={() => { setScenarioTypeFilter('atlas'); setScenarioTablePage(1); }}
+                      >
+                        <HeroSparklesIcon className="atlas-tab-icon" aria-hidden="true" />
+                        ATLAS Generated <span className="tab-count">({atlasOriginCount})</span>
+                      </button>
+                      <button
+                        type="button"
+                        role="tab"
+                        aria-selected={scenarioTypeFilter === 'manual'}
+                        className={scenarioTypeFilter === 'manual' ? 'active' : ''}
+                        onClick={() => { setScenarioTypeFilter('manual'); setScenarioTablePage(1); }}
+                      >
+                        <HeroUserIcon className="atlas-tab-icon" aria-hidden="true" />
+                        Custom / User Authored <span className="tab-count">({customOriginCount})</span>
+                      </button>
+                    </div>
+                    <a className="atlas-scenario-create-action" href={scenarioCreateHref()}>
+                      <HeroPlusIcon className="atlas-btn-icon" aria-hidden="true" />
+                      <span>Create scenario</span>
+                      <HeroArrowRightIcon className="atlas-btn-arrow" aria-hidden="true" />
+                    </a>
+                  </div>
+
+                  {/* TOOLBAR: STATUS CHIPS, BUYING GROUP / MARKET SELECTS & VIEW TOGGLE */}
+                  <div className="atlas-scenario-table-toolbar">
+                    <div className="atlas-scenario-status-chips" role="group" aria-label="Scenario status priority chips">
+                      <button
+                        type="button"
+                        className={scenarioStatusFilter === 'all' ? 'active' : ''}
+                        onClick={() => { setScenarioStatusFilter('all'); setScenarioTablePage(1); }}
+                      >
+                        <HeroCubeIcon className="atlas-chip-icon" aria-hidden="true" /> All Statuses
+                      </button>
+                      <button
+                        type="button"
+                        className={scenarioStatusFilter === 'recommended' ? 'active recommended' : 'recommended'}
+                        onClick={() => { setScenarioStatusFilter('recommended'); setScenarioTablePage(1); }}
+                      >
+                        <HeroSparklesIcon className="atlas-chip-icon" aria-hidden="true" /> Recommended
+                      </button>
+                      <button
+                        type="button"
+                        className={scenarioStatusFilter === 'guardrail_watch' ? 'active danger' : 'danger'}
+                        onClick={() => { setScenarioStatusFilter('guardrail_watch'); setScenarioTablePage(1); }}
+                      >
+                        <HeroExclamationTriangleIcon className="atlas-chip-icon" aria-hidden="true" /> Guardrail Watch
+                      </button>
+                      <button
+                        type="button"
+                        className={scenarioStatusFilter === 'needs_validation' ? 'active warning' : 'warning'}
+                        onClick={() => { setScenarioStatusFilter('needs_validation'); setScenarioTablePage(1); }}
+                      >
+                        <HeroBoltIcon className="atlas-chip-icon" aria-hidden="true" /> Needs Validation
+                      </button>
+                      <button
+                        type="button"
+                        className={scenarioStatusFilter === 'approved' ? 'active success' : 'success'}
+                        onClick={() => { setScenarioStatusFilter('approved'); setScenarioTablePage(1); }}
+                      >
+                        <HeroCheckCircleIcon className="atlas-chip-icon" aria-hidden="true" /> Approved
+                      </button>
+                    </div>
+
+                    <div className="atlas-scenario-right-controls">
+                      <div className="atlas-scenario-table-filters" aria-label="Scenario table scope filters">
                         <ScenarioFilterDropdown
                           id="buying-group"
                           label="Buying group"
@@ -13223,110 +13459,231 @@ function ScenarioModelsView({
                           value={scenarioTableMarketFilter}
                         />
                       </div>
-                      <a className="atlas-scenario-create-action" href={scenarioCreateHref()}>Create scenario</a>
-                    </div>
-		                <div className="atlas-scenario-table-wrap">
-		                  <table className="atlas-scenario-review-table">
-		                    <colgroup>
-		                      <col className="scenario-col" />
-		                      <col className="status-col" />
-		                      <col className="type-col" />
-		                      <col className="created-col" />
-		                      <col className="buyer-col" />
-		                      <col className="market-col" />
-		                    </colgroup>
-		                    <thead>
-		                      <tr>
-		                        <th>Scenario</th>
-		                        <th><ScenarioTableSortableHeader label="Impact" sort="impact" /></th>
-		                        <th>Scenario type</th>
-		                        <th><ScenarioTableSortableHeader label="Created" sort="created" /></th>
-		                        <th>Buying group</th>
-		                        <th>Market</th>
-		                      </tr>
-		                    </thead>
-		                    <tbody>
-		                      {scenarioTableVisibleRows.map((scenario) => {
-		                        const impact = scenarioTableImpact(scenario);
-		                        const scope = scenarioTableScope(scenario);
-                            const marketNames = 'marketNames' in scope && scope.marketNames
-                              ? scope.marketNames
-                              : scope.market.split(' / ').map((market) => market.trim()).filter(Boolean);
-                            const hasMultipleMarkets = marketNames.length > 1;
-		                        return (
-		                            <tr
-                                  className={`impact-${impact.tone}`}
-                                  key={scenario.id}
-                                  onClick={() => { window.location.href = scenarioDetailHref(scenario.id); }}
-                                  onKeyDown={(event) => {
-                                    if (event.key === 'Enter' || event.key === ' ') {
-                                      event.preventDefault();
-                                      window.location.href = scenarioDetailHref(scenario.id);
-                                    }
-                                  }}
-                                  role="link"
-                                  tabIndex={0}
-                                >
-		                              <td className="atlas-scenario-table-name">
-		                                <a href={scenarioDetailHref(scenario.id)}>
-		                                  <strong>{scenarioTableTitle(scenario)}</strong>
-		                                </a>
-		                              </td>
-                                  <td>
-                                    <span className={`atlas-scenario-impact-read impact-${impact.tone}`}>
-                                      <strong>{impact.label}</strong>
-                                      <small>{impact.detail}</small>
-                                    </span>
-                                  </td>
-                                  <td><span className="atlas-scenario-type-text">{scenario.origin === 'manual' ? 'Manual' : 'ATLAS generated'}</span></td>
-                                  <td>{scenarioTableCreatedLabel(scenario.createdAt)}</td>
-		                              <td>
-		                                <span className="atlas-scenario-scope-text">{scope.buyingGroup}</span>
-		                              </td>
-                                  <td>
-                                    {hasMultipleMarkets ? (
-                                      <span className="atlas-scenario-market-badge" aria-label={`Markets: ${marketNames.join(', ')}`}>
-                                        <span className="atlas-scenario-market-badge-label">{marketNames.length} markets</span>
-                                        <span className="atlas-scenario-market-tooltip" role="tooltip">{marketNames.join(', ')}</span>
-                                      </span>
-                                    ) : (
-                                      <span className="atlas-scenario-scope-text">{scope.market}</span>
-                                    )}
-                                  </td>
-		                            </tr>
-		                        );
-		                      })}
-		                    </tbody>
-		                  </table>
-		                </div>
-                    <nav className="atlas-scenario-table-pagination" aria-label="Scenario table pages">
-                      <span>
-                        Showing {scenarioTableStartIndex + 1}-{Math.min(scenarioTableStartIndex + scenarioTablePageSize, scenarioTableRows.length)} of {scenarioTableRows.length}
-                      </span>
-                      <div>
-                        {scenarioTableCurrentPage > 1 ? (
-                          <button onClick={() => setScenarioTablePage(scenarioTableCurrentPage - 1)} type="button">Previous</button>
-                        ) : (
-                          <span aria-disabled="true">Previous</span>
-                        )}
-                        {Array.from({ length: scenarioTableTotalPages }, (_, index) => index + 1).map((page) => (
-                          page === scenarioTableCurrentPage ? (
-                            <span aria-current="page" className="active" key={page}>{page}</span>
-                          ) : (
-                            <button onClick={() => setScenarioTablePage(page)} type="button" key={page}>{page}</button>
-                          )
-                        ))}
-                        {scenarioTableCurrentPage < scenarioTableTotalPages ? (
-                          <button onClick={() => setScenarioTablePage(scenarioTableCurrentPage + 1)} type="button">Next</button>
-                        ) : (
-                          <span aria-disabled="true">Next</span>
-                        )}
+
+                      <div className="atlas-scenario-view-switcher" role="group" aria-label="View toggle">
+                        <button
+                          type="button"
+                          aria-label="Grid view"
+                          aria-pressed={scenarioViewMode === 'grid'}
+                          className={scenarioViewMode === 'grid' ? 'active' : ''}
+                          onClick={() => setScenarioViewMode('grid')}
+                        >
+                          <HeroSquares2X2Icon className="atlas-switcher-icon" aria-hidden="true" /> Grid
+                        </button>
+                        <button
+                          type="button"
+                          aria-label="Matrix view"
+                          aria-pressed={scenarioViewMode === 'table'}
+                          className={scenarioViewMode === 'table' ? 'active' : ''}
+                          onClick={() => setScenarioViewMode('table')}
+                        >
+                          <HeroListBulletIcon className="atlas-switcher-icon" aria-hidden="true" /> Matrix
+                        </button>
                       </div>
-                    </nav>
-		            </section>
-		          {scenarioSaveStatus ? <span className="atlas-scenario-save-status">{scenarioSaveStatus}</span> : null}
-		        </div>
-		      </section> : null}
+                    </div>
+                  </div>
+
+                  {/* SCENARIO CATALOG CONTENT: GRID OR MATRIX TABLE */}
+                  {scenarioViewMode === 'grid' ? (
+                    <div className="atlas-scenario-card-grid" aria-label="Scenario card catalog">
+                      {scenarioTableVisibleRows.length === 0 ? (
+                        <div className="atlas-scenario-empty-state">
+                          <p>No scenarios found matching the selected filters.</p>
+                          <button type="button" onClick={() => { setScenarioTypeFilter('all'); setScenarioStatusFilter('all'); setScenarioTableBuyingGroupFilter(''); setScenarioTableMarketFilter(''); }}>Clear all filters</button>
+                        </div>
+                      ) : (
+                        scenarioTableVisibleRows.map((scenario) => {
+                          const badge = getScenarioBadge(scenario);
+                          const scope = scenarioTableScope(scenario);
+                          const leverPills = getScenarioLeverPills(scenario);
+
+                          return (
+                            <article key={scenario.id} className={`atlas-scenario-rich-card tone-${badge.tone}`}>
+                              <header className="rich-card-head">
+                                <div className="rich-card-badges">
+                                  <span className={`rich-card-badge badge-${badge.tone}`}>
+                                    {renderBadgeIcon(badge.tone)} {badge.label}
+                                  </span>
+                                  <span className={`origin-badge origin-${scenario.origin}`}>
+                                    {scenario.origin === 'manual' || scenario.id === 'custom' ? (
+                                      <><HeroUserIcon className="atlas-origin-heroicon" aria-hidden="true" /> Custom</>
+                                    ) : (
+                                      <><HeroSparklesIcon className="atlas-origin-heroicon" aria-hidden="true" /> ATLAS</>
+                                    )}
+                                  </span>
+                                </div>
+                                <span className="rich-card-date">{scenarioTableCreatedLabel(scenario.createdAt)}</span>
+                              </header>
+
+                              <h3 className="rich-card-title">
+                                <a href={scenarioDetailHref(scenario.id)}>{scenarioTableTitle(scenario)}</a>
+                              </h3>
+                              <p className="rich-card-desc">{scenario.description}</p>
+
+                              <div className="rich-card-kpi-grid">
+                                <div className="rich-kpi">
+                                  <span>Net Revenue</span>
+                                  <strong className={scenario.outputs.revenueImpact >= 0 ? 'pos' : 'neg'}>
+                                    {scenarioDeltaLabel(scenario.outputs.revenueImpact)}
+                                  </strong>
+                                </div>
+                                <div className="rich-kpi">
+                                  <span>Margin Impact</span>
+                                  <strong className={scenario.outputs.marginImpact >= 0 ? 'pos' : 'neg'}>
+                                    {scenarioDeltaLabel(scenario.outputs.marginImpact)}
+                                  </strong>
+                                </div>
+                                <div className="rich-kpi">
+                                  <span>Risk Value</span>
+                                  <strong>{euros(Math.round(scenario.outputs.riskAdjustedValue))}</strong>
+                                </div>
+                              </div>
+
+                              <div className="rich-card-levers-strip">
+                                {leverPills.map((pill, idx) => (
+                                  <span key={idx} className={`lever-pill pill-${pill.tone}`}>{pill.label}</span>
+                                ))}
+                              </div>
+
+                              <div className="rich-card-acceptance">
+                                <div className="acceptance-header">
+                                  <span>Buyer Acceptance</span>
+                                  <strong>{scenario.inputs.buyerAcceptanceProbability}%</strong>
+                                </div>
+                                <div className="acceptance-track">
+                                  <div className="acceptance-bar-fill" style={{ width: `${scenario.inputs.buyerAcceptanceProbability}%` }} />
+                                </div>
+                              </div>
+
+                              <footer className="rich-card-footer">
+                                <span className="rich-card-scope-badge">{scope.buyingGroup} · {scope.market}</span>
+                                <a className="rich-card-link" href={scenarioDetailHref(scenario.id)}>
+                                  View details <HeroArrowRightIcon className="atlas-btn-arrow" aria-hidden="true" />
+                                </a>
+                              </footer>
+                            </article>
+                          );
+                        })
+                      )}
+                    </div>
+                  ) : (
+                    <div className="atlas-scenario-table-wrap">
+                      <table className="atlas-scenario-review-table atlas-scenario-matrix-table">
+                        <colgroup>
+                          <col className="scenario-col" />
+                          <col className="status-col" />
+                          <col className="levers-col" />
+                          <col className="impact-col" />
+                          <col className="acceptance-col" />
+                          <col className="scope-col" />
+                        </colgroup>
+                        <thead>
+                          <tr>
+                            <th>Scenario & Origin</th>
+                            <th><ScenarioTableSortableHeader label="Status" sort="status" /></th>
+                            <th>Levers Snapshot</th>
+                            <th><ScenarioTableSortableHeader label="Impact" sort="impact" /></th>
+                            <th><ScenarioTableSortableHeader label="Acceptance" sort="acceptance" /></th>
+                            <th>Scope</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {scenarioTableVisibleRows.map((scenario) => {
+                            const badge = getScenarioBadge(scenario);
+                            const impact = scenarioTableImpact(scenario);
+                            const scope = scenarioTableScope(scenario);
+                            const leverPills = getScenarioLeverPills(scenario);
+
+                            return (
+                              <tr
+                                className={`impact-${impact.tone}`}
+                                key={scenario.id}
+                                onClick={() => { window.location.href = scenarioDetailHref(scenario.id); }}
+                                onKeyDown={(event) => {
+                                  if (event.key === 'Enter' || event.key === ' ') {
+                                    event.preventDefault();
+                                    window.location.href = scenarioDetailHref(scenario.id);
+                                  }
+                                }}
+                                role="link"
+                                tabIndex={0}
+                              >
+                                <td className="atlas-scenario-table-name">
+                                  <div className="matrix-title-cell">
+                                    <a href={scenarioDetailHref(scenario.id)}>
+                                      <strong>{scenarioTableTitle(scenario)}</strong>
+                                    </a>
+                                    <span className={`origin-pill origin-${scenario.origin}`}>
+                                      {scenario.origin === 'manual' || scenario.id === 'custom' ? (
+                                        <><HeroUserIcon className="atlas-origin-heroicon" aria-hidden="true" /> Custom</>
+                                      ) : (
+                                        <><HeroSparklesIcon className="atlas-origin-heroicon" aria-hidden="true" /> ATLAS</>
+                                      )}
+                                    </span>
+                                  </div>
+                                </td>
+                                <td>
+                                  <span className={`rich-card-badge badge-${badge.tone}`}>
+                                    {renderBadgeIcon(badge.tone)} {badge.label}
+                                  </span>
+                                </td>
+                                <td>
+                                  <div className="matrix-levers-cell">
+                                    {leverPills.map((pill, idx) => (
+                                      <span key={idx} className={`lever-pill pill-${pill.tone}`}>{pill.label}</span>
+                                    ))}
+                                  </div>
+                                </td>
+                                <td>
+                                  <span className={`atlas-scenario-impact-read impact-${impact.tone}`}>
+                                    <strong>{impact.label} ({euros(Math.round(scenario.outputs.riskAdjustedValue))})</strong>
+                                    <small>{impact.detail}</small>
+                                  </span>
+                                </td>
+                                <td>
+                                  <span className="matrix-acceptance-text">{scenario.inputs.buyerAcceptanceProbability}%</span>
+                                </td>
+                                <td>
+                                  <span className="atlas-scenario-scope-text">{scope.buyingGroup} · {scope.market}</span>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+
+                  {/* PAGINATION */}
+                  <nav className="atlas-scenario-table-pagination" aria-label="Scenario catalog pages">
+                    <span>
+                      Showing {scenarioTableStartIndex + 1}-{Math.min(scenarioTableStartIndex + scenarioTablePageSize, scenarioTableRows.length)} of {scenarioTableRows.length}
+                    </span>
+                    <div>
+                      {scenarioTableCurrentPage > 1 ? (
+                        <button onClick={() => setScenarioTablePage(scenarioTableCurrentPage - 1)} type="button">Previous</button>
+                      ) : (
+                        <span aria-disabled="true">Previous</span>
+                      )}
+                      {Array.from({ length: scenarioTableTotalPages }, (_, index) => index + 1).map((page) => (
+                        page === scenarioTableCurrentPage ? (
+                          <span aria-current="page" className="active" key={page}>{page}</span>
+                        ) : (
+                          <button onClick={() => setScenarioTablePage(page)} type="button" key={page}>{page}</button>
+                        )
+                      ))}
+                      {scenarioTableCurrentPage < scenarioTableTotalPages ? (
+                        <button onClick={() => setScenarioTablePage(scenarioTableCurrentPage + 1)} type="button">Next</button>
+                      ) : (
+                        <span aria-disabled="true">Next</span>
+                      )}
+                    </div>
+                  </nav>
+                </section>
+                {scenarioSaveStatus ? <span className="atlas-scenario-save-status">{scenarioSaveStatus}</span> : null}
+              </div>
+            </section>
+          ) : null}
 
       {scenarioLabMode === 'create' ? (
         <section className="atlas-scenario-create-workspace" aria-label="Create scenario workspace">
