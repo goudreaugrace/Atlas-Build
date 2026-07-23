@@ -10908,8 +10908,8 @@ function BuyingGroupTriageTable({ activeSort = 'priority', groups }: { activeSor
           <tr>
             <th>Buying group</th>
             <th className="atlas-buyer-triage-center-col"><BuyingGroupSortableHeader activeSort={activeSort} label="Risk" sort="priority" /></th>
-            <th><BuyingGroupSortableHeader activeSort={activeSort} label="Margin at risk" sort="margin" /></th>
-            <th><BuyingGroupSortableHeader activeSort={activeSort} label="Target gap" sort="gap" /></th>
+            <th className="atlas-buyer-triage-center-col"><BuyingGroupSortableHeader activeSort={activeSort} label="Margin at risk" sort="margin" /></th>
+            <th className="atlas-buyer-triage-center-col"><BuyingGroupSortableHeader activeSort={activeSort} label="Target gap" sort="gap" /></th>
             <th>Recommended scenarios</th>
           </tr>
         </thead>
@@ -10943,8 +10943,8 @@ function BuyingGroupTriageTable({ activeSort = 'priority', groups }: { activeSor
                     <span className="atlas-risk-tooltip" role="tooltip">{buyerRiskReason(group)}</span>
                   </span>
                 </td>
-                <td className={`metric-${buyerMetricTone('margin', group)}`}>{euros(exposure.marginAtRisk)}</td>
-                <td className={`metric-${buyerMetricTone('gap', group)}`}>{pct(realizationGap)}</td>
+                <td className={`atlas-buyer-triage-center-col metric-${buyerMetricTone('margin', group)}`}>{euros(exposure.marginAtRisk)}</td>
+                <td className={`atlas-buyer-triage-center-col metric-${buyerMetricTone('gap', group)}`}>{pct(realizationGap)}</td>
                 <td>
                   <span className="atlas-buyer-scenario-route">
                     {buyerScenarioToTest(group)}
