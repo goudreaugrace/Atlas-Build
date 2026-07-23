@@ -74994,15 +74994,18 @@ display: grid !important;
   max-width: 820px !important;
 }
 
+/* Legacy header eyebrow rule disabled to prevent overriding button text */
+/*
 html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-timeline-view-v2 .atlas-bg-timeline-header span,
 html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-timeline-view-v2 .atlas-bg-timeline-ledger > header span,
 html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-timeline-view-v2 .atlas-bg-timeline-learning > header span {
-color: #0b57d0 !important;
+  color: #0b57d0 !important;
   font-size: 12px !important;
   font-weight: 800 !important;
   letter-spacing: .035em !important;
   text-transform: uppercase !important;
 }
+*/
 
 html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-timeline-view-v2 .atlas-bg-timeline-header h2 {
 color: #30343b !important;
@@ -75020,8 +75023,10 @@ color: #6f747c !important;
   margin: 0 !important;
 }
 
+/* Legacy header link rule disabled to allow primary blue pill button */
+/*
 html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-timeline-view-v2 .atlas-bg-timeline-header a {
-align-items: center !important;
+  align-items: center !important;
   border: 1px solid #1a73e8 !important;
   border-radius: 999px !important;
   color: #0b57d0 !important;
@@ -75034,6 +75039,7 @@ align-items: center !important;
   text-decoration: none !important;
   white-space: nowrap !important;
 }
+*/
 
 html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-timeline-summary-grid {
 display: grid !important;
@@ -76372,7 +76378,6 @@ html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-current-view-v2 .atlas-
 html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-current-view-v2 .atlas-bg-current-numbers > header span,
 html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-current-view-v2 .atlas-bg-prep-section > header span,
 html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-current-view-v2 .atlas-bg-scenario-section > header span,
-html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-timeline-view-v2 .atlas-bg-timeline-header span,
 html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-timeline-current-read span,
 html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-timeline-view-v2 .atlas-bg-timeline-ledger > header span {
   color: var(--atlas-buyer-primary) !important;
@@ -77005,6 +77010,8 @@ html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-intelligence-card-facts
   margin: 0 !important;
 }
 
+/* Legacy broad link styles disabled to allow clean SSOT component styling */
+/*
 html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-source-button,
 html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-current-view-v2 a,
 html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-timeline-header a {
@@ -77032,6 +77039,7 @@ html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-timeline-header a:focus
   background: var(--atlas-buyer-primary-dark) !important;
   border-color: var(--atlas-buyer-primary-dark) !important;
 }
+*/
 
 html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-ai-flags {
   display: grid !important;
@@ -80894,7 +80902,6 @@ html body main.atlas-hub-shell .atlas-hub-main section.atlas-bg-timeline-view-v2
   max-width: 860px !important;
 }
 
-html body main.atlas-hub-shell .atlas-hub-main section.atlas-bg-timeline-view-v2 .atlas-bg-timeline-header span,
 html body main.atlas-hub-shell .atlas-hub-main section.atlas-bg-timeline-view-v2 .atlas-bg-timeline-ledger > header span,
 html body main.atlas-hub-shell .atlas-hub-main section.atlas-bg-timeline-view-v2 .atlas-bg-timeline-row-kicker span {
   color: #707172 !important;
@@ -80924,22 +80931,8 @@ html body main.atlas-hub-shell .atlas-hub-main section.atlas-bg-timeline-view-v2
   margin: 0 !important;
 }
 
-html body main.atlas-hub-shell .atlas-hub-main section.atlas-bg-timeline-view-v2 .atlas-bg-timeline-header a {
-  align-items: center !important;
-  background: transparent !important;
-  border: 1px solid #0f73d8 !important;
-  border-radius: 999px !important;
-  color: #0f73d8 !important;
-  display: inline-flex !important;
-  font-family: var(--font-body) !important;
-  font-size: 12px !important;
-  font-weight: 400 !important;
-  justify-content: center !important;
-  min-height: 36px !important;
-  padding: 0 14px !important;
-  text-decoration: none !important;
-  white-space: nowrap !important;
-}
+/* Legacy header link override replaced by Figma SSOT primary button component */
+/* html body main.atlas-hub-shell .atlas-hub-main section.atlas-bg-timeline-view-v2 .atlas-bg-timeline-header a { ... } */
 
 html body main.atlas-hub-shell .atlas-hub-main section.atlas-bg-timeline-view-v2 .atlas-bg-timeline-ledger {
   background: #ffffff !important;
@@ -82560,4 +82553,881 @@ html body main.atlas-hub-shell .atlas-hub-main,
 main.atlas-hub-shell .atlas-hub-main,
 .atlas-hub-main {
   padding-bottom: 0 !important;
+}
+
+/* ==========================================================================
+   ATLAS Timeline Refinement (Figma SSOT Aligned + DESIGN.md Color Tokens)
+   ========================================================================== */
+
+html body main.atlas-hub-shell .atlas-hub-main section.atlas-bg-current-view-v2 section.atlas-bg-timeline-view-v2,
+html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-timeline-view-v2,
+.atlas-bg-timeline-view-v2 {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 28px !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  background: #ffffff !important;
+  border: 1px solid var(--colors-neutral-border, #ebebeb) !important;
+  border-radius: 20px !important;
+  padding: 32px 36px !important;
+  box-shadow: 0 4px 20px -4px rgba(49, 55, 61, 0.04), 0 1px 3px rgba(0, 0, 0, 0.02) !important;
+}
+
+.atlas-bg-timeline-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 24px !important;
+  padding-bottom: 20px !important;
+  border-bottom: 1px solid var(--colors-neutral-border, #ebebeb) !important;
+  margin-bottom: 8px !important;
+}
+
+.atlas-bg-timeline-header h3,
+.atlas-bg-timeline-header h2,
+html body main.atlas-hub-shell .atlas-hub-main section.atlas-bg-current-view-v2 section.atlas-bg-timeline-view-v2 .atlas-bg-timeline-header h3,
+html body main.atlas-hub-shell .atlas-hub-main section.atlas-bg-current-view-v2 section.atlas-bg-timeline-view-v2 .atlas-bg-timeline-header h2 {
+  font-family: var(--font-display, "Libre Franklin"), sans-serif !important;
+  font-size: 24px !important;
+  font-weight: 600 !important;
+  line-height: 32px !important;
+  letter-spacing: -0.6px !important;
+  color: var(--colors-neutral-text, #31373d) !important;
+  margin: 0 !important;
+}
+
+.atlas-bg-timeline-header-desc {
+  font-family: var(--font-body, "Inter"), sans-serif !important;
+  font-size: 14px !important;
+  font-weight: 400 !important;
+  line-height: 22px !important;
+  letter-spacing: -0.056px !important;
+  color: var(--colors-neutral-muted, #707172) !important;
+  margin: 0 !important;
+}
+
+.atlas-bg-timeline-header-actions {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  flex-shrink: 0 !important;
+  padding-top: 4px !important;
+}
+
+.atlas-bg-timeline-total-badge {
+  background: var(--colors-neutral-bg, #f5f5f5) !important;
+  color: var(--colors-neutral-muted, #707172) !important;
+  font-family: var(--font-body, "Inter"), sans-serif !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  padding: 6px 14px !important;
+  border-radius: 9999px !important;
+  border: 1px solid var(--colors-neutral-border, #ebebeb) !important;
+}
+
+
+
+/* Timeline Ledger & Year Blocks */
+.atlas-bg-timeline-ledger {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 32px !important;
+  width: 100% !important;
+}
+
+.atlas-bg-timeline-year-block {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 18px !important;
+  width: 100% !important;
+}
+
+/* Date Pill / Section Header */
+.atlas-bg-timeline-date-pill {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  background: var(--colors-neutral-text, #31373d) !important;
+  color: #ffffff !important;
+  padding: 7px 16px !important;
+  border-radius: 20px !important;
+  font-family: var(--font-body, "Inter"), sans-serif !important;
+  font-size: 12.5px !important;
+  font-weight: 600 !important;
+  box-shadow: 0 2px 8px rgba(49, 55, 61, 0.12) !important;
+  align-self: flex-start !important;
+  position: relative !important;
+  z-index: 3 !important;
+}
+
+.atlas-bg-timeline-date-pill small {
+  color: var(--colors-neutral-muted, #707172) !important;
+  font-size: 12px !important;
+  font-weight: 400 !important;
+}
+
+.atlas-bg-timeline-count-badge {
+  background: rgba(255, 255, 255, 0.18) !important;
+  color: #f8fafc !important;
+  padding: 2px 8px !important;
+  border-radius: 9999px !important;
+  font-size: 11px !important;
+  font-style: normal !important;
+  font-weight: 600 !important;
+}
+
+/* Timeline Track */
+.atlas-bg-timeline-track {
+  position: relative !important;
+  padding-left: 110px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 20px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.atlas-bg-timeline-track::before {
+  content: "" !important;
+  position: absolute !important;
+  top: 10px !important;
+  bottom: 20px !important;
+  left: 90px !important;
+  width: 2px !important;
+  background: repeating-linear-gradient(to bottom, var(--colors-neutral-border, #ebebeb) 0px, var(--colors-neutral-border, #ebebeb) 5px, transparent 5px, transparent 9px) !important;
+  z-index: 0 !important;
+}
+
+/* Timestamp column on left */
+.atlas-bg-timeline-time {
+  position: absolute !important;
+  left: -110px !important;
+  top: 14px !important;
+  width: 75px !important;
+  text-align: right !important;
+  font-family: var(--font-body, "Inter"), sans-serif !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  color: var(--colors-neutral-muted, #707172) !important;
+  letter-spacing: -0.12px !important;
+  text-transform: uppercase !important;
+}
+
+/* Node Marker on vertical axis - DESIGN.md Color Token Mapped */
+.atlas-bg-timeline-node {
+  position: absolute !important;
+  left: -29px !important;
+  top: 12px !important;
+  width: 28px !important;
+  height: 28px !important;
+  border-radius: 50% !important;
+  background: #ffffff !important;
+  border: 2px solid var(--colors-neutral-border, #ebebeb) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  z-index: 10 !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05) !important;
+  transition: all 0.2s ease !important;
+}
+
+.atlas-bg-timeline-row:hover .atlas-bg-timeline-node {
+  transform: scale(1.15) !important;
+  box-shadow: 0 0 0 4px rgba(35, 127, 225, 0.12) !important;
+}
+
+/* Primary Blue for Buyer */
+.atlas-bg-timeline-node--buyer { border-color: var(--colors-primary, #237fe1) !important; color: var(--colors-primary-dark, #0563c7) !important; background: #e5f0fc !important; z-index: 10 !important; position: absolute !important; }
+/* Complementary Green for Finance */
+.atlas-bg-timeline-node--finance { border-color: var(--colors-complementary, #3c8500) !important; color: var(--colors-complementary-dark, #2c6100) !important; background: #f2f8ec !important; z-index: 10 !important; position: absolute !important; }
+/* Secondary Amber for Market */
+.atlas-bg-timeline-node--market { border-color: var(--colors-secondary, #eb9f0a) !important; color: var(--colors-secondary-dark, #bd7d00) !important; background: #fff8eb !important; z-index: 10 !important; position: absolute !important; }
+/* Neutral Text/Muted for Document */
+.atlas-bg-timeline-node--document { border-color: var(--colors-neutral-muted, #707172) !important; color: var(--colors-neutral-text, #31373d) !important; background: var(--colors-neutral-bg, #f5f5f5) !important; z-index: 10 !important; position: absolute !important; }
+
+/* Timeline Event Card */
+.atlas-bg-timeline-card {
+  flex: 1 !important;
+  max-width: 80% !important;
+  background: #ffffff !important;
+  border: 1px solid var(--colors-neutral-border, #ebebeb) !important;
+  border-radius: 20px !important;
+  padding: 20px !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 12px !important;
+  box-sizing: border-box !important;
+  margin-bottom: 24px !important;
+}
+
+.atlas-bg-timeline-card:hover {
+  transform: translateY(-2px) !important;
+  border-color: var(--colors-primary-light, #abd2fb) !important;
+  box-shadow: 0 10px 28px -6px rgba(49, 55, 61, 0.08) !important;
+}
+
+/* Card Header */
+.atlas-bg-timeline-card-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+}
+
+.atlas-bg-timeline-badge-group {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+
+.atlas-bg-timeline-type-badge {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  font-family: var(--font-body, "Inter"), sans-serif !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.12px !important;
+  text-transform: uppercase !important;
+  padding: 4px 12px !important;
+  border-radius: 9999px !important;
+}
+
+/* Category Badge DESIGN.md Color Token Mapping */
+.atlas-bg-timeline-type-badge--buyer { background: #e5f0fc !important; color: var(--colors-primary-dark, #0563c7) !important; }
+.atlas-bg-timeline-type-badge--finance { background: var(--colors-complementary-light, #cfe1a8) !important; color: var(--colors-complementary-dark, #2c6100) !important; }
+.atlas-bg-timeline-type-badge--market { background: var(--colors-secondary-light, #fff0d2) !important; color: var(--colors-secondary-dark, #bd7d00) !important; }
+.atlas-bg-timeline-type-badge--document { background: var(--colors-neutral-bg, #f5f5f5) !important; color: var(--colors-neutral-text, #31373d) !important; }
+
+/* Latest Badge */
+.atlas-bg-timeline-latest-tag {
+  background: var(--colors-primary, #237fe1) !important;
+  color: #ffffff !important;
+  font-family: var(--font-body, "Inter"), sans-serif !important;
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.05em !important;
+  text-transform: uppercase !important;
+  padding: 2px 8px !important;
+  border-radius: 4px !important;
+}
+
+/* Card Title & Content (Reduced heading size by ~15%: from 16px to 13.5px) */
+.atlas-bg-timeline-card h3 {
+  font-family: var(--font-display, "Libre Franklin"), sans-serif !important;
+  font-size: 13.5px !important;
+  font-weight: 600 !important;
+  line-height: 18px !important;
+  letter-spacing: -0.128px !important;
+  color: var(--colors-neutral-text, #31373d) !important;
+  margin: 0 !important;
+}
+
+.atlas-bg-timeline-card-detail {
+  font-family: var(--font-body, "Inter"), sans-serif !important;
+  font-size: 14px !important;
+  line-height: 22px !important;
+  letter-spacing: -0.056px !important;
+  color: var(--colors-neutral-text, #31373d) !important;
+  margin: 0 !important;
+}
+
+/* Callout Box inside Card - DESIGN.md Color Token Mapped */
+.atlas-bg-timeline-callout {
+  border-radius: 16px !important;
+  padding: 14px 18px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 6px !important;
+  transition: all 0.15s ease !important;
+  border-left: 4px solid transparent !important;
+}
+
+.atlas-bg-timeline-callout--buyer {
+  background: #f4f8fd !important;
+  border: 1px solid var(--colors-primary-light, #abd2fb) !important;
+  border-left: 4px solid var(--colors-primary, #237fe1) !important;
+}
+
+.atlas-bg-timeline-callout--finance {
+  background: #f6fafa !important;
+  border: 1px solid var(--colors-complementary-light, #cfe1a8) !important;
+  border-left: 4px solid var(--colors-complementary, #3c8500) !important;
+}
+
+.atlas-bg-timeline-callout--market {
+  background: #fffbf2 !important;
+  border: 1px solid var(--colors-secondary-light, #fff0d2) !important;
+  border-left: 4px solid var(--colors-secondary, #eb9f0a) !important;
+}
+
+.atlas-bg-timeline-callout--document {
+  background: #f9f9f9 !important;
+  border: 1px solid var(--colors-neutral-border, #ebebeb) !important;
+  border-left: 4px solid var(--colors-neutral-muted, #707172) !important;
+}
+
+.atlas-bg-timeline-callout-impact,
+.atlas-bg-timeline-callout-impact *,
+.atlas-bg-timeline-callout-impact span {
+  font-family: var(--font-body, "Inter"), sans-serif !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  color: var(--colors-neutral-text, #31373d) !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+}
+
+.atlas-bg-timeline-callout-effect {
+  font-family: var(--font-body, "Inter"), sans-serif !important;
+  font-size: 13px !important;
+  color: var(--colors-neutral-muted, #707172) !important;
+  line-height: 20px !important;
+  margin: 0 !important;
+}
+
+.atlas-bg-timeline-callout-effect strong {
+  color: var(--colors-neutral-text, #31373d) !important;
+}
+
+/* Card Footer */
+.atlas-bg-timeline-card-footer {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+  padding-top: 12px !important;
+  border-top: 1px solid var(--colors-neutral-border, #ebebeb) !important;
+  margin-top: 2px !important;
+}
+
+.atlas-bg-timeline-source-info {
+  font-family: var(--font-body, "Inter"), sans-serif !important;
+  font-size: 12px !important;
+  color: var(--colors-neutral-muted, #707172) !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+}
+
+.atlas-bg-timeline-action-link {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  font-family: var(--font-body, "Inter"), sans-serif !important;
+  font-size: 12.5px !important;
+  font-weight: 600 !important;
+  color: var(--colors-primary, #237fe1) !important;
+  text-decoration: none !important;
+  transition: all 0.15s ease !important;
+}
+
+.atlas-bg-timeline-action-link:hover {
+  color: var(--colors-primary-dark, #0563c7) !important;
+  text-decoration: underline !important;
+}
+
+/* Primary Action Button (1:1 Match to Figma SSOT Node 9-7366) */
+html body main.atlas-hub-shell .atlas-hub-main section.atlas-bg-current-view-v2 section.atlas-bg-timeline-view-v2 .atlas-bg-timeline-header a.atlas-bg-timeline-add-btn,
+html body main.atlas-hub-shell .atlas-hub-main section.atlas-bg-current-view-v2 a.atlas-bg-timeline-add-btn,
+html body main.atlas-hub-shell .atlas-hub-main .atlas-hub-main a.atlas-bg-timeline-add-btn,
+a.atlas-bg-timeline-add-btn,
+button.atlas-bg-timeline-add-btn,
+.atlas-bg-timeline-add-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 4px !important;
+  background: var(--colors-primary, #237fe1) !important;
+  color: #ffffff !important;
+  font-family: var(--font-display, "Libre Franklin"), var(--font-body, "Inter"), sans-serif !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  line-height: 22px !important;
+  letter-spacing: -0.12px !important;
+  padding: 8px 16px !important;
+  min-height: auto !important;
+  border-radius: 20px !important;
+  border: none !important;
+  text-transform: none !important;
+  text-decoration: none !important;
+  white-space: nowrap !important;
+  box-shadow: 0 1px 3px rgba(35, 127, 225, 0.25) !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main section.atlas-bg-current-view-v2 section.atlas-bg-timeline-view-v2 .atlas-bg-timeline-header a.atlas-bg-timeline-add-btn span,
+html body main.atlas-hub-shell .atlas-hub-main section.atlas-bg-current-view-v2 a.atlas-bg-timeline-add-btn span,
+html body main.atlas-hub-shell .atlas-hub-main .atlas-hub-main a.atlas-bg-timeline-add-btn span,
+.atlas-bg-timeline-add-btn span {
+  display: inline !important;
+  background: transparent !important;
+  color: #ffffff !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  text-transform: none !important;
+  letter-spacing: -0.12px !important;
+}
+
+.atlas-bg-timeline-add-btn svg {
+  color: #ffffff !important;
+  stroke: #ffffff !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main section.atlas-bg-current-view-v2 section.atlas-bg-timeline-view-v2 .atlas-bg-timeline-header a.atlas-bg-timeline-add-btn:hover,
+html body main.atlas-hub-shell .atlas-hub-main section.atlas-bg-current-view-v2 a.atlas-bg-timeline-add-btn:hover,
+a.atlas-bg-timeline-add-btn:hover,
+button.atlas-bg-timeline-add-btn:hover,
+.atlas-bg-timeline-add-btn:hover {
+  background: var(--colors-primary-dark, #0563c7) !important;
+  color: #ffffff !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 12px rgba(35, 127, 225, 0.35) !important;
+}
+
+/* Tertiary Button (Figma SSOT Node 9-7471) */
+html body main.atlas-hub-shell .atlas-hub-main section.atlas-bg-current-view-v2 .atlas-bg-source-button,
+html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-current-view-v2 .atlas-bg-source-button,
+html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-source-button,
+html body main.atlas-hub-shell .atlas-hub-main button.atlas-bg-source-button,
+button.atlas-bg-source-button,
+.atlas-bg-source-button,
+.atlas-bg-source-button--tertiary {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  background: transparent !important;
+  color: var(--colors-primary, #237fe1) !important;
+  border: 1px solid transparent !important;
+  border-radius: 20px !important;
+  padding: 6px 14px !important;
+  min-height: auto !important;
+  font-family: var(--font-body, "Inter"), sans-serif !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  letter-spacing: -0.1px !important;
+  cursor: pointer !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  text-decoration: none !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main section.atlas-bg-current-view-v2 .atlas-bg-source-button:hover,
+html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-current-view-v2 .atlas-bg-source-button:hover,
+html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-source-button:hover,
+html body main.atlas-hub-shell .atlas-hub-main button.atlas-bg-source-button:hover,
+button.atlas-bg-source-button:hover,
+.atlas-bg-source-button:hover,
+.atlas-bg-source-button--tertiary:hover {
+  background: #e5f0fc !important;
+  border-color: var(--colors-primary-light, #abd2fb) !important;
+  color: var(--colors-primary-dark, #0563c7) !important;
+}
+
+/* High-specificity overrides for Timeline Refinement & Scroll Reveal */
+html body main.atlas-hub-shell .atlas-hub-main section.atlas-bg-current-view-v2 section.atlas-bg-timeline-view-v2 .atlas-bg-timeline-row,
+html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-timeline-view-v2 .atlas-bg-timeline-row,
+.atlas-bg-timeline-row {
+  display: flex !important;
+  grid-template-columns: none !important;
+  border: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  width: 100% !important;
+  opacity: 0 !important;
+  transform: translateY(22px) !important;
+  transition: opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1), transform 0.45s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  transition-delay: calc(var(--item-index, 0) * 50ms) !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main section.atlas-bg-current-view-v2 section.atlas-bg-timeline-view-v2 .atlas-bg-timeline-row.is-revealed,
+html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-timeline-view-v2 .atlas-bg-timeline-row.is-revealed,
+.atlas-bg-timeline-row.is-revealed {
+  opacity: 1 !important;
+  transform: translateY(0) !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main section.atlas-bg-current-view-v2 section.atlas-bg-timeline-view-v2 .atlas-bg-timeline-card,
+html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-timeline-view-v2 .atlas-bg-timeline-card {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 12px !important;
+  width: 100% !important;
+  background: #ffffff !important;
+  border: 1px solid var(--colors-neutral-border, #ebebeb) !important;
+  border-radius: 20px !important;
+  padding: 20px !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+  box-sizing: border-box !important;
+}
+
+/* ==========================================================================
+   ATLAS Profile Page Refinement: Fluid Lead Panel & Combined Minimal Tabbed Panel
+   ========================================================================== */
+
+/* Lead Panel Refinement (Fluid, less boxed, icon-scannable) */
+html body main.atlas-hub-shell .atlas-hub-main section.atlas-bg-profile-view-v2 .atlas-bg-profile-lead,
+html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-profile-command-read .atlas-bg-profile-lead,
+.atlas-bg-profile-lead {
+  background: #ffffff !important;
+  border: 1px solid var(--colors-neutral-border, #ebebeb) !important;
+  border-radius: 18px !important;
+  padding: 24px 28px !important;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.03) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 20px !important;
+}
+
+.atlas-bg-profile-lead-eyebrow {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  color: var(--colors-primary, #237fe1) !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.1px !important;
+  text-transform: uppercase !important;
+  margin-bottom: 6px !important;
+}
+
+.atlas-bg-profile-lead-eyebrow svg {
+  color: var(--colors-primary, #237fe1) !important;
+}
+
+.atlas-bg-profile-facts-grid {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)) !important;
+  gap: 12px !important;
+  width: 100% !important;
+  margin-top: 4px !important;
+}
+
+.atlas-bg-profile-fact-card {
+  background: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 14px !important;
+  padding: 12px 16px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 6px !important;
+  transition: all 0.15s ease !important;
+}
+
+.atlas-bg-profile-fact-card:hover {
+  background: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
+}
+
+.atlas-bg-profile-fact-header {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  color: var(--colors-neutral-muted, #707172) !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+}
+
+.atlas-bg-profile-fact-header svg {
+  color: var(--colors-primary, #237fe1) !important;
+}
+
+.atlas-bg-profile-fact-card strong {
+  font-family: var(--font-display, "Libre Franklin"), var(--font-body, "Inter"), sans-serif !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  color: var(--colors-neutral-text, #31373d) !important;
+}
+
+/* Combined Signals & Pattern Library Panel with Minimal Tabs */
+.atlas-bg-profile-combined-panel {
+  background: #ffffff !important;
+  border: 1px solid var(--colors-neutral-border, #ebebeb) !important;
+  border-radius: 18px !important;
+  padding: 24px 28px !important;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.03) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 20px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.atlas-bg-profile-combined-header {
+  display: flex !important;
+  align-items: flex-start !important;
+  justify-content: space-between !important;
+  gap: 20px !important;
+  flex-wrap: wrap !important;
+}
+
+.atlas-bg-profile-combined-header h3 {
+  font-family: var(--font-display, "Libre Franklin"), sans-serif !important;
+  font-size: 18px !important;
+  font-weight: 700 !important;
+  color: var(--colors-neutral-text, #31373d) !important;
+  margin: 0 0 4px 0 !important;
+}
+
+.atlas-bg-profile-combined-header p {
+  font-size: 13px !important;
+  color: var(--colors-neutral-muted, #707172) !important;
+  margin: 0 !important;
+}
+
+/* Minimal Tab Bar (Matched 1:1 with Indicators/Prepare tabs) */
+.atlas-bg-profile-minimal-tabs {
+  align-items: center !important;
+  background: #ffffff !important;
+  border: 1px solid #d9dbe0 !important;
+  border-radius: 999px !important;
+  display: inline-flex !important;
+  flex-shrink: 0 !important;
+  gap: 2px !important;
+  padding: 3px !important;
+}
+
+.atlas-bg-profile-tab-btn {
+  align-items: center !important;
+  background: transparent !important;
+  border: none !important;
+  border-radius: 999px !important;
+  color: #5f6673 !important;
+  cursor: pointer !important;
+  display: inline-flex !important;
+  font-family: var(--font-body) !important;
+  font-size: 12.5px !important;
+  font-weight: 500 !important;
+  gap: 6px !important;
+  justify-content: center !important;
+  letter-spacing: 0 !important;
+  min-height: 28px !important;
+  outline: none !important;
+  padding: 0 16px !important;
+  transition: background 120ms ease, color 120ms ease !important;
+  white-space: nowrap !important;
+}
+
+.atlas-bg-profile-tab-btn svg {
+  color: #5f6673 !important;
+  transition: color 120ms ease !important;
+}
+
+.atlas-bg-profile-tab-btn:not(.is-active):hover {
+  background: #f4f5f6 !important;
+  color: #30343b !important;
+}
+
+.atlas-bg-profile-tab-btn:not(.is-active):hover svg {
+  color: #30343b !important;
+}
+
+.atlas-bg-profile-tab-btn.is-active {
+  background: #0b57d0 !important;
+  color: #ffffff !important;
+  font-weight: 500 !important;
+  box-shadow: none !important;
+}
+
+.atlas-bg-profile-tab-btn.is-active svg {
+  color: #ffffff !important;
+}
+
+/* Accordion metrics 30% width */
+html body main.atlas-hub-shell .atlas-hub-main .atlas-triage-row-metrics,
+.atlas-triage-row-metrics {
+  display: flex !important;
+  flex: 1 1 auto !important;
+  flex-wrap: nowrap !important;
+  gap: 16px !important;
+  width: 100% !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-triage-row-metrics > div,
+.atlas-triage-row-metrics > div {
+  flex: 1 1 30% !important;
+  width: 30% !important;
+  min-width: 0 !important;
+}
+
+/* Accordion detail-copy horizontal layout with 12px gap */
+html body main.atlas-hub-shell .atlas-hub-main .atlas-triage-alert-detail-copy,
+.atlas-triage-alert-detail-copy {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  gap: 12px !important;
+  width: 100% !important;
+  flex: 1 1 100% !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-triage-alert-detail-copy > div,
+.atlas-triage-alert-detail-copy > div {
+  flex: 1 1 0% !important;
+  min-width: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 4px !important;
+}
+
+/* Negotiator Card: Gradient-01 styling and top/bottom layout grouping */
+html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-negotiator-card,
+html body main.atlas-hub-shell .atlas-hub-main section.atlas-bg-profile-view-v2 .atlas-bg-negotiator-card,
+.atlas-bg-negotiator-card {
+  background-image: linear-gradient(107.873deg, rgb(241, 238, 231) 0%, rgb(229, 240, 252) 100%) !important;
+  background-color: transparent !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: space-between !important;
+  gap: 16px !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-negotiator-card-top,
+.atlas-bg-negotiator-card-top {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-negotiator-card-bottom,
+.atlas-bg-negotiator-card-bottom {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0 !important;
+}
+
+/* 1. Intelligence & Buyer Behaviors section title Libre Franklin font override */
+html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-profile-combined-header h3,
+html body main.atlas-hub-shell .atlas-hub-main section.atlas-bg-profile-combined-panel .atlas-bg-profile-combined-header h3,
+.atlas-bg-profile-combined-header h3 {
+  font-family: var(--font-display, "Libre Franklin"), "Libre Franklin", sans-serif !important;
+  font-size: 18px !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.2px !important;
+}
+
+/* 2. Negotiator Card: Gradient-02 background */
+html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-negotiator-card,
+html body main.atlas-hub-shell .atlas-hub-main section.atlas-bg-profile-view-v2 .atlas-bg-negotiator-card,
+.atlas-bg-negotiator-card {
+  background-image: linear-gradient(107.873deg, rgb(226, 238, 250) 0%, rgb(230, 236, 217) 100%) !important;
+  background-color: transparent !important;
+  border: 1px solid #d9dadb !important;
+  border-radius: 24px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: space-between !important;
+  gap: 16px !important;
+  padding: 28px !important;
+}
+
+/* 3. Buyer Response Read card: matched 1:1 with Current cycle read card */
+html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-profile-command-read .atlas-bg-profile-lead,
+html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-profile-lead,
+.atlas-bg-profile-lead {
+  background: #f5f5f5 !important;
+  border: 1px solid #d9dadb !important;
+  border-radius: 24px !important;
+  box-shadow: none !important;
+  display: grid !important;
+  gap: 24px !important;
+  padding: 28px !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-profile-lead .atlas-bg-profile-section-header > div {
+  border-top: none !important;
+  padding-top: 0 !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-profile-lead .atlas-bg-profile-lead-eyebrow {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  margin-bottom: 8px !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-profile-lead .atlas-bg-profile-lead-eyebrow span {
+  color: #707172 !important;
+  font-family: var(--font-body) !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0 !important;
+  line-height: 18px !important;
+  text-transform: uppercase !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-profile-lead h2 {
+  color: #31373d !important;
+  font-family: var(--font-display, "Libre Franklin"), sans-serif !important;
+  font-size: clamp(24px, 2.1vw, 32px) !important;
+  font-weight: 500 !important;
+  letter-spacing: 0 !important;
+  line-height: 1.12 !important;
+  margin: 0 0 8px 0 !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-profile-lead p {
+  color: #707172 !important;
+  font-family: var(--font-body) !important;
+  font-size: 14px !important;
+  font-weight: 400 !important;
+  line-height: 22px !important;
+  margin: 0 !important;
+  max-width: 760px !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-profile-facts-grid {
+  display: grid !important;
+  gap: 16px !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  margin-top: 8px !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-profile-fact-card {
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 6px !important;
+  min-height: auto !important;
+  padding: 0 !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-profile-fact-card .atlas-bg-cycle-stat-icon {
+  align-items: center !important;
+  background: rgba(11, 87, 208, 0.08) !important;
+  border-radius: 9999px !important;
+  color: #0b57d0 !important;
+  display: inline-flex !important;
+  height: 28px !important;
+  justify-content: center !important;
+  width: 28px !important;
+  margin-bottom: 2px !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-profile-fact-card .atlas-bg-cycle-stat-label {
+  color: #707172 !important;
+  font-family: var(--font-body) !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0 !important;
+  line-height: 18px !important;
+  text-transform: uppercase !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-profile-fact-card .atlas-bg-cycle-stat-value {
+  color: #31373d !important;
+  font-family: var(--font-display, "Libre Franklin"), sans-serif !important;
+  font-size: 18px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0 !important;
+  line-height: 1.15 !important;
+  margin: 0 !important;
 }

@@ -30,6 +30,7 @@ import {
   MoveRight,
   Newspaper,
   PieChart,
+  Plus,
   RefreshCw,
   ScanSearch,
   Search,
@@ -37,6 +38,7 @@ import {
   ShieldCheck,
   Sparkles,
   Square,
+  Tag,
   Target,
   TrendingDown,
   TrendingUp,
@@ -9550,12 +9552,13 @@ function BuyingGroupProfileSourceButton({
 }) {
   return (
     <button
-      className="atlas-bg-source-button"
+      className="atlas-bg-source-button atlas-bg-source-button--tertiary"
       title={`${sourceDisplayName(source)} / Confidence ${source.confidence}`}
       type="button"
       onClick={() => onOpen(source)}
     >
-      Sources
+      <FileText size={12} />
+      <span>Sources</span>
     </button>
   );
 }
@@ -9574,6 +9577,7 @@ function BuyingGroupProfileMiniView({
   const markets = workspace.markets.map((market) => market.name).join(' / ');
   const [openSource, setOpenSource] = useState<SourceMeta | null>(null);
   const [expandedSignalId, setExpandedSignalId] = useState<string | null>(flaggedInsights[0]?.id ?? null);
+  const [profileTab, setProfileTab] = useState<'signals' | 'behavior'>('signals');
 
   return (
     <>
@@ -9582,7 +9586,10 @@ function BuyingGroupProfileMiniView({
           <article className="atlas-bg-profile-lead">
             <header className="atlas-bg-profile-section-header">
               <div>
-                <span>Buyer response read</span>
+                <div className="atlas-bg-profile-lead-eyebrow">
+                  <Brain size={14} />
+                  <span>Buyer response read</span>
+                </div>
                 <h2>{workspace.buyingGroup.name} usually responds through {negotiator.style.toLowerCase()} behavior.</h2>
                 <p>{negotiator.watch}</p>
               </div>
@@ -9590,125 +9597,176 @@ function BuyingGroupProfileMiniView({
                 Open negotiation <ArrowRight size={14} />
               </a>
             </header>
-            <dl className="atlas-bg-profile-facts">
-              <div><dt>Markets</dt><dd>{markets}</dd></div>
-              <div><dt>Stage</dt><dd>{workspace.buyingGroup.negotiationStage}</dd></div>
-              <div><dt>Current risk</dt><dd>{workspace.buyingGroup.riskLevel}</dd></div>
-              <div><dt>Latest ask</dt><dd>{profileRead.currentState.latestBuyerAsk}</dd></div>
-            </dl>
+            <div className="atlas-bg-profile-facts-grid">
+              <div className="atlas-bg-profile-fact-card">
+                <span className="atlas-bg-cycle-stat-icon"><Globe2 size={15} /></span>
+                <span className="atlas-bg-cycle-stat-label">Markets</span>
+                <strong className="atlas-bg-cycle-stat-value">{markets}</strong>
+              </div>
+              <div className="atlas-bg-profile-fact-card">
+                <span className="atlas-bg-cycle-stat-icon"><Clock3 size={15} /></span>
+                <span className="atlas-bg-cycle-stat-label">Stage</span>
+                <strong className="atlas-bg-cycle-stat-value">{workspace.buyingGroup.negotiationStage}</strong>
+              </div>
+              <div className="atlas-bg-profile-fact-card">
+                <span className="atlas-bg-cycle-stat-icon"><AlertTriangle size={15} /></span>
+                <span className="atlas-bg-cycle-stat-label">Current risk</span>
+                <strong className="atlas-bg-cycle-stat-value">{workspace.buyingGroup.riskLevel}</strong>
+              </div>
+              <div className="atlas-bg-profile-fact-card">
+                <span className="atlas-bg-cycle-stat-icon"><Tag size={15} /></span>
+                <span className="atlas-bg-cycle-stat-label">Latest ask</span>
+                <strong className="atlas-bg-cycle-stat-value">{profileRead.currentState.latestBuyerAsk}</strong>
+              </div>
+            </div>
           </article>
 
           <article className="atlas-bg-negotiator-card">
-            <div className="atlas-bg-card-header">
-              <span>Negotiator read</span>
-              <BuyingGroupProfileSourceButton onOpen={setOpenSource} source={latestMemory?.source ?? workspace.buyingGroup.source} />
+            <div className="atlas-bg-negotiator-card-top">
+              <div className="atlas-bg-card-header">
+                <span>Negotiator read</span>
+                <BuyingGroupProfileSourceButton onOpen={setOpenSource} source={latestMemory?.source ?? workspace.buyingGroup.source} />
+              </div>
+              <h3>{negotiator.name}</h3>
+              <p>{negotiator.role}</p>
             </div>
-            <h3>{negotiator.name}</h3>
-            <p>{negotiator.role}</p>
-            <dl>
-              <div><dt>Style</dt><dd>{negotiator.style}</dd></div>
-              <div><dt>Expected cadence</dt><dd>{negotiator.cadence}</dd></div>
-            </dl>
+            <div className="atlas-bg-negotiator-card-bottom">
+              <dl>
+                <div><dt>Style</dt><dd>{negotiator.style}</dd></div>
+                <div><dt>Expected cadence</dt><dd>{negotiator.cadence}</dd></div>
+              </dl>
+            </div>
           </article>
         </div>
 
-        <section className="atlas-bg-profile-signal-feed">
-          <header className="atlas-bg-profile-feed-header">
+        {/* Combined Panel with Minimal Tabs for Signals (#) and Buyer Behavior (#) */}
+        <section className="atlas-bg-profile-combined-panel">
+          <header className="atlas-bg-profile-combined-header">
             <div>
-              <div className="atlas-bg-profile-feed-title-row">
-                <AlertCircle size={18} />
-                <h3>{flaggedInsights.length} Signals</h3>
-              </div>
-              <p>External and historical signals this buyer may bring into the room, ranked for CNO preparation.</p>
+              <h3>Intelligence & Buyer Behaviors</h3>
+              <p>
+                {profileTab === 'signals'
+                  ? 'External and historical signals this buyer may bring into the room, ranked for CNO preparation.'
+                  : 'Expected buyer behaviors to account for before the next response.'}
+              </p>
+            </div>
+
+            <div className="atlas-bg-profile-minimal-tabs" role="tablist">
+              <button
+                aria-selected={profileTab === 'signals'}
+                className={`atlas-bg-profile-tab-btn${profileTab === 'signals' ? ' is-active' : ''}`}
+                onClick={() => setProfileTab('signals')}
+                role="tab"
+                type="button"
+              >
+                <AlertCircle size={14} />
+                <span>Signals ({flaggedInsights.length})</span>
+              </button>
+
+              <button
+                aria-selected={profileTab === 'behavior'}
+                className={`atlas-bg-profile-tab-btn${profileTab === 'behavior' ? ' is-active' : ''}`}
+                onClick={() => setProfileTab('behavior')}
+                role="tab"
+                type="button"
+              >
+                <BookOpen size={14} />
+                <span>Buyer Behavior ({patterns.length})</span>
+              </button>
             </div>
           </header>
-          <div className="atlas-bg-profile-signal-list">
-            {flaggedInsights.map((insight, index) => {
-              const isExpanded = expandedSignalId === insight.id;
-              return (
-              <article className={`atlas-bg-profile-signal-accordion${isExpanded ? ' is-expanded' : ''}`} key={insight.id}>
-                <div className="atlas-bg-profile-signal-accordion-main">
-                  <div className="atlas-bg-profile-signal-title-block">
-                    <p>{insight.label}</p>
-                    <h4>{insight.strategyUse}</h4>
-                  </div>
-                  <dl className="atlas-bg-profile-signal-metrics">
-                    <div>
-                      <dt>Rank</dt>
-                      <dd>{String(index + 1).padStart(2, '0')}</dd>
-                    </div>
-                    <div>
-                      <dt>Signal</dt>
-                      <dd>{insight.change}</dd>
-                    </div>
-                    <div>
-                      <dt>Source</dt>
-                      <dd>{sourceDisplayName(insight.source)}</dd>
-                    </div>
-                  </dl>
-                  <button
-                    aria-expanded={isExpanded}
-                    aria-label={`${isExpanded ? 'Collapse' : 'Expand'} ${insight.strategyUse}`}
-                    className="atlas-bg-profile-signal-chevron"
-                    onClick={() => setExpandedSignalId(isExpanded ? null : insight.id)}
-                    type="button"
-                  >
-                    {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
-                  </button>
-                </div>
 
-                <div className="atlas-bg-profile-signal-reaction-row">
-                  <div className="atlas-bg-profile-signal-reaction">
-                    <img src="/images/backgrounds/isotope_orbs 1.png" alt="Atlas" />
-                    <p><span>Atlas read:</span> {insight.implication}</p>
-                  </div>
-                  <BuyingGroupProfileSourceButton onOpen={setOpenSource} source={insight.source} />
-                </div>
+          {profileTab === 'signals' ? (
+            <div className="atlas-triage-alert-list atlas-triage-alert-list-v2">
+              {flaggedInsights.map((insight, index) => {
+                const isExpanded = expandedSignalId === insight.id;
+                return (
+                  <article className={`atlas-triage-alert-row atlas-triage-alert-row-v2 tone-${index % 2 === 0 ? 'medium' : 'low'}${isExpanded ? ' is-expanded' : ''}`} key={insight.id}>
+                    <div className="atlas-triage-alert-main">
+                      <div className="atlas-triage-alert-copy">
+                        <div className="atlas-triage-alert-title-block">
+                          <p className="atlas-triage-alert-eyebrow-label">{insight.label}</p>
+                          <h3>{insight.strategyUse}</h3>
+                        </div>
+                        <dl className="atlas-triage-row-metrics">
+                          <div>
+                            <dt>Rank</dt>
+                            <dd>{String(index + 1).padStart(2, '0')}</dd>
+                          </div>
+                          <div>
+                            <dt>Signal</dt>
+                            <dd>{insight.change}</dd>
+                          </div>
+                          <div>
+                            <dt>Source</dt>
+                            <dd>{sourceDisplayName(insight.source)}</dd>
+                          </div>
+                        </dl>
+                      </div>
+                      <button
+                        className="atlas-triage-chevron-btn"
+                        aria-label={`${isExpanded ? 'Collapse' : 'Expand'} ${insight.strategyUse}`}
+                        aria-expanded={isExpanded}
+                        onClick={() => setExpandedSignalId(isExpanded ? null : insight.id)}
+                        type="button"
+                      >
+                        {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                      </button>
+                    </div>
 
-                <div className="atlas-bg-profile-signal-detail-wrapper">
-                  <section className="atlas-bg-profile-signal-detail">
-                    <div>
-                      <span>CNO move</span>
-                      <p>{insight.action}</p>
+                    <div className={`atlas-triage-alert-footer-row${isExpanded ? ' is-expanded' : ''}`}>
+                      <div className="atlas-triage-alert-reaction-info">
+                        <img src="/images/backgrounds/isotope_orbs 1.png" alt="Atlas" className="atlas-triage-reaction-logo" />
+                        <div className="atlas-triage-reaction-text">
+                          <span>Atlas read:</span>
+                          <span>{insight.implication}</span>
+                        </div>
+                      </div>
+                      <div className="atlas-triage-alert-cta-row">
+                        <BuyingGroupProfileSourceButton onOpen={setOpenSource} source={insight.source} />
+                      </div>
                     </div>
-                    <div>
-                      <span>Buyer read</span>
-                      <p>{insight.response}</p>
-                    </div>
-                    <div>
-                      <span>Source context</span>
-                      <p>{sourceDisplayName(insight.source)} · {formatAtlasDate(insight.source.sourceDate, { includeYear: true })} · {insight.source.confidence} confidence</p>
-                    </div>
-                  </section>
-                </div>
-              </article>
-              );
-            })}
-          </div>
-        </section>
 
-        <section className="atlas-bg-profile-pattern-section">
-          <header className="atlas-bg-profile-section-header">
-            <div>
-              <span>Pattern library</span>
-              <h3>Expected buyer behaviors to account for before the next response</h3>
-              <p>These patterns translate prior rounds and comparable pressure into practical moves for the next negotiation room.</p>
+                    <div className="atlas-triage-alert-detail-wrapper">
+                      <div className="atlas-triage-alert-detail-inner">
+                        <section className="atlas-triage-alert-detail">
+                          <div className="atlas-triage-alert-detail-copy">
+                            <div>
+                              <span>CNO move</span>
+                              <p>{insight.action}</p>
+                            </div>
+                            <div>
+                              <span>Buyer read</span>
+                              <p>{insight.response}</p>
+                            </div>
+                            <div>
+                              <span>Source context</span>
+                              <p>{sourceDisplayName(insight.source)} · {formatAtlasDate(insight.source.sourceDate, { includeYear: true })} · {insight.source.confidence} confidence</p>
+                            </div>
+                          </div>
+                        </section>
+                      </div>
+                    </div>
+                  </article>
+                );
+              })}
             </div>
-          </header>
-          <div className="atlas-bg-behavior-grid">
-            {patterns.map((pattern) => (
-              <BuyingGroupIntelligenceCard
-                action={pattern.action}
-                detail={pattern.detail}
-                eyebrow={pattern.label}
-                expectedResponse={pattern.expectedResponse}
-                key={pattern.label}
-                onOpenSource={setOpenSource}
-                source={pattern.source}
-                title={pattern.value}
-              />
-            ))}
-          </div>
+          ) : (
+            <div className="atlas-bg-behavior-grid">
+              {patterns.map((pattern) => (
+                <BuyingGroupIntelligenceCard
+                  action={pattern.action}
+                  detail={pattern.detail}
+                  eyebrow={pattern.label}
+                  expectedResponse={pattern.expectedResponse}
+                  key={pattern.label}
+                  onOpenSource={setOpenSource}
+                  source={pattern.source}
+                  title={pattern.value}
+                />
+              ))}
+            </div>
+          )}
         </section>
       </section>
       {openSource ? <SourceDetailDrawer onClose={() => setOpenSource(null)} source={openSource} /> : null}
@@ -10128,6 +10186,15 @@ function BuyingGroupCurrentNegotiationMiniView({
   );
 }
 
+function getTimelineCategory(eventType: string, label: string) {
+  const norm = `${eventType} ${label}`.toLowerCase();
+  if (/buyer|round|ask|movement/.test(norm)) return { category: 'buyer', colorClass: 'buyer', icon: User };
+  if (/finance|guardrail|decision|lock|financial/.test(norm)) return { category: 'finance', colorClass: 'finance', icon: ShieldCheck };
+  if (/competitor|market|signal|external/.test(norm)) return { category: 'market', colorClass: 'market', icon: BarChart3 };
+  if (/debrief|learning|document|source|update/.test(norm)) return { category: 'document', colorClass: 'document', icon: FileText };
+  return { category: 'document', colorClass: 'document', icon: Clock3 };
+}
+
 function BuyingGroupTimelineMiniView({
   profileUpdates,
   workspace
@@ -10135,6 +10202,27 @@ function BuyingGroupTimelineMiniView({
   profileUpdates: BuyerProfileDocumentUpdate[];
   workspace: BuyingGroupWorkspacePacket;
 }) {
+  const [openSource, setOpenSource] = useState<SourceMeta | null>(null);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !('IntersectionObserver' in window)) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('is-revealed');
+          }
+        });
+      },
+      { threshold: 0.1, rootMargin: '0px 0px -20px 0px' }
+    );
+
+    const rows = document.querySelectorAll('.atlas-bg-timeline-row');
+    rows.forEach((row) => observer.observe(row));
+
+    return () => observer.disconnect();
+  }, [workspace.buyingGroup.id]);
+
   const negotiationEventTypes: TimelineEvent['eventType'][] = [
     'competitor_move',
     'negotiation_update',
@@ -10153,6 +10241,7 @@ function BuyingGroupTimelineMiniView({
     return {
       date: event.timestamp,
       detail: event.summary,
+      eventType: event.eventType,
       id: event.id,
       impact: financialImpact,
       label: timelineMemoryLabel(event.eventType),
@@ -10163,6 +10252,7 @@ function BuyingGroupTimelineMiniView({
     };
   })
     .sort((a, b) => b.date.localeCompare(a.date));
+
   const latestRow = timelineRows[0];
   const currentYear = latestRow?.date.slice(0, 4) ?? '2026';
   const timelineYears = timelineRows.reduce<Array<{ rows: typeof timelineRows; year: string }>>((years, row) => {
@@ -10177,59 +10267,102 @@ function BuyingGroupTimelineMiniView({
   }, []);
 
   return (
-    <section className="atlas-bg-mini-view atlas-bg-timeline-view atlas-bg-timeline-view-v2">
-      <header className="atlas-bg-timeline-header">
-        <div>
-          <span>Negotiation memory</span>
-          <h2>{workspace.buyingGroup.name} negotiation timeline</h2>
-          <p>Only the moments that changed the negotiation read stay visible: buyer movement, finance guardrails, decisions, and debrief learning.</p>
-        </div>
-        <a href={`/intelligence?buyingGroup=${workspace.buyingGroup.id}&action=add-debrief`}>Add debrief</a>
-      </header>
-
-      <section className="atlas-bg-timeline-ledger">
-        <header>
-          <span>Cycle timeline</span>
-          <h3>Negotiation events ATLAS uses for predictions</h3>
+    <>
+      <section className="atlas-bg-mini-view atlas-bg-timeline-view atlas-bg-timeline-view-v2">
+        <header className="atlas-bg-timeline-header">
+          <h3>Negotiation Timeline</h3>
+          <a
+            className="atlas-bg-timeline-add-btn"
+            href={`/buying-groups/${workspace.buyingGroup.id}?action=add-brief`}
+            style={{ color: '#ffffff', textTransform: 'none', backgroundColor: '#237fe1' }}
+          >
+            <Plus size={16} style={{ color: '#ffffff', stroke: '#ffffff' }} />
+            <span style={{ color: '#ffffff', textTransform: 'none' }}>Add Brief</span>
+          </a>
         </header>
-        <div className="atlas-bg-timeline-list">
+
+        <section className="atlas-bg-timeline-ledger">
           {timelineYears.map((yearGroup) => (
-            <details className="atlas-bg-timeline-year-group" key={yearGroup.year} open={yearGroup.year === currentYear}>
-              <summary>
-                <div>
-                  <span>{yearGroup.year}</span>
-                  <strong>{yearGroup.year === currentYear ? 'Current negotiation cycle' : 'Prior-cycle memory'}</strong>
-                </div>
-                <em>{yearGroup.rows.length} events</em>
-              </summary>
-              <div className="atlas-bg-timeline-year-events">
-                {yearGroup.rows.map((row, index) => (
-                  <article key={row.id} className={row.id === latestRow?.id ? 'is-latest' : undefined}>
-                    <time>{formatAtlasDate(row.date, { includeYear: true })}</time>
-                    <div className="atlas-bg-timeline-marker" aria-hidden="true">
-                      <span>{index + 1}</span>
-                    </div>
-                    <div className="atlas-bg-timeline-content">
-                      <div className="atlas-bg-timeline-row-kicker">
-                        <span>{row.label}</span>
-                        {row.id === latestRow?.id ? <em>Latest</em> : null}
-                      </div>
-                      <h3>{row.title}</h3>
-                      <p>{row.detail}</p>
-                      <p className="atlas-bg-timeline-impact-line">
-                        <strong>{row.impact}</strong>
-                        <span>{row.predictionEffect}</span>
-                      </p>
-                      <p className="atlas-bg-timeline-source-line">Source: {row.sourceLine}</p>
-                    </div>
-                  </article>
-                ))}
+            <div className="atlas-bg-timeline-year-block" key={yearGroup.year}>
+              {/* Date Header Pill (Inspired by the mock's black date pills: Today, Friday 15th January, etc) */}
+              <div className="atlas-bg-timeline-date-pill">
+                <span>{yearGroup.year}</span>
+                <small>{yearGroup.year === currentYear ? 'Current negotiation cycle' : 'Prior-cycle memory'}</small>
+                <em className="atlas-bg-timeline-count-badge">{yearGroup.rows.length} events</em>
               </div>
-            </details>
+
+              {/* Vertical timeline track with items */}
+              <div className="atlas-bg-timeline-track">
+                {yearGroup.rows.map((row, index) => {
+                  const { icon: CategoryIcon, colorClass } = getTimelineCategory(row.eventType, row.label);
+                  return (
+                    <article
+                      className={`atlas-bg-timeline-row atlas-bg-timeline-row--${colorClass}${row.id === latestRow?.id ? ' is-latest' : ''}`}
+                      key={row.id}
+                      style={{ '--item-index': index } as React.CSSProperties}
+                    >
+                      {/* Left timestamp label */}
+                      <time className="atlas-bg-timeline-time">
+                        {formatAtlasDate(row.date, { includeYear: false, includeTime: false })}
+                      </time>
+
+                      {/* Node marker icon on timeline vertical axis */}
+                      <div className={`atlas-bg-timeline-node atlas-bg-timeline-node--${colorClass}`} aria-hidden="true">
+                        <CategoryIcon size={14} />
+                      </div>
+
+                      {/* Main Timeline Card */}
+                      <div className="atlas-bg-timeline-card">
+                        <div className="atlas-bg-timeline-card-header">
+                          <div className="atlas-bg-timeline-badge-group">
+                            <span className={`atlas-bg-timeline-type-badge atlas-bg-timeline-type-badge--${colorClass}`}>
+                              <CategoryIcon size={12} />
+                              {row.label}
+                            </span>
+                            {row.id === latestRow?.id ? <span className="atlas-bg-timeline-latest-tag">Latest</span> : null}
+                          </div>
+                          <BuyingGroupProfileSourceButton onOpen={setOpenSource} source={row.source} />
+                        </div>
+
+                        <h3>{row.title}</h3>
+                        <p className="atlas-bg-timeline-card-detail">{row.detail}</p>
+
+                        {/* HIGHLIGHT CALLOUT BOX (Key feature from inspiration mockup!) */}
+                        <div className={`atlas-bg-timeline-callout atlas-bg-timeline-callout--${colorClass}`}>
+                          {row.impact ? (
+                            <div className="atlas-bg-timeline-callout-impact">
+                              <TrendingUp size={12} />
+                              <span>{row.impact}</span>
+                            </div>
+                          ) : null}
+                          <p className="atlas-bg-timeline-callout-effect">
+                            <strong>Atlas effect:</strong> {row.predictionEffect}
+                          </p>
+                        </div>
+
+                        {/* Card Footer */}
+                        <div className="atlas-bg-timeline-card-footer">
+                          <span className="atlas-bg-timeline-source-info">
+                            Source: {row.sourceLine}
+                          </span>
+                          <a
+                            className="atlas-bg-timeline-action-link"
+                            href={`/intelligence?buyingGroup=${workspace.buyingGroup.id}&view=memory`}
+                          >
+                            View memory <ArrowRight size={12} />
+                          </a>
+                        </div>
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+            </div>
           ))}
-        </div>
+        </section>
       </section>
-    </section>
+      {openSource ? <SourceDetailDrawer onClose={() => setOpenSource(null)} source={openSource} /> : null}
+    </>
   );
 }
 
