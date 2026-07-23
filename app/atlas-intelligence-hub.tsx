@@ -13351,7 +13351,9 @@ function ScenarioModelsView({
                       </button>
                     </div>
                     <a className="atlas-scenario-create-action" href={scenarioCreateHref()}>
-                      <HeroPlusIcon className="atlas-btn-icon" aria-hidden="true" /> Create scenario
+                      <HeroPlusIcon className="atlas-btn-icon" aria-hidden="true" />
+                      <span>Create scenario</span>
+                      <HeroArrowRightIcon className="atlas-btn-arrow" aria-hidden="true" />
                     </a>
                   </div>
 

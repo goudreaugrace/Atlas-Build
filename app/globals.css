@@ -86759,22 +86759,43 @@ html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-segmented-control
 }
 
 html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-create-action {
-  background: #237FE1;
-  color: #FFFFFF;
-  font-family: var(--font-body, "Inter"), sans-serif;
-  font-size: 12px;
-  font-weight: 500;
-  padding: 8px 16px;
-  border-radius: 20px;
-  text-decoration: none;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  transition: background 0.15s ease;
+  background: linear-gradient(149.48deg, #237FE1 51.55%, #88B429 99.33%) !important;
+  border: none !important;
+  color: #F5F5F5 !important;
+  font-family: var(--font-display, "Libre Franklin"), sans-serif !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.12px !important;
+  line-height: 22px !important;
+  padding: 8px 16px !important;
+  border-radius: 20px !important;
+  text-decoration: none !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 4px !important;
+  transition: all 0.15s ease !important;
+  box-shadow: 0 2px 8px rgba(35, 127, 225, 0.25) !important;
 }
 
 html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-create-action:hover {
-  background: #0563C7;
+  filter: brightness(1.08) !important;
+  box-shadow: 0 4px 12px rgba(35, 127, 225, 0.35) !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-create-action svg,
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-create-action .atlas-btn-icon {
+  width: 20px !important;
+  height: 20px !important;
+  color: #F5F5F5 !important;
+  flex-shrink: 0 !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-create-action .atlas-btn-arrow {
+  width: 16px !important;
+  height: 16px !important;
+  color: #F5F5F5 !important;
+  flex-shrink: 0 !important;
 }
 
 /* 3. TOOLBAR: UNBOXED & FLUID (No borders or padding per user request) */
