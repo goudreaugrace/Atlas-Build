@@ -8217,17 +8217,15 @@ html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-breakdown article
 }
 
 .atlas-command-surface input {
-  order: 1;
+  order: 0 !important;
 }
 
 .atlas-command-surface button.voice {
-  order: 0;
-  min-width: 84px;
+  order: 1 !important;
 }
 
 .atlas-command-surface button.send {
-  order: 2;
-  min-width: 86px;
+  order: 2 !important;
 }
 
 .atlas-command-surface button:disabled,
@@ -74126,6 +74124,7 @@ html body main.atlas-hub-shell .atlas-command-input-wrapper input {
   min-width: 0 !important;
   outline: none !important;
   padding: 0 !important;
+  order: 0 !important;
 }
 
 html body main.atlas-hub-shell .atlas-command-input-wrapper.focused input,
@@ -74149,6 +74148,7 @@ html body main.atlas-hub-shell .atlas-command-input-wrapper button.voice {
   flex-shrink: 0 !important;
   justify-content: center !important;
   padding: 4px !important;
+  order: 1 !important;
 }
 
 /* Send button: gradient-05 with paper-airplane icon */
