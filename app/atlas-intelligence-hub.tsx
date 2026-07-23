@@ -63,6 +63,14 @@ import {
   HeroPlusIcon,
   HeroCubeIcon,
   HeroArrowRightIcon,
+  HeroBookOpenIcon,
+  HeroShieldCheckIcon,
+  HeroChevronDownIcon,
+  HeroChevronUpIcon,
+  HeroMagnifyingGlassIcon,
+  HeroArrowTopRightOnSquareIcon,
+  HeroDocumentTextIcon,
+  HeroFunnelIcon,
 } from '@/src/components/ui/heroicons';
 import {
   atlasIntelligenceSeed,
@@ -14519,13 +14527,30 @@ function filterSourceDatabaseRows(rows: SourceDatabaseRow[], ask?: string) {
 
 function SourceDatabaseView({ initialPrompt }: { initialPrompt?: string }) {
   const [sourceDatabasePage, setSourceDatabasePage] = useState(1);
+  const [tableSearchQuery, setTableSearchQuery] = useState('');
+  const [isControlReadExpanded, setIsControlReadExpanded] = useState(false);
+
   const allRows = buildSourceDatabaseRows();
-  const rows = filterSourceDatabaseRows(allRows, initialPrompt);
+  let rows = filterSourceDatabaseRows(allRows, initialPrompt);
+
+  if (tableSearchQuery.trim()) {
+    const q = tableSearchQuery.toLowerCase();
+    rows = rows.filter(
+      (row) =>
+        row.recordName.toLowerCase().includes(q) ||
+        row.recordType.toLowerCase().includes(q) ||
+        row.source.sourceType.toLowerCase().includes(q) ||
+        sourceDisplayName(row.source).toLowerCase().includes(q) ||
+        row.financialImpact.toLowerCase().includes(q)
+    );
+  }
+
   const sourceWatchouts = allRows.filter((row) => row.source.status === 'stale' || row.source.status === 'needs_validation' || row.source.status === 'missing');
   const approvedRows = allRows.filter((row) => row.source.status === 'approved' || row.source.status === 'ready');
   const highConfidenceRows = allRows.filter((row) => row.source.confidence === 'high');
   const modeledRows = allRows.filter((row) => row.source.status === 'modeled' || row.source.sourceType === 'ai_generated' || row.source.sourceType === 'user_entered');
   const nonCanonicalRows = allRows.filter((row) => row.source.governance.canonicalUseAllowed !== 'yes');
+
   const governanceCards = [
     {
       action: 'Use first',
@@ -14556,6 +14581,7 @@ function SourceDatabaseView({ initialPrompt }: { initialPrompt?: string }) {
       value: String(nonCanonicalRows.length)
     }
   ];
+
   const sourceDatabasePageSize = 10;
   const sourceDatabaseTotalPages = Math.max(1, Math.ceil(rows.length / sourceDatabasePageSize));
   const sourceDatabaseCurrentPage = Math.min(Math.max(1, sourceDatabasePage), sourceDatabaseTotalPages);
@@ -14564,77 +14590,134 @@ function SourceDatabaseView({ initialPrompt }: { initialPrompt?: string }) {
 
   useEffect(() => {
     setSourceDatabasePage(1);
-  }, [initialPrompt]);
+  }, [initialPrompt, tableSearchQuery]);
 
   return (
     <>
       <IntentBrief
         eyebrow="Intelligence Library"
-        title={`${rows.length} memory, source, and scenario records / ${sourceWatchouts.length} watchouts.`}
+        title={`${allRows.length} memory, source, and scenario records / ${sourceWatchouts.length} watchouts.`}
         body={`${approvedRows.length} approved or ready / ${highConfidenceRows.length} high confidence records.`}
         action="Use this library to validate sources, approve memory, and audit prediction confidence."
         metrics={[
-          { label: 'Records', value: String(rows.length) },
+          { label: 'Records', value: String(allRows.length) },
           { label: 'High confidence', value: String(highConfidenceRows.length), tone: 'good' },
           { label: 'Source watchouts', value: String(sourceWatchouts.length), tone: 'watch' }
         ]}
       />
-      <div className="atlas-source-decision-governance-panel">
-        <MemoryDecisionPanel documents={packet.documents} events={packet.latestTimelineEvents} title="Library control read" />
-        <section className="atlas-source-governance-summary" aria-label="Source governance summary">
-          {governanceCards.map((card) => (
-            <article className={`tone-${card.tone}`} key={card.label}>
-              <span>{card.label}</span>
-              <h4>{card.value}</h4>
-              <p>{card.detail}</p>
-              <em>{card.action}</em>
-            </article>
-          ))}
-        </section>
-      </div>
-      <SavedGeneratedViewsShelf />
-      <section className="atlas-source-database">
-        <header>
-          <div>
-            <h3>{initialPrompt ? 'Filtered source records' : 'All ATLAS source records'}</h3>
+
+      <section className={`atlas-library-control-disclosure${isControlReadExpanded ? ' is-expanded' : ''}`}>
+        <header className="atlas-library-control-header">
+          <div className="atlas-library-control-title-group">
+            <span className="atlas-library-control-badge">
+              <HeroShieldCheckIcon className="w-4 h-4" /> Governance
+            </span>
+            <div>
+              <h3>Library Control & Governance Read</h3>
+              <p>Audit memory decisions, canonical source status, and watchout alerts across active records.</p>
+            </div>
           </div>
-          <p>{rows.length} shown / {allRows.length} total. {sourceWatchouts.length} source watchouts / {approvedRows.length} usable records.</p>
+
+          <div className="atlas-library-control-meta">
+            <div className="atlas-library-control-chips">
+              <span className="control-chip tone-good">{approvedRows.length} Approved</span>
+              <span className="control-chip tone-watch">{sourceWatchouts.length} Watchouts</span>
+              <span className="control-chip tone-draft">{modeledRows.length} Modeled</span>
+              <span className="control-chip tone-blocked">{nonCanonicalRows.length} Non-canonical</span>
+            </div>
+            <button
+              className="atlas-control-read-toggle-btn"
+              onClick={() => setIsControlReadExpanded(!isControlReadExpanded)}
+              type="button"
+            >
+              <span>{isControlReadExpanded ? 'Hide Governance Read' : 'View Governance Read'}</span>
+              {isControlReadExpanded ? <HeroChevronUpIcon className="w-4 h-4" /> : <HeroChevronDownIcon className="w-4 h-4" />}
+            </button>
+          </div>
         </header>
+
+        {isControlReadExpanded ? (
+          <div className="atlas-library-control-body">
+            <MemoryDecisionPanel documents={packet.documents} events={packet.latestTimelineEvents} title="Library control read" />
+            <section className="atlas-source-governance-summary" aria-label="Source governance summary">
+              {governanceCards.map((card) => (
+                <article className={`tone-${card.tone}`} key={card.label}>
+                  <span>{card.label}</span>
+                  <h4>{card.value}</h4>
+                  <p>{card.detail}</p>
+                  <em>{card.action}</em>
+                </article>
+              ))}
+            </section>
+          </div>
+        ) : null}
+      </section>
+
+      <section className="atlas-source-database">
+        <header className="atlas-source-database-toolbar">
+          <div className="atlas-source-database-title-box">
+            <h3>{initialPrompt ? 'Filtered source records' : 'All ATLAS source records'}</h3>
+            <p>{rows.length} shown of {allRows.length} total • {approvedRows.length} usable • {sourceWatchouts.length} watchouts</p>
+          </div>
+          <div className="atlas-source-database-search-wrap">
+            <HeroMagnifyingGlassIcon className="w-4 h-4 search-icon" />
+            <input
+              type="text"
+              placeholder="Search records, sources, types..."
+              value={tableSearchQuery}
+              onChange={(e) => setTableSearchQuery(e.target.value)}
+              className="atlas-source-database-search-input"
+            />
+            {tableSearchQuery ? (
+              <button onClick={() => setTableSearchQuery('')} className="search-clear-btn" type="button">Clear</button>
+            ) : null}
+          </div>
+        </header>
+
         {initialPrompt ? <p className="atlas-source-database-filter">Asked: “{initialPrompt}”</p> : null}
+
         <div className="atlas-source-database-table" role="table" aria-label="ATLAS source database">
           <div className="atlas-source-database-head" role="row">
-            <span>Record</span>
-            <span>Source</span>
+            <span>Record Name & Type</span>
+            <span>Source System</span>
             <span>Date</span>
-            <span>Status</span>
-            <span>Affected</span>
-            <span>Financial data</span>
-            <span>Links</span>
+            <span>Trust & Confidence</span>
+            <span>Affected Scope</span>
+            <span>Financial Impact</span>
+            <span>Actions</span>
           </div>
+
           {visibleSourceDatabaseRows.map((row) => (
             <article className="atlas-source-database-row" key={row.id} role="row">
-              <div>
-                <em>{row.recordType}</em>
-                <span>{row.recordName}</span>
+              <div className="record-col">
+                <span className="record-type-badge">{row.recordType}</span>
+                <strong className="record-name">{row.recordName}</strong>
               </div>
-              <div>
-                <em>{row.source.sourceType}</em>
-                <span>{sourceDisplayName(row.source)}</span>
+              <div className="source-col">
+                <span className="source-type-badge">{row.source.sourceType}</span>
+                <span className="source-name">{sourceDisplayName(row.source)}</span>
               </div>
-              <span>{row.source.sourceDate}</span>
+              <span className="date-cell">{row.source.sourceDate}</span>
               <div className="atlas-source-database-status">
                 <StatusChip status={row.source.status} />
                 <ConfidenceChip confidence={row.source.confidence} />
               </div>
-              <span>{row.affectedMarkets} / {row.affectedBuyingGroups}</span>
-              <span>{row.financialImpact}</span>
+              <span className="scope-cell">{row.affectedMarkets} markets / {row.affectedBuyingGroups} buyers</span>
+              <span className="financial-cell">{row.financialImpact}</span>
               <div className="atlas-source-database-links">
-                <a href={row.source.url ?? `/intelligence?source=${encodeURIComponent(row.id)}`}>Open source</a>
-                <a href={row.recordHref}>Open record</a>
+                <a href={row.source.url ?? `/intelligence?source=${encodeURIComponent(row.id)}`} className="atlas-table-action-btn" title="Open source">
+                  <HeroArrowTopRightOnSquareIcon className="w-3.5 h-3.5" />
+                  <span>Source</span>
+                </a>
+                <a href={row.recordHref} className="atlas-table-action-btn" title="Open record">
+                  <HeroDocumentTextIcon className="w-3.5 h-3.5" />
+                  <span>Record</span>
+                </a>
               </div>
             </article>
           ))}
         </div>
+
         {sourceDatabaseTotalPages > 1 ? (
           <nav className="atlas-source-database-pagination" aria-label="Intelligence library table pages">
             <span>
