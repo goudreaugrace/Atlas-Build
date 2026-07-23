@@ -87273,3 +87273,51 @@ html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-empty-state butto
   border-radius: 20px;
   cursor: pointer;
 }
+
+/* Buyer profile header badge stabilization. */
+html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-hero .atlas-bg-hero-meta span,
+html body main.atlas-hub-shell .atlas-hub-main .atlas-buying-group-hero .atlas-buyer-risk-badge {
+  -webkit-backdrop-filter: none !important;
+  align-items: center !important;
+  backface-visibility: hidden !important;
+  backdrop-filter: none !important;
+  background: rgba(245, 245, 245, .2) !important;
+  background-clip: padding-box !important;
+  border: 1px solid rgba(255, 255, 255, .38) !important;
+  color: #ffffff !important;
+  display: inline-flex !important;
+  justify-content: center !important;
+  line-height: 1 !important;
+  opacity: 1 !important;
+  transform: translateZ(0) !important;
+  transition: none !important;
+  will-change: auto !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-hero .atlas-bg-hero-meta .atlas-bg-hero-risk-pill--critical,
+html body main.atlas-hub-shell .atlas-hub-main .atlas-buying-group-hero .atlas-buyer-risk-badge.risk-critical {
+  background: rgba(255, 232, 225, .92) !important;
+  border-color: rgba(255, 192, 169, .96) !important;
+  color: #b33812 !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-hero .atlas-bg-hero-meta .atlas-bg-hero-risk-pill--high,
+html body main.atlas-hub-shell .atlas-hub-main .atlas-buying-group-hero .atlas-buyer-risk-badge.risk-high {
+  background: rgba(255, 244, 220, .94) !important;
+  border-color: rgba(255, 219, 145, .96) !important;
+  color: #9a6500 !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-hero .atlas-bg-hero-meta .atlas-bg-hero-risk-pill--medium,
+html body main.atlas-hub-shell .atlas-hub-main .atlas-buying-group-hero .atlas-buyer-risk-badge.risk-medium {
+  background: rgba(232, 243, 255, .94) !important;
+  border-color: rgba(171, 210, 251, .96) !important;
+  color: #0b61b8 !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-hero .atlas-bg-hero-meta .atlas-bg-hero-risk-pill--low,
+html body main.atlas-hub-shell .atlas-hub-main .atlas-buying-group-hero .atlas-buyer-risk-badge.risk-low {
+  background: rgba(238, 247, 220, .94) !important;
+  border-color: rgba(207, 225, 168, .96) !important;
+  color: #4f7416 !important;
+}
