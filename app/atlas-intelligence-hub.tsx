@@ -28,6 +28,7 @@ import {
   LineChart,
   Loader2,
   Mic,
+  Monitor,
   MoveRight,
   Newspaper,
 
@@ -13101,7 +13102,7 @@ function ScenarioModelsView({
 	                </div>
 	                <div className="atlas-scenario-response-grid">
 	                  <article>
-	                    <span><Square size={16} /> Why ATLAS thinks this</span>
+	                    <span><Monitor size={16} /> Why ATLAS thinks this</span>
 	                    <strong>Buyer memory</strong>
 	                    <p>{scenarioBasis}</p>
 	                    <strong>Lever read</strong>
