@@ -11169,6 +11169,7 @@ function ScenarioModelsView({
   const [scenarioAdjustmentEditing, setScenarioAdjustmentEditing] = useState(false);
   const [scenarioAdjustmentBaselineInputs, setScenarioAdjustmentBaselineInputs] = useState<ScenarioInputs | null>(null);
   const [scenarioInputOverrides, setScenarioInputOverrides] = useState<Record<string, ScenarioInputs>>({});
+  const [scenarioClockBaselineInputs, setScenarioClockBaselineInputs] = useState<Record<string, ScenarioInputs>>({});
   const [scenarioAdjustmentAddedLeversByScenario, setScenarioAdjustmentAddedLeversByScenario] = useState<Record<string, ScenarioAdjustmentAddedLeverRow[]>>({});
   const [scenarioAdjustmentLeverMenuOpen, setScenarioAdjustmentLeverMenuOpen] = useState(false);
   const [scenarioBreakdownCollapsed, setScenarioBreakdownCollapsed] = useState(false);
@@ -12281,7 +12282,11 @@ function ScenarioModelsView({
   }
 
   function updateScenarioParametersForCurrentTab(scenarioId: string) {
+    const clockBaseline = scenarioAdjustmentBaselineInputs ?? scenarioClockBaselineInputs[scenarioId];
     setScenarioInputOverrides((current) => ({ ...current, [scenarioId]: inputs }));
+    if (clockBaseline) {
+      setScenarioClockBaselineInputs((current) => ({ ...current, [scenarioId]: current[scenarioId] ?? clockBaseline }));
+    }
     setSelectedScenarioId(scenarioId);
     setScenarioAdjustmentEditing(false);
     setScenarioAdjustmentBaselineInputs(null);
@@ -12291,7 +12296,11 @@ function ScenarioModelsView({
   }
 
   function saveScenarioParametersAsCustom() {
+    const clockBaseline = scenarioAdjustmentBaselineInputs ?? scenarioClockBaselineInputs.custom;
     setCustomScenarioInputs(inputs);
+    if (clockBaseline) {
+      setScenarioClockBaselineInputs((current) => ({ ...current, custom: current.custom ?? clockBaseline }));
+    }
     setSelectedScenarioId('custom');
     setScenarioAdjustmentEditing(false);
     setScenarioAdjustmentBaselineInputs(null);
@@ -12844,9 +12853,10 @@ function ScenarioModelsView({
 	    const createClockBaselineInputs = createBuyingGroup
 	      ? buildCreateScenarioInputs(createBuyingGroup, createMarkets.length ? createMarkets : [])
 	      : scenario.inputs;
+	    const savedClockBaselineInputs = scenarioClockBaselineInputs[displayScenario.id];
 	    const clockBaselineInputs = isCreateScenarioMode
-	      ? scenarioAdjustmentBaselineInputs ?? createClockBaselineInputs
-	      : scenario.inputs;
+	      ? savedClockBaselineInputs ?? scenarioAdjustmentBaselineInputs ?? createClockBaselineInputs
+	      : savedClockBaselineInputs ?? scenarioAdjustmentBaselineInputs ?? scenario.inputs;
 	    const selectedClockHour = clockHourFromInputs(displayScenario.inputs, clockBaselineInputs, displayScenario.id);
 	    const negotiatorClockOffset = negotiatorClockOffsetByBuyingGroup[scenarioContext.buyingGroupId] ?? (displayScenario.relationshipRisk === 'High' ? .32 : .18);
 	    const buyerClockHour = Math.min(5.5, Math.max(1.8, selectedClockHour + negotiatorClockOffset));
