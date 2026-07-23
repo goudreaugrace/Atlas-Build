@@ -75934,6 +75934,19 @@ html body main.atlas-hub-shell .atlas-hub-main .atlas-buyer-list-shell .atlas-bu
   letter-spacing: normal !important;
 }
 
+html body main.atlas-hub-shell .atlas-hub-main .atlas-buyer-list-shell .atlas-buyer-triage-table-wrap,
+html body main.atlas-hub-shell .atlas-hub-main .atlas-buyer-triage-table-wrap,
+.atlas-buyer-list-shell .atlas-buyer-triage-table-wrap,
+.atlas-buyer-triage-table-wrap {
+  background: #ffffff !important;
+  border: 1px solid #ebebeb !important;
+  border-radius: 24px !important;
+  box-shadow: 0 1px 3px rgba(16, 42, 67, .04) !important;
+  box-sizing: border-box !important;
+  overflow-x: auto !important;
+  padding: 24px !important;
+}
+
 html body main.atlas-hub-shell .atlas-hub-main .atlas-buyer-list-shell .atlas-buyer-triage-table {
   font-family: var(--font-body) !important;
 }
