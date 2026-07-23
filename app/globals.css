@@ -76044,7 +76044,11 @@ html body .atlas-generated-report-primary {
 }
 
 .atlas-panel-in-view,
-html body .atlas-panel-in-view {
+html body .atlas-panel-in-view,
+.atlas-scenario-table-section .atlas-panel-in-view,
+.atlas-scenario-table-section.atlas-panel-in-view,
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-table-section,
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-modeler:has(.atlas-scenario-overview) .atlas-scenario-table-section {
   background: transparent !important;
   background-color: transparent !important;
   border: none !important;
