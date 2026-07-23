@@ -11159,6 +11159,7 @@ function ScenarioModelsView({
   const [expandedScenarioRowIds, setExpandedScenarioRowIds] = useState<string[]>([]);
   const [compareScenarioIds, setCompareScenarioIds] = useState<string[]>([]);
   const [savedManualScenarios] = useState<ScenarioLabOption[]>([]);
+  const [customScenarioInputs, setCustomScenarioInputs] = useState<ScenarioInputs | null>(null);
   const [skuRows, setSkuRows] = useState<ScenarioSkuRow[]>([
     { id: 'scenario-sku-core', sku: 'Core multipack family', priceMove: initialInputs.priceIncreasePercent, volumeRisk: Math.abs(initialInputs.volumeChangePercent), margin: 31.2, sensitivity: 'Medium' },
     { id: 'scenario-sku-promo', sku: 'Promo pack architecture', priceMove: Math.max(0.5, initialInputs.priceIncreasePercent - 0.4), volumeRisk: Math.abs(initialInputs.volumeChangePercent) + 0.7, margin: 27.6, sensitivity: 'High' }
@@ -12010,13 +12011,22 @@ function ScenarioModelsView({
     origin: 'atlas' as const,
     scenarioStyle: scenario.scenarioStyle
   }));
+  const workingCustomScenarioOption = {
+    ...predictiveScenario('custom', 'Current working model', 'Uses the current levers, scenario level, SKU rows, and custom assumptions.', inputs, 'Updates as the CNO changes the model.'),
+    createdAt: scenarioLabCreatedAt(0, 11, 12),
+    origin: 'manual' as const,
+    scenarioStyle: 'Custom'
+  };
+  const customScenarioOption = customScenarioInputs
+    ? { ...predictiveScenario('custom', 'Current working model', 'Uses the saved lever changes, scenario level, SKU rows, and custom assumptions.', scenarioInputOverrides.custom ?? customScenarioInputs, 'Updates from the CNO-saved custom model.'), createdAt: workingCustomScenarioOption.createdAt, origin: 'manual' as const, scenarioStyle: 'Custom' }
+    : null;
 	  const scenarioOptions = [
 
     { ...predictiveScenario('recommended', 'Balanced evidence-backed ask', 'Best current move based on buyer history, finance guardrails, and market signals.', recommendedWorkingInputs, 'Best default when the team needs a sourced starting point.'), createdAt: scenarioLabCreatedAt(0, 14, 18), origin: 'atlas' as const, scenarioStyle: 'Recommended' },
     { ...predictiveScenario('conservative', 'Lower-risk landing path', 'Protect landing probability with a smaller price move and controlled support.', conservativeWorkingInputs, 'Best when relationship risk or source confidence makes the full move harder to land.'), createdAt: scenarioLabCreatedAt(1, 17, 5), origin: 'atlas' as const, scenarioStyle: 'Conservative' },
     { ...predictiveScenario('aggressive', 'Value capture stretch', 'Push for more price realization with less trade support and higher buyer resistance.', aggressiveWorkingInputs, 'Use when margin protection is more important than relationship safety.'), createdAt: scenarioLabCreatedAt(0, 13, 5), origin: 'atlas' as const, scenarioStyle: 'Aggressive' },
     { ...predictiveScenario('buyer-counter', 'Likely buyer counter', 'Models the buyer pushing back with lower realization and more trade support.', buyerCounterWorkingInputs, 'Use to prepare the downside case and pushback response.'), createdAt: scenarioLabCreatedAt(0, 12, 47), origin: 'atlas' as const, scenarioStyle: 'Buyer counter' },
-    { ...predictiveScenario('custom', 'Current working model', 'Uses the current levers, scenario level, SKU rows, and custom assumptions.', inputs, 'Updates as the CNO changes the model.'), createdAt: scenarioLabCreatedAt(0, 11, 12), origin: 'atlas' as const, scenarioStyle: 'Custom' },
+    ...(customScenarioOption ? [customScenarioOption] : []),
     ...highImpactScenarioOptions,
     ...planningScenarioOptions,
     ...referenceScenarioOptions,
@@ -12264,6 +12274,7 @@ function ScenarioModelsView({
   }
 
   function saveScenarioParametersAsCustom() {
+    setCustomScenarioInputs(inputs);
     setSelectedScenarioId('custom');
     setScenarioAdjustmentEditing(false);
     setScenarioAdjustmentBaselineInputs(null);
@@ -12379,7 +12390,9 @@ function ScenarioModelsView({
 
 	  const isScenarioDetailMode = scenarioLabMode === 'create' || (Boolean(initialScenarioId) && initialScenarioLabMode !== 'create');
 	  const fullViewScenario = isScenarioDetailMode
-	    ? scenarioOptions.find((scenario) => scenario.id === (scenarioLabMode === 'create' ? 'custom' : (selectedScenarioId || initialScenarioId)))
+	    ? scenarioLabMode === 'create'
+	      ? workingCustomScenarioOption
+	      : scenarioOptions.find((scenario) => scenario.id === (selectedScenarioId || initialScenarioId))
 	    : undefined;
 	  function scenarioDetailHref(scenarioId: string) {
 	    const params = new URLSearchParams();
@@ -12673,7 +12686,7 @@ function ScenarioModelsView({
 	      { id: 'conservative', label: 'Conservative', note: scenarioTabNote(pct(conservativeScenarioInputs.priceIncreasePercent), pct(conservativeScenarioInputs.expectedRealizationPercent)), icon: <ShieldCheck size={18} /> },
 	      { id: 'aggressive', label: 'Aggressive', note: scenarioTabNote(pct(aggressiveScenarioInputs.priceIncreasePercent), pct(aggressiveScenarioInputs.expectedRealizationPercent)), icon: <TrendingUp size={18} /> },
 	      { id: 'buyer-counter', label: 'Likely Buyer Counter', note: scenarioTabNote(pct(buyerCounterInputs.priceIncreasePercent), pct(buyerCounterInputs.expectedRealizationPercent)), icon: <Sparkles size={18} /> },
-	      { id: 'custom', label: 'Custom', note: scenarioTabNote(pct(inputs.priceIncreasePercent), pct(inputs.expectedRealizationPercent)), icon: <Layers3 size={18} /> }
+	      ...(customScenarioOption ? [{ id: 'custom', label: 'Custom', note: scenarioTabNote(pct(customScenarioOption.inputs.priceIncreasePercent), pct(customScenarioOption.inputs.expectedRealizationPercent)), icon: <Layers3 size={18} /> }] : [])
 	    ];
 	    const detailMetricNumbers = [
 	      { label: 'Margin Impact', value: scenarioDeltaLabel(displayScenario.outputs.marginImpact) },
