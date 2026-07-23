@@ -86607,7 +86607,7 @@ html body main.atlas-hub-shell .atlas-hub-main .spotlight-action-btn:hover {
   color: #FFFFFF !important;
 }
 
-/* 2. ORIGIN BAR & FIGMA SSOT TAB COMPONENT (Node 9:11761) */
+/* 2. ORIGIN BAR & FIGMA SSOT TAB COMPONENT (Node 9:11800) */
 html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-origin-bar {
   display: flex;
   align-items: center;
@@ -86617,8 +86617,39 @@ html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-origin-bar {
   flex-wrap: wrap;
 }
 
+/* Figma Node 9:11800 Tabs Container */
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-segmented-control {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  padding: 8px !important;
+  border-radius: 28px !important;
+  background: rgba(245, 245, 245, 0.1) !important;
+  border: 1px solid #D9DADB !important;
+  backdrop-filter: blur(24px) !important;
+  -webkit-backdrop-filter: blur(24px) !important;
+  box-sizing: border-box !important;
+}
+
 /* Inactive Pill Tab (Figma node 9:11759) */
-html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-segmented-control button,
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-segmented-control button {
+  background: transparent !important;
+  border: 1px solid transparent !important;
+  color: #31373D !important;
+  border-radius: 28px !important;
+  padding: 8px 16px !important;
+  font-family: var(--font-display, "Libre Franklin"), sans-serif !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  letter-spacing: -0.12px !important;
+  line-height: 22px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+}
+
 html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-status-chips button,
 html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-view-switcher button {
   background: #F5F5F5 !important;
@@ -86638,7 +86669,12 @@ html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-view-switcher but
   transition: all 0.15s ease-in-out;
 }
 
-html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-segmented-control button:hover,
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-segmented-control button:hover:not(.active) {
+  background: rgba(0, 0, 0, 0.04) !important;
+  border-color: transparent !important;
+  color: #1A1F26 !important;
+}
+
 html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-status-chips button:hover,
 html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-view-switcher button:hover {
   background: #EBEBEB !important;
@@ -86663,19 +86699,19 @@ html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-view-switcher but
   box-shadow: 0 2px 8px rgba(5, 99, 199, 0.25) !important;
 }
 
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-segmented-control button svg,
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-segmented-control button .atlas-tab-icon {
+  width: 16px !important;
+  height: 16px !important;
+  color: #31373D;
+}
+
 html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-segmented-control button.active svg,
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-segmented-control button.active .atlas-tab-icon,
 html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-status-chips button.active svg,
 html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-view-switcher button.active svg {
   color: #F5F5F5 !important;
   fill: currentColor;
-}
-
-html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-segmented-control {
-  display: inline-flex;
-  gap: 8px;
-  background: transparent;
-  padding: 0;
-  border: none;
 }
 
 html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-segmented-control .tab-count {
