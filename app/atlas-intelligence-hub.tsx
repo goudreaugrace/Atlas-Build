@@ -1056,6 +1056,7 @@ export function AppShell({
   const totalAlertsCount = useMemo(() => {
     return computeTotalTriageAlertsCount();
   }, []);
+  const topNavAlerts = useMemo(() => topCnoTriageAlerts(5), []);
 
   const primaryNav = [
     { label: 'Triage', href: '/' },
@@ -1115,10 +1116,30 @@ export function AppShell({
             })}
           </nav>
           <div className="atlas-hub-context">
-            <a href="/" className="atlas-nav-alert-badge" aria-label="Active alerts count">
-              <AlertCircle size={20} />
-              <span>{totalAlertsCount}</span>
-            </a>
+            <div className="atlas-nav-alert-menu">
+              <a href="/" className="atlas-nav-alert-badge" aria-label={`${totalAlertsCount} active alerts. Open triage.`}>
+                <AlertCircle size={20} />
+                <span>{totalAlertsCount}</span>
+              </a>
+              <div className="atlas-nav-alert-dropdown" role="menu" aria-label="Top CNO alerts">
+                <header>
+                  <span>Top CNO Alerts</span>
+                  <small>{totalAlertsCount} active</small>
+                </header>
+                {topNavAlerts.map((alert) => {
+                  const buyingGroupId = triageBuyingGroupIdForAlert(alert);
+                  const alertHref = alert.modelHref ?? (buyingGroupId ? `/buying-groups/${buyingGroupId}` : alert.href);
+                  return (
+                    <a className={`tone-${alert.tone}`} href={alertHref} key={alert.id} role="menuitem">
+                      <span>{alert.alertTypeLabel}</span>
+                      <strong>{alert.title}</strong>
+                      <em>{alert.value} · {alert.action}</em>
+                    </a>
+                  );
+                })}
+                <a className="atlas-nav-alert-triage-link" href="/" role="menuitem">Open full triage <ArrowRight size={13} /></a>
+              </div>
+            </div>
             <img src="/user-avatar.png" alt="User Avatar" className="atlas-user-avatar" />
           </div>
         </header>
@@ -2442,6 +2463,90 @@ function computeTotalTriageAlertsCount() {
   return holisticAlerts.length;
 }
 
+function topCnoTriageAlerts(limit = 5) {
+  const toneRank: Record<AtlasActiveAlert['tone'], number> = {
+    critical: 4,
+    watch: 3,
+    memory: 2,
+    opportunity: 1
+  };
+  const mvpBuyingGroups = [...packet.buyingGroups]
+    .sort((a, b) => riskRank(b.riskLevel) - riskRank(a.riskLevel) || b.financialExposure.marginAtRisk - a.financialExposure.marginAtRisk)
+    .slice(0, 4);
+  return mvpBuyingGroups
+    .flatMap((group) => triageAlertsForBuyingGroup(group))
+    .sort((a, b) => toneRank[b.tone] - toneRank[a.tone] || Number.parseFloat(b.value.replace(/[^\d.-]/g, '')) - Number.parseFloat(a.value.replace(/[^\d.-]/g, '')))
+    .slice(0, limit);
+}
+
+function triageImpactNumber(value: string) {
+  const numeric = Number.parseFloat(value.replace(/[^\d.-]/g, ''));
+  if (!Number.isFinite(numeric)) return 0;
+  const normalized = value.toLowerCase();
+  if (normalized.includes('bn') || normalized.includes('b')) return Math.abs(numeric) * 1_000_000_000;
+  if (normalized.includes('m')) return Math.abs(numeric) * 1_000_000;
+  if (normalized.includes('k')) return Math.abs(numeric) * 1_000;
+  if (normalized.includes('%') || normalized.includes('pts')) return Math.abs(numeric) * 100_000;
+  return Math.abs(numeric);
+}
+
+function triageAlertPriorityScore(alert: AtlasActiveAlert) {
+  const toneBase: Record<AtlasActiveAlert['tone'], number> = {
+    critical: 78,
+    watch: 62,
+    memory: 52,
+    opportunity: 44
+  };
+  const impactValues = [alert.value, ...alert.metrics.map((metric) => metric.value)]
+    .map(triageImpactNumber);
+  const largestImpact = Math.max(0, ...impactValues);
+  const impactBoost = largestImpact > 0 ? Math.min(18, Math.log10(largestImpact + 1) * 2.2) : 0;
+  const modeledBoost = alert.alertTypeLabel === 'Scenario modeled' ? 8 : alert.modelHref ? 5 : 0;
+  const cnoBoost = /cno|decide|scenario|margin|risk|counter|guardrail/i.test(`${alert.action} ${alert.possibleEffect}`) ? 4 : 0;
+  return Math.round(Math.max(10, Math.min(98, toneBase[alert.tone] + impactBoost + modeledBoost + cnoBoost)));
+}
+
+function triageAlertPriorityRead(alert: AtlasActiveAlert, rank?: number) {
+  const score = triageAlertPriorityScore(alert);
+  if (rank === 0) {
+    return { label: 'Look first', note: 'Likely CNO decision', score, tone: 'first' };
+  }
+  if (rank === 1 || rank === 2 || score >= 82) {
+    return { label: 'High impact', note: 'Review before next move', score, tone: 'high' };
+  }
+  if (rank === 3 || rank === 4 || score >= 62) {
+    return { label: 'Watch next', note: 'Could change scenario', score, tone: 'watch' };
+  }
+  return { label: 'Keep visible', note: 'Context signal', score, tone: 'steady' };
+}
+
+function triageRecommendedGeneratedPath(alert: AtlasActiveAlert, priorityRead = triageAlertPriorityRead(alert)) {
+  const scenarioSnapshot = scenarioSnapshotForAlert(alert);
+  const atlasAction = triageAtlasActionForAlert(alert, scenarioSnapshot);
+  const pathLabel = scenarioSnapshot
+    ? scenarioSnapshot.title
+    : alert.alertTypeLabel === 'Memory update'
+      ? 'Buyer memory path'
+      : alert.alertTypeLabel === 'Pattern identified'
+        ? 'Cross-market pattern path'
+        : alert.alertTypeLabel === 'Competitor move'
+          ? 'Competitive response path'
+          : 'Scenario impact path';
+  const reason = priorityRead.tone === 'first'
+    ? 'This should be the first ATLAS-generated path the CNO reviews.'
+    : priorityRead.tone === 'high'
+      ? 'Use this path before deciding the next buyer move.'
+      : 'Keep this path visible while reviewing the scenario impact.';
+
+  return {
+    href: atlasAction.href,
+    label: atlasAction.label,
+    pathLabel,
+    reason,
+    score: priorityRead.score
+  };
+}
+
 function ScenarioEntryQueue({
   eyebrow = 'Alert-to-scenario queue',
   items,
@@ -2512,7 +2617,9 @@ function TriageCommandCenter({
     ...groupScopes
   ];
   const activeScope = triageScopes.find((scope) => scope.id === activeScopeId) ?? triageScopes[0];
-  const visibleAlerts = activeScope.alerts.filter((alert) => !dismissedAlertIds.includes(alert.id));
+  const visibleAlerts = activeScope.alerts
+    .filter((alert) => !dismissedAlertIds.includes(alert.id))
+    .sort((a, b) => triageAlertPriorityScore(b) - triageAlertPriorityScore(a));
   const criticalCount = visibleAlerts.filter((alert) => alert.tone === 'critical').length;
   const totalModeledValue = visibleAlerts.reduce((sum, alert) => {
     const parsedValue = Number(alert.value.replace(/[^\d.-]/g, ''));
@@ -2579,6 +2686,12 @@ function TriageCommandCenter({
             const atlasAction = triageAtlasActionForAlert(alert, scenarioSnapshot);
             const buyingGroupId = triageBuyingGroupIdForAlert(alert);
             const buyingGroup = buyingGroupId ? getBuyingGroup(buyingGroupId) : undefined;
+            const priorityRead = triageAlertPriorityRead(alert, index);
+            const recommendedPath = triageRecommendedGeneratedPath(alert, priorityRead);
+            const rowMetrics: Array<{ label: string; tone?: string; value: string }> = [
+              { label: 'Priority', tone: priorityRead.tone, value: priorityRead.label },
+              ...alert.metrics.map((metric) => ({ label: metric.label, value: metric.value }))
+            ];
           return (
               <article className={`atlas-triage-alert-row atlas-triage-alert-row-v2 tone-${alert.tone}${isExpanded ? ' is-expanded' : ''}`} key={alert.id}>
                 {/* Upper block: alert summary */}
@@ -2589,8 +2702,8 @@ function TriageCommandCenter({
                       <h3>{alert.title}</h3>
                     </div>
                     <dl className="atlas-triage-row-metrics">
-                      {alert.metrics.slice(0, 3).map((metric) => (
-                        <div key={`${alert.id}-${metric.label}`}>
+                      {rowMetrics.slice(0, 4).map((metric) => (
+                        <div className={metric.label === 'Priority' ? `atlas-triage-priority-metric priority-${metric.tone}` : undefined} key={`${alert.id}-${metric.label}`}>
                           <dt>{metric.label}</dt>
                           <dd>{metric.value}</dd>
                         </div>
@@ -2642,9 +2755,17 @@ function TriageCommandCenter({
                         </div>
                       </div>
                       <div className="atlas-triage-completed-actions" aria-label="ATLAS completed work">
-                        {triageCompletedActionsForAlert(alert).map((snapshot) => (
-                          <TriageScenarioSnapshotCard key={`${alert.id}-${snapshot.status}-${snapshot.title}`} snapshot={snapshot} />
-                        ))}
+                        <a className="atlas-triage-recommended-path" href={recommendedPath.href}>
+                          <span>Recommended ATLAS path</span>
+                          <strong>{recommendedPath.pathLabel}</strong>
+                          <p>{recommendedPath.reason}</p>
+                          <em>{recommendedPath.label} <ArrowRight size={13} /></em>
+                        </a>
+                        <div className="atlas-triage-generated-path-grid">
+                          {triageCompletedActionsForAlert(alert).slice(1).map((snapshot) => (
+                            <TriageScenarioSnapshotCard key={`${alert.id}-${snapshot.status}-${snapshot.title}`} snapshot={snapshot} />
+                          ))}
+                        </div>
                       </div>
                     </section>
                   </div>
@@ -10772,9 +10893,9 @@ function BuyingGroupTriageTable({ activeSort = 'priority', groups }: { activeSor
           <tr>
             <th>Buying group</th>
             <th><BuyingGroupSortableHeader activeSort={activeSort} label="Risk" sort="priority" /></th>
-            <th><BuyingGroupSortableHeader activeSort={activeSort} label="Margin at risk" sort="margin" /></th>
-            <th><BuyingGroupSortableHeader activeSort={activeSort} label="Target gap" sort="gap" /></th>
-            <th>Scenario to test</th>
+            <th className="atlas-buyer-triage-center-col"><BuyingGroupSortableHeader activeSort={activeSort} label="Margin at risk" sort="margin" /></th>
+            <th className="atlas-buyer-triage-center-col"><BuyingGroupSortableHeader activeSort={activeSort} label="Target gap" sort="gap" /></th>
+            <th>Recommended scenarios</th>
           </tr>
         </thead>
         <tbody>
@@ -10807,8 +10928,8 @@ function BuyingGroupTriageTable({ activeSort = 'priority', groups }: { activeSor
                     <span className="atlas-risk-tooltip" role="tooltip">{buyerRiskReason(group)}</span>
                   </span>
                 </td>
-                <td className={`metric-${buyerMetricTone('margin', group)}`}>{euros(exposure.marginAtRisk)}</td>
-                <td className={`metric-${buyerMetricTone('gap', group)}`}>{pct(realizationGap)}</td>
+                <td className={`atlas-buyer-triage-center-col metric-${buyerMetricTone('margin', group)}`}>{euros(exposure.marginAtRisk)}</td>
+                <td className={`atlas-buyer-triage-center-col metric-${buyerMetricTone('gap', group)}`}>{pct(realizationGap)}</td>
                 <td>
                   <span className="atlas-buyer-scenario-route">
                     {buyerScenarioToTest(group)}
@@ -11009,6 +11130,12 @@ function ScenarioModelsView({
   const scenarioSource = attachedBuyingGroup?.source ?? attachedMarket?.source ?? packet.documents.find((document) => document.id === defaultScenario.sourceIds[0])?.source ?? packet.markets[0].source;
   const [inputs, setInputs] = useState<ScenarioInputs>(initialInputs);
   const [scenarioSaveStatus, setScenarioSaveStatus] = useState('');
+  const [scenarioSaveConfirmation, setScenarioSaveConfirmation] = useState<{
+    buyingGroupId: string;
+    buyingGroupName: string;
+    href: string;
+    title: string;
+  } | null>(null);
   const [selectedLevel, setSelectedLevel] = useState<ScenarioWorkspaceLevel>(attachedBuyingGroup ? 'buying_group' : attachedMarket ? 'market' : 'portfolio');
   const [selectedScenarioId, setSelectedScenarioId] = useState(initialScenarioId ?? '');
   const [scenarioLabMode, setScenarioLabMode] = useState<ScenarioLabMode>(initialScenarioLabMode === 'create' ? 'create' : 'review');
@@ -11019,6 +11146,8 @@ function ScenarioModelsView({
   const [scenarioTablePage, setScenarioTablePage] = useState(Number.parseInt(initialScenarioPage || '1', 10));
   const [scenarioTableSort, setScenarioTableSort] = useState(initialSort || 'impact');
   const [scenarioNewSinceLastVisitCount, setScenarioNewSinceLastVisitCount] = useState<number | null>(null);
+  const [createBuyingGroupId, setCreateBuyingGroupId] = useState(attachedBuyingGroup?.id ?? '');
+  const [createMarketIds, setCreateMarketIds] = useState<string[]>(attachedBuyingGroup ? attachedBuyingGroup.primaryMarkets : selectedMarket ? [selectedMarket.id] : []);
 
   const [scenarioAdjustmentEditing, setScenarioAdjustmentEditing] = useState(false);
   const [scenarioAdjustmentBaselineInputs, setScenarioAdjustmentBaselineInputs] = useState<ScenarioInputs | null>(null);
@@ -11029,7 +11158,7 @@ function ScenarioModelsView({
   const [expandedScenarioPriorityGroups, setExpandedScenarioPriorityGroups] = useState({ planning: false, traceability: false });
   const [expandedScenarioRowIds, setExpandedScenarioRowIds] = useState<string[]>([]);
   const [compareScenarioIds, setCompareScenarioIds] = useState<string[]>([]);
-  const [savedManualScenarios, setSavedManualScenarios] = useState<ScenarioLabOption[]>([]);
+  const [savedManualScenarios] = useState<ScenarioLabOption[]>([]);
   const [skuRows, setSkuRows] = useState<ScenarioSkuRow[]>([
     { id: 'scenario-sku-core', sku: 'Core multipack family', priceMove: initialInputs.priceIncreasePercent, volumeRisk: Math.abs(initialInputs.volumeChangePercent), margin: 31.2, sensitivity: 'Medium' },
     { id: 'scenario-sku-promo', sku: 'Promo pack architecture', priceMove: Math.max(0.5, initialInputs.priceIncreasePercent - 0.4), volumeRisk: Math.abs(initialInputs.volumeChangePercent) + 0.7, margin: 27.6, sensitivity: 'High' }
@@ -11097,6 +11226,86 @@ function ScenarioModelsView({
   function updateInput<K extends keyof ScenarioInputs>(key: K, value: ScenarioInputs[K]) {
     setInputs((current) => ({ ...current, [key]: value }));
     setSelectedScenarioId('custom');
+  }
+
+  function buildCreateScenarioInputs(group: BuyingGroup, markets: Market[]) {
+    const buyerInputs = scenarioInputsForBuyingGroup(group);
+    if (!markets.length) return buyerInputs;
+    const averagePressure = markets.reduce((sum, market) => sum + riskRank(market.pressureLevel), 0) / markets.length;
+    const marketGap = markets.reduce((sum, market) => sum + market.gapToPlan, 0) / markets.length;
+    const tradeExposure = markets.reduce((sum, market) => sum + market.tradeSpendExposure, 0);
+    const marginExposure = markets.reduce((sum, market) => sum + market.marginAtRisk, 0);
+    return {
+      ...buyerInputs,
+      buyerAcceptanceProbability: Math.max(24, Math.min(92, buyerInputs.buyerAcceptanceProbability - averagePressure * 4)),
+      concessionAmount: Math.round(buyerInputs.concessionAmount + marginExposure * 0.025),
+      expectedRealizationPercent: Math.max(0.4, buyerInputs.expectedRealizationPercent - averagePressure * 0.08),
+      priceIncreasePercent: Math.max(0.6, buyerInputs.priceIncreasePercent + Math.min(0.4, marketGap / Math.max(1, baseRevenue) * 100)),
+      tradeSpendChange: Math.round(Math.max(buyerInputs.tradeSpendChange, tradeExposure * 0.08)),
+      volumeChangePercent: Math.max(-5, buyerInputs.volumeChangePercent - averagePressure * 0.18)
+    };
+  }
+
+  function applyCreateScenarioContext(groupId: string, marketIds: string[]) {
+    const group = getBuyingGroup(groupId);
+    const markets = marketIds.map((id) => getMarket(id)).filter((market): market is Market => Boolean(market));
+    if (!group || !markets.length) return;
+    setInputs(buildCreateScenarioInputs(group, markets));
+    setSelectedLevel('buying_group');
+    setSelectedScenarioId('custom');
+    setScenarioTableBuyingGroupFilter(group.id);
+    setScenarioTableMarketFilter(markets[0]?.id ?? '');
+  }
+
+  function selectCreateBuyingGroup(groupId: string) {
+    setCreateBuyingGroupId(groupId);
+    const group = getBuyingGroup(groupId);
+    const groupMarkets = group
+      ? group.primaryMarkets.map((id) => getMarket(id)).filter((market): market is Market => Boolean(market))
+      : [];
+    const nextMarketIds = groupMarkets.length === 1 ? [groupMarkets[0].id] : [];
+    setCreateMarketIds(nextMarketIds);
+    if (group && nextMarketIds.length) {
+      setInputs(buildCreateScenarioInputs(group, groupMarkets));
+      setScenarioTableBuyingGroupFilter(group.id);
+      setScenarioTableMarketFilter(nextMarketIds[0]);
+    } else if (group) {
+      setInputs(scenarioInputsForBuyingGroup(group));
+      setScenarioTableBuyingGroupFilter(group.id);
+      setScenarioTableMarketFilter('');
+    } else {
+      setScenarioTableBuyingGroupFilter('');
+      setScenarioTableMarketFilter('');
+    }
+    setSelectedLevel('buying_group');
+    setSelectedScenarioId('custom');
+    setScenarioAdjustmentEditing(false);
+    setScenarioAdjustmentBaselineInputs(null);
+  }
+
+  function toggleCreateMarket(marketId: string) {
+    if (!createBuyingGroupId) return;
+    setCreateMarketIds((current) => {
+      const nextMarketIds = current.includes(marketId)
+        ? current.filter((id) => id !== marketId)
+        : [...current, marketId];
+      applyCreateScenarioContext(createBuyingGroupId, nextMarketIds);
+      return nextMarketIds;
+    });
+  }
+
+  function selectAllCreateMarkets() {
+    if (!createBuyingGroupId || !createMarketOptions.length) return;
+    if (createMarketIds.length === createMarketOptions.length) {
+      const group = getBuyingGroup(createBuyingGroupId);
+      setCreateMarketIds([]);
+      if (group) setInputs(scenarioInputsForBuyingGroup(group));
+      setScenarioTableMarketFilter('');
+      return;
+    }
+    const nextMarketIds = createMarketOptions.map((market) => market.id);
+    setCreateMarketIds(nextMarketIds);
+    applyCreateScenarioContext(createBuyingGroupId, nextMarketIds);
   }
 
   function inputsForScenarioLevel(level: ScenarioWorkspaceLevel): ScenarioInputs {
@@ -11298,6 +11507,52 @@ function ScenarioModelsView({
     { delta: outputs.volumeImpact, label: 'Volume', value: scenarioBaselineMetrics.volume },
     { delta: outputs.tradeSpendImpact, label: 'Trade spend', value: scenarioBaselineMetrics.trade }
   ];
+  const createBuyingGroups = [...packet.buyingGroups]
+    .sort((a, b) => riskRank(b.riskLevel) - riskRank(a.riskLevel) || b.financialExposure.marginAtRisk - a.financialExposure.marginAtRisk);
+  const createBuyingGroup = createBuyingGroupId ? getBuyingGroup(createBuyingGroupId) : undefined;
+  const createMarketOptions = createBuyingGroup
+    ? createBuyingGroup.primaryMarkets.map((id) => getMarket(id)).filter((market): market is Market => Boolean(market))
+    : [];
+  const createMarkets = createMarketIds.map((id) => getMarket(id)).filter((market): market is Market => Boolean(market));
+  const createSetupComplete = Boolean(createBuyingGroup && createMarkets.length);
+  const createContextRevenue = createMarkets.reduce((sum, market) => sum + market.revenueUnderNegotiation, 0) || createBuyingGroup?.financialExposure.revenueUnderNegotiation || baseRevenue;
+  const createContextMargin = createMarkets.reduce((sum, market) => sum + market.marginAtRisk, 0) || createBuyingGroup?.financialExposure.marginAtRisk || scenarioBaselineMetrics.margin;
+  const createAveragePressure = createMarkets.length
+    ? createMarkets.reduce((sum, market) => sum + riskRank(market.pressureLevel), 0) / createMarkets.length
+    : 0;
+  const createClockHour = Math.min(5.4, Math.max(2.1,
+    2.85
+      + (inputs.priceIncreasePercent - inputs.expectedRealizationPercent) * 0.16
+      + createAveragePressure * 0.18
+      + Math.max(0, -inputs.volumeChangePercent) * 0.08
+      + Math.min(0.55, inputs.tradeSpendChange / Math.max(1, createContextRevenue) * 12)
+  ));
+  function createClockTimeFromHour(clockHour: number) {
+    const hour = Math.floor(clockHour);
+    const minutes = Math.round((clockHour - hour) * 60 / 5) * 5;
+    const normalizedHour = minutes === 60 ? hour + 1 : hour;
+    const normalizedMinutes = minutes === 60 ? 0 : minutes;
+    return `${normalizedHour}:${String(normalizedMinutes).padStart(2, '0')}`;
+  }
+  function createClockLabelFromHour(clockHour: number) {
+    if (clockHour < 2.75) return 'Bartering';
+    if (clockHour < 3.45) return 'Haggling';
+    if (clockHour < 4.65) return 'Hard Bargaining';
+    return 'Dealing';
+  }
+  function createClockMarkerStyle(clockTime: string, radius = 39) {
+    const [hourValue, minuteValue = '0'] = clockTime.split(':');
+    const hour = Number(hourValue) % 12;
+    const minute = Number(minuteValue);
+    const angle = ((hour + minute / 60) * 30 - 90) * (Math.PI / 180);
+    return {
+      '--clock-marker-x': `${50 + Math.cos(angle) * radius}%`,
+      '--clock-marker-y': `${50 + Math.sin(angle) * radius}%`
+    } as CSSProperties;
+  }
+  const createPostureTime = createClockTimeFromHour(createClockHour);
+  const createPostureLabel = createClockLabelFromHour(createClockHour);
+  const createBuyerClockTime = createClockTimeFromHour(Math.min(5.5, createClockHour + (createAveragePressure > 1.7 ? 0.35 : 0.2)));
   const buyerAskForCorridor = attachedWorkspace ? Number.parseFloat(attachedWorkspace.currentState.latestBuyerAsk) : inputs.priceIncreasePercent + 1.2;
   const currentPositionForCorridor = attachedWorkspace ? Number.parseFloat(attachedWorkspace.currentState.pepsicoPosition) : inputs.expectedRealizationPercent;
   const recommendedAskForCorridor = inputs.priceIncreasePercent;
@@ -11998,28 +12253,6 @@ function ScenarioModelsView({
     toggleCompareScenario(scenarioId);
   }
 
-  function saveAdjustedScenarioToTable() {
-    const createdAt = new Date().toISOString();
-    const manualScenario: ScenarioLabOption = {
-      ...predictiveScenario(
-        `manual-${Date.now().toString(36)}`,
-        `Manual scenario ${savedManualScenarios.length + 1}`,
-        `CNO adjusted case using ${inputs.priceIncreasePercent.toFixed(1)}% price ask, ${inputs.expectedRealizationPercent.toFixed(1)}% realization, and ${inputs.buyerAcceptanceProbability.toFixed(0)}% buyer acceptance.`,
-        inputs,
-        'Saved from the manual scenario workspace for comparison against ATLAS generated scenarios.'
-      ),
-      createdAt,
-      origin: 'manual',
-      scenarioStyle: 'Manual adjustment'
-    };
-    setSavedManualScenarios((current) => [manualScenario, ...current]);
-    setSelectedScenarioId(manualScenario.id);
-    setCompareScenarioIds((current) => [manualScenario.id, ...current.filter((id) => id !== manualScenario.id)].slice(0, 4));
-    setScenarioTypeFilter('all');
-    setScenarioLabMode('review');
-    setScenarioSaveStatus('Manual scenario added to the scenario table.');
-  }
-
   function updateScenarioParametersForCurrentTab(scenarioId: string) {
     setScenarioInputOverrides((current) => ({ ...current, [scenarioId]: inputs }));
     setSelectedScenarioId(scenarioId);
@@ -12039,27 +12272,41 @@ function ScenarioModelsView({
     if (typeof window !== 'undefined') window.history.replaceState(null, '', scenarioDetailHref('custom'));
   }
 
-  function saveScenarioToBuyingGroup() {
-    if (!attachedBuyingGroup) {
+  function saveScenarioToBuyingGroup(scenarioToSave: ScenarioLabOption = selectedPredictiveScenario) {
+    const inferredContext = scenarioBuyingGroupContext(scenarioToSave);
+    const targetBuyingGroup = attachedBuyingGroup
+      ?? createBuyingGroup
+      ?? (inferredContext.buyingGroupId ? getBuyingGroup(inferredContext.buyingGroupId) : undefined);
+    const targetMarketId = createMarkets[0]?.id
+      ?? selectedMarketId
+      ?? inferredContext.marketId
+      ?? targetBuyingGroup?.primaryMarkets[0];
+    const saveInputs = scenarioToSave.inputs;
+    const saveOutputs = calculateScenarioOutputs(saveInputs, targetBuyingGroup?.financialExposure.revenueUnderNegotiation ?? baseRevenue);
+
+    if (!targetBuyingGroup) {
       setScenarioSaveStatus('Select a buying group before saving this scenario.');
       return;
     }
     const now = new Date().toISOString();
+    const profileHref = `/buying-groups/${targetBuyingGroup.id}?view=strategy`;
+    const cleanScenarioName = scenarioToSave.name.replace(/^.\. /, '');
+
     saveStoredGeneratedView({
       artifactType: 'scenario_output',
       audienceMode: 'internal_cno',
-      buyingGroupId: attachedBuyingGroup.id,
+      buyingGroupId: targetBuyingGroup.id,
       confidence: scenarioSource.confidence,
       contentSnapshot: {
         sections: [
           {
             title: 'Scenario inputs',
-            body: `Price increase ${inputs.priceIncreasePercent.toFixed(1)}%, expected realization ${inputs.expectedRealizationPercent.toFixed(1)}%, buyer acceptance ${inputs.buyerAcceptanceProbability.toFixed(0)}%, competitor pressure ${inputs.competitorPressureLevel}.`,
+            body: `Price increase ${saveInputs.priceIncreasePercent.toFixed(1)}%, expected realization ${saveInputs.expectedRealizationPercent.toFixed(1)}%, buyer acceptance ${saveInputs.buyerAcceptanceProbability.toFixed(0)}%, competitor pressure ${saveInputs.competitorPressureLevel}.`,
             bullets: [
-              `Trade spend: ${euros(inputs.tradeSpendChange)}`,
-              `Concession: ${euros(inputs.concessionAmount)}`,
-              `Volume change: ${inputs.volumeChangePercent.toFixed(1)}%`,
-              `Contract length: ${inputs.contractLengthMonths} months`
+              `Trade spend: ${euros(saveInputs.tradeSpendChange)}`,
+              `Concession: ${euros(saveInputs.concessionAmount)}`,
+              `Volume change: ${saveInputs.volumeChangePercent.toFixed(1)}%`,
+              `Contract length: ${saveInputs.contractLengthMonths} months`
             ]
           },
           {
@@ -12075,32 +12322,32 @@ function ScenarioModelsView({
           },
           {
             title: 'Predictive buyer response',
-            body: selectedPredictiveScenario.buyerResponse,
+            body: scenarioToSave.buyerResponse,
             bullets: [
-              `Selected scenario: ${selectedPredictiveScenario.name}`,
-              `ATLAS score: ${selectedPredictiveScenario.atlasScore}/100`,
-              `Likelihood to land: ${selectedPredictiveScenario.likelihood}%`,
-              `Recommended edit: ${selectedPredictiveScenario.recommendedEdit}`
+              `Selected scenario: ${scenarioToSave.name}`,
+              `ATLAS score: ${scenarioToSave.atlasScore}/100`,
+              `Likelihood to land: ${scenarioToSave.likelihood}%`,
+              `Recommended edit: ${scenarioToSave.recommendedEdit}`
             ]
           },
           {
             title: 'Modeled impact',
-            body: `Risk-adjusted value is ${euros(outputs.riskAdjustedValue)} with ${outputs.riskLevel} risk.`,
+            body: `Risk-adjusted value is ${euros(saveOutputs.riskAdjustedValue)} with ${saveOutputs.riskLevel} risk.`,
             bullets: [
-              `Revenue: ${scenarioDeltaLabel(outputs.revenueImpact)} (${scenarioPercentChange(outputs.revenueImpact, scenarioBaselineMetrics.revenue)} from current)`,
-              `Margin: ${scenarioDeltaLabel(outputs.marginImpact)} (${scenarioPercentChange(outputs.marginImpact, scenarioBaselineMetrics.margin)} from current)`,
-              `Volume: ${scenarioDeltaLabel(outputs.volumeImpact)} (${scenarioPercentChange(outputs.volumeImpact, scenarioBaselineMetrics.volume)} from current)`,
-              `Trade spend: ${scenarioDeltaLabel(outputs.tradeSpendImpact)} (${scenarioPercentChange(outputs.tradeSpendImpact, scenarioBaselineMetrics.trade)} from current)`
+              `Revenue: ${scenarioDeltaLabel(saveOutputs.revenueImpact)} (${scenarioPercentChange(saveOutputs.revenueImpact, scenarioBaselineMetrics.revenue)} from current)`,
+              `Margin: ${scenarioDeltaLabel(saveOutputs.marginImpact)} (${scenarioPercentChange(saveOutputs.marginImpact, scenarioBaselineMetrics.margin)} from current)`,
+              `Volume: ${scenarioDeltaLabel(saveOutputs.volumeImpact)} (${scenarioPercentChange(saveOutputs.volumeImpact, scenarioBaselineMetrics.volume)} from current)`,
+              `Trade spend: ${scenarioDeltaLabel(saveOutputs.tradeSpendImpact)} (${scenarioPercentChange(saveOutputs.tradeSpendImpact, scenarioBaselineMetrics.trade)} from current)`
             ]
           }
         ],
-        summary: `${outputs.riskLevel} risk scenario for ${attachedBuyingGroup.name}: revenue ${scenarioDeltaLabel(outputs.revenueImpact)}, margin ${scenarioDeltaLabel(outputs.marginImpact)}, risk-adjusted value ${euros(outputs.riskAdjustedValue)}.`,
-        title: `${attachedBuyingGroup.name} scenario model · ${inputs.expectedRealizationPercent.toFixed(1)}% realization`
+        summary: `${saveOutputs.riskLevel} risk scenario for ${targetBuyingGroup.name}: revenue ${scenarioDeltaLabel(saveOutputs.revenueImpact)}, margin ${scenarioDeltaLabel(saveOutputs.marginImpact)}, risk-adjusted value ${euros(saveOutputs.riskAdjustedValue)}.`,
+        title: `${targetBuyingGroup.name} scenario model · ${saveInputs.expectedRealizationPercent.toFixed(1)}% realization`
       },
       createdAt: now,
-      id: `scenario-model-${attachedBuyingGroup.id}-${Date.now().toString(36)}`,
+      id: `scenario-model-${targetBuyingGroup.id}-${Date.now().toString(36)}`,
       lifecycleState: 'attached',
-      marketId: selectedMarketId || attachedBuyingGroup.primaryMarkets[0],
+      marketId: targetMarketId,
       mode: 'new_draft',
       prompt: scenarioReportPrompt,
       revisionCount: 0,
@@ -12109,11 +12356,17 @@ function ScenarioModelsView({
       sourceDate: scenarioSource.sourceDate,
       sourceDecision: 'Saved from Scenario Lab as buyer-specific pricing corridor and guardrail memory.',
       sourceName: scenarioSource.sourceName,
-      summary: `${selectedPredictiveScenario.name}: ${selectedPredictiveScenario.buyerResponse} Revenue ${scenarioDeltaLabel(outputs.revenueImpact)}, margin ${scenarioDeltaLabel(outputs.marginImpact)}, risk-adjusted value ${euros(outputs.riskAdjustedValue)}.`,
-      title: `${attachedBuyingGroup.name} ${selectedPredictiveScenario.name.replace(/^.\. /, '')}: ${inputs.expectedRealizationPercent.toFixed(1)}% realization`,
+      summary: `${scenarioToSave.name}: ${scenarioToSave.buyerResponse} Revenue ${scenarioDeltaLabel(saveOutputs.revenueImpact)}, margin ${scenarioDeltaLabel(saveOutputs.marginImpact)}, risk-adjusted value ${euros(saveOutputs.riskAdjustedValue)}.`,
+      title: `${targetBuyingGroup.name} ${cleanScenarioName}: ${saveInputs.expectedRealizationPercent.toFixed(1)}% realization`,
       updatedAt: now
     });
-    setScenarioSaveStatus(`Saved to ${attachedBuyingGroup.name} scenario memory.`);
+    setScenarioSaveStatus(`Saved to ${targetBuyingGroup.name} scenario memory.`);
+    setScenarioSaveConfirmation({
+      buyingGroupId: targetBuyingGroup.id,
+      buyingGroupName: targetBuyingGroup.name,
+      href: profileHref,
+      title: `${targetBuyingGroup.name} ${cleanScenarioName}`
+    });
   }
 
   const mvpScenarioBuyingGroups = [...packet.topExposureBuyingGroups]
@@ -12124,9 +12377,9 @@ function ScenarioModelsView({
 	    .slice(0, 5);
 	  const scenarioTrigger = scenarioAlerts[0];
 
-	  const isScenarioDetailMode = Boolean(initialScenarioId) && initialScenarioLabMode !== 'create';
+	  const isScenarioDetailMode = scenarioLabMode === 'create' || (Boolean(initialScenarioId) && initialScenarioLabMode !== 'create');
 	  const fullViewScenario = isScenarioDetailMode
-	    ? scenarioOptions.find((scenario) => scenario.id === (selectedScenarioId || initialScenarioId))
+	    ? scenarioOptions.find((scenario) => scenario.id === (scenarioLabMode === 'create' ? 'custom' : (selectedScenarioId || initialScenarioId)))
 	    : undefined;
 	  function scenarioDetailHref(scenarioId: string) {
 	    const params = new URLSearchParams();
@@ -12340,6 +12593,27 @@ function ScenarioModelsView({
   if (selectedBuyingGroupId) compareParams.set('buyingGroup', selectedBuyingGroupId);
   if (selectedMarketId) compareParams.set('market', selectedMarketId);
   const compareHref = compareScenarioIds.length >= 2 ? `/scenario-lab/compare?${compareParams.toString()}` : '#';
+  const scenarioSaveConfirmationModal = scenarioSaveConfirmation ? (
+    <div className="atlas-scenario-save-modal" role="presentation" onClick={() => setScenarioSaveConfirmation(null)}>
+      <section
+        aria-label="Scenario saved"
+        aria-modal="true"
+        role="dialog"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <header>
+          <span>Scenario saved</span>
+          <button aria-label="Close scenario saved confirmation" onClick={() => setScenarioSaveConfirmation(null)} type="button"><X size={17} /></button>
+        </header>
+        <h2>{scenarioSaveConfirmation.title} has been saved.</h2>
+        <p>The scenario is now attached to the buyer profile and will appear in the scenario memory section for {scenarioSaveConfirmation.buyingGroupName}.</p>
+        <footer>
+          <button type="button" onClick={() => setScenarioSaveConfirmation(null)}>Close popup</button>
+          <a href={scenarioSaveConfirmation.href}>Go to buying group <ArrowRight size={14} /></a>
+        </footer>
+      </section>
+    </div>
+  ) : null;
 
 	  function toggleCompareScenario(scenarioId: string) {
 	    setCompareScenarioIds((current) => {
@@ -12358,6 +12632,7 @@ function ScenarioModelsView({
 
 	  if (fullViewScenario) {
 	    const scenario = fullViewScenario;
+	    const isCreateScenarioMode = scenarioLabMode === 'create';
 
 	    const scenarioWorkingInputs = scenarioAdjustmentEditing ? inputs : scenario.inputs;
 	    const scenarioWorkingRead = predictiveScenario(scenario.id, scenario.name, scenario.description, scenarioWorkingInputs, scenario.why);
@@ -12368,7 +12643,18 @@ function ScenarioModelsView({
 	      origin: scenario.origin,
 	      scenarioStyle: scenario.scenarioStyle
 	    };
-	    const scenarioContext = attachedBuyingGroup
+	    const createScenarioContextMarketLabel = createMarkets.length
+	      ? createMarkets.map((market) => market.name).join(' / ')
+	      : 'Select markets';
+	    const scenarioContext = isCreateScenarioMode
+	      ? {
+	          buyingGroup: createBuyingGroup?.name ?? 'Select buying group',
+	          buyingGroupId: createBuyingGroup?.id ?? '',
+	          market: createScenarioContextMarketLabel,
+	          marketId: createMarkets[0]?.id ?? '',
+	          multi: createMarkets.length > 1
+	        }
+	      : attachedBuyingGroup
 	      ? scenarioBuyingGroupContext(scenario)
 	      : { buyingGroup: 'EDEKA', buyingGroupId: 'edeka', market: 'Germany', marketId: 'germany', multi: false };
 	    const attentionReason = scenarioAttentionReason(scenario);
@@ -12425,8 +12711,31 @@ function ScenarioModelsView({
 	      if (clockHour < 4.65) return 'Hard Bargaining';
 	      return 'Dealing';
 	    };
-	    const selectedClockHour = clockHourFromInputs(displayScenario.inputs, scenario.inputs, displayScenario.id);
-	    const buyerClockHour = Math.min(5.5, selectedClockHour + (displayScenario.relationshipRisk === 'High' ? .32 : .18));
+	    const scenarioNegotiatorWorkspace = scenarioContext.buyingGroupId ? buildBuyingGroupWorkspacePacket(scenarioContext.buyingGroupId) : undefined;
+	    const scenarioNegotiator = scenarioNegotiatorWorkspace
+	      ? buyerNegotiatorProfile(scenarioNegotiatorWorkspace)
+	      : {
+	          cadence: 'Usually counters below target first, then asks for trade support or phasing.',
+	          name: 'Lead negotiator',
+	          role: 'Commercial buyer',
+	          style: 'Commercial, evidence-led',
+	          watch: 'Watch for affordability, competitor comparison, and trade support requests.'
+	        };
+	    const negotiatorClockOffsetByBuyingGroup: Record<string, number> = {
+	      carrefour: .48,
+	      edeka: .32,
+	      rewe: .18,
+	      tesco: -.22
+	    };
+	    const createClockBaselineInputs = createBuyingGroup
+	      ? buildCreateScenarioInputs(createBuyingGroup, createMarkets.length ? createMarkets : [])
+	      : scenario.inputs;
+	    const clockBaselineInputs = isCreateScenarioMode
+	      ? scenarioAdjustmentBaselineInputs ?? createClockBaselineInputs
+	      : scenario.inputs;
+	    const selectedClockHour = clockHourFromInputs(displayScenario.inputs, clockBaselineInputs, displayScenario.id);
+	    const negotiatorClockOffset = negotiatorClockOffsetByBuyingGroup[scenarioContext.buyingGroupId] ?? (displayScenario.relationshipRisk === 'High' ? .32 : .18);
+	    const buyerClockHour = Math.min(5.5, Math.max(1.8, selectedClockHour + negotiatorClockOffset));
 	    const postureTime = clockTimeFromHour(selectedClockHour);
 	    const buyerTime = clockTimeFromHour(buyerClockHour);
 	    const postureLabel = clockLabelFromHour(selectedClockHour);
@@ -12451,13 +12760,20 @@ function ScenarioModelsView({
 	    scenarioCompareParams.append('scenario', displayScenario.id === 'buyer-counter' ? 'recommended' : 'buyer-counter');
 	    if (scenarioContext.buyingGroupId) scenarioCompareParams.set('buyingGroup', scenarioContext.buyingGroupId);
 	    if (scenarioContext.marketId) scenarioCompareParams.set('market', scenarioContext.marketId);
-	    const buyerProfileHref = scenarioContext.buyingGroupId ? `/buying-groups/${scenarioContext.buyingGroupId}?view=current` : scenarioHref();
-	    const scenarioFullSummary = `${scenarioContext.buyingGroup} movement changed the expected landing range for the current negotiation.`;
+	    const scenarioFullSummary = isCreateScenarioMode
+	      ? createSetupComplete
+	        ? `${scenarioContext.buyingGroup} scenario is scoped to ${scenarioContext.market}; lever changes will update the expected landing range before saving.`
+	        : 'Select a buying group and at least one impacted market to populate the model.'
+	      : `${scenarioContext.buyingGroup} movement changed the expected landing range for the current negotiation.`;
 	    const scenarioAddedLeverRows = scenarioAdjustmentAddedLeversByScenario[displayScenario.id] ?? [];
 	    const scenarioAddedLeverKeys = new Set(scenarioAddedLeverRows.map((row) => row.key));
 	    const scenarioAddedLeverOptions = advancedScenarioControls.filter((row): row is typeof row & { key: ScenarioNumericInputKey } => row.key !== 'competitorPressureLevel');
 	    const availableScenarioAddedLeverOptions = scenarioAddedLeverOptions.filter((row) => !scenarioAddedLeverKeys.has(row.key));
 	    function startScenarioAdjustmentEditing() {
+	      if (isCreateScenarioMode && !createSetupComplete) {
+	        setScenarioSaveStatus('Select a buying group and at least one market before editing levers.');
+	        return;
+	      }
 	      setScenarioAdjustmentBaselineInputs(displayScenario.inputs);
 	      setInputs(displayScenario.inputs);
 	      setScenarioAdjustmentEditing(true);
@@ -12510,19 +12826,88 @@ function ScenarioModelsView({
 	      setInputs((current) => ({ ...current, [key]: nextValue }));
 	    }
 	    return (
-	      <section className="atlas-scenario-screen" aria-label={`${scenario.name} scenario screen`}>
+	      <section className={`atlas-scenario-screen${isCreateScenarioMode ? ' atlas-scenario-screen-create' : ''}`} aria-label={`${scenario.name} scenario screen`}>
 	        <header className="atlas-scenario-screen-header">
 	          <a className="atlas-scenario-screen-back" href={scenarioHref()} aria-label="Back to Scenario Lab">←</a>
 	          <div>
-	            <span>{attentionReason} · {scenarioContext.buyingGroup} · {scenarioContext.market}</span>
-	            <h1>{scenarioContext.buyingGroup} price realization pressure</h1>
+	            <span>{isCreateScenarioMode ? 'Create scenario' : attentionReason} · {scenarioContext.buyingGroup} · {scenarioContext.market}</span>
+	            <h1>{isCreateScenarioMode ? 'Create scenario from buyer context' : `${scenarioContext.buyingGroup} price realization pressure`}</h1>
 	          </div>
 	          <div className="atlas-scenario-screen-actions">
 	            <a className="atlas-scenario-download-report" href={scenarioReportHref} rel="noreferrer" target="_blank" aria-label="Download scenario report"><Download size={15} /><span>Download scenario report</span></a>
-	            <a className="atlas-scenario-save-buying-group" href={buyerProfileHref}>Save to Buying Group <ArrowRight size={13} /></a>
+	            {isCreateScenarioMode ? (
+	              <button className="atlas-scenario-save-buying-group" disabled={!createSetupComplete} onClick={() => saveScenarioToBuyingGroup(displayScenario)} type="button">Save scenario <ArrowRight size={13} /></button>
+	            ) : (
+	              <button className="atlas-scenario-save-buying-group" onClick={() => saveScenarioToBuyingGroup(displayScenario)} type="button">Save to Buying Group <ArrowRight size={13} /></button>
+	            )}
 	          </div>
 	        </header>
 
+	        {isCreateScenarioMode ? (
+	          <section className="atlas-scenario-create-controls" aria-label="Scenario context selectors">
+	            <details className="atlas-scenario-create-filter-dropdown">
+	              <summary>
+	                <span>{createBuyingGroup?.name ?? 'Select buying group'}</span>
+	                <i aria-hidden="true" />
+	              </summary>
+	              <div>
+	                {createBuyingGroups.map((group) => (
+	                  <button
+	                    className={createBuyingGroupId === group.id ? 'selected' : ''}
+	                    key={group.id}
+	                    onClick={(event) => {
+	                      selectCreateBuyingGroup(group.id);
+	                      event.currentTarget.closest('details')?.removeAttribute('open');
+	                    }}
+	                    type="button"
+	                  >
+	                    {group.name}
+	                  </button>
+	                ))}
+	              </div>
+	            </details>
+	            <div className={createBuyingGroup ? '' : 'is-disabled'}>
+	              {createBuyingGroup ? (
+	                <details className="atlas-scenario-create-filter-dropdown" data-disabled={createMarketOptions.length <= 1 ? 'true' : undefined}>
+	                  <summary>
+	                    <span>{createMarketOptions.length > 1 && createMarketIds.length === createMarketOptions.length ? 'All markets' : createMarketIds.length ? createMarkets.map((market) => market.name).join(' / ') : 'Select impacted markets'}</span>
+	                    <i aria-hidden="true" />
+	                  </summary>
+	                  {createMarketOptions.length > 1 ? (
+	                    <div>
+	                      <button
+	                        aria-pressed={createMarketIds.length === createMarketOptions.length}
+	                        className={`atlas-scenario-market-all-row${createMarketIds.length === createMarketOptions.length ? ' selected active' : ''}`}
+	                        onClick={selectAllCreateMarkets}
+	                        type="button"
+	                      >
+	                        <input checked={createMarketIds.length === createMarketOptions.length} readOnly tabIndex={-1} type="checkbox" />
+	                        <span>All markets</span>
+	                      </button>
+	                      {createMarketOptions.map((market) => {
+	                        const isSelected = createMarketIds.includes(market.id);
+	                        return (
+	                          <button
+	                            aria-pressed={isSelected}
+	                            className={isSelected ? 'selected active' : ''}
+	                            key={market.id}
+	                            onClick={() => toggleCreateMarket(market.id)}
+	                            type="button"
+	                          >
+	                            <input checked={isSelected} readOnly tabIndex={-1} type="checkbox" />
+	                            <span>{market.name}</span>
+	                          </button>
+	                        );
+	                      })}
+	                    </div>
+	                  ) : null}
+	                </details>
+	              ) : (
+	                <p>Select a buying group to reveal markets.</p>
+	              )}
+	            </div>
+	          </section>
+	        ) : (
 	        <nav className="atlas-scenario-screen-tabs" aria-label="Scenario options">
 	          {scenarioTabs.map((tabItem) => {
 	            const isActive = scenario.id === tabItem.id;
@@ -12550,9 +12935,19 @@ function ScenarioModelsView({
 	            );
 	          })}
 	        </nav>
+	        )}
 
+	        {isCreateScenarioMode && !createBuyingGroup ? (
+	          <section className="atlas-scenario-create-empty" aria-label="Create scenario placeholder">
+	            <div>
+	              <span>Scenario workspace</span>
+	              <h2>Select a buying group to start.</h2>
+	              <p>The scenario adjustments, impact metrics, negotiation clock, and ATLAS breakdown will populate after buyer context is selected.</p>
+	            </div>
+	          </section>
+	        ) : (
 	        <div className="atlas-scenario-screen-shell">
-	          <aside className={`atlas-scenario-lever-rail${scenarioAdjustmentEditing ? ' is-editing' : ''}`} aria-label="Scenario adjustments">
+	          <aside className={`atlas-scenario-lever-rail${scenarioAdjustmentEditing ? ' is-editing' : ''}${isCreateScenarioMode && !createSetupComplete ? ' is-locked' : ''}`} aria-label="Scenario adjustments">
 	            <header>
 	              <span>Scenario adjustments</span>
 	              <div className="atlas-scenario-add-lever-menu">
@@ -12561,7 +12956,7 @@ function ScenarioModelsView({
 	                  aria-haspopup="menu"
 	                  type="button"
 	                  onClick={() => setScenarioAdjustmentLeverMenuOpen((open) => !open)}
-	                  disabled={availableScenarioAddedLeverOptions.length === 0}
+	                  disabled={availableScenarioAddedLeverOptions.length === 0 || (isCreateScenarioMode && !createSetupComplete)}
 	                >
 	                  Add lever
 	                </button>
@@ -12584,7 +12979,7 @@ function ScenarioModelsView({
 	                  <label key={key} style={{ '--scenario-lever-progress': `${progress}%` } as CSSProperties}>
 	                    <span>{label.replace(' increase %', ' Ask').replace(' change €', '').replace(' probability', '')}</span>
 	                    <strong>{formatScenarioInputValue(key, currentValue)}</strong>
-	                    <input disabled={!scenarioAdjustmentEditing} type="range" min={min} max={max} step={step} value={currentValue} onChange={(event) => updateScenarioNumericInput(key as ScenarioNumericInputKey, event.currentTarget.value, min, max)} />
+	                    <input disabled={!scenarioAdjustmentEditing || (isCreateScenarioMode && !createSetupComplete)} type="range" min={min} max={max} step={step} value={currentValue} onChange={(event) => updateScenarioNumericInput(key as ScenarioNumericInputKey, event.currentTarget.value, min, max)} />
 	                    <b aria-hidden="true">=</b>
 	                    <small>
 	                      <em>{formatScenarioInputValue(key, min)} - {formatScenarioInputValue(key, max)}</em>
@@ -12610,7 +13005,7 @@ function ScenarioModelsView({
 	                      ))}
 	                    </select>
 	                    <strong>{formatScenarioInputValue(key, currentValue)}</strong>
-	                    <input disabled={!scenarioAdjustmentEditing} type="range" min={min} max={max} step={step} value={currentValue} onChange={(event) => updateScenarioNumericInput(key, event.currentTarget.value, min, max)} />
+	                    <input disabled={!scenarioAdjustmentEditing || (isCreateScenarioMode && !createSetupComplete)} type="range" min={min} max={max} step={step} value={currentValue} onChange={(event) => updateScenarioNumericInput(key, event.currentTarget.value, min, max)} />
 	                    <b aria-hidden="true">=</b>
 	                    <small>
 	                      <em>{formatScenarioInputValue(key, min)} - {formatScenarioInputValue(key, max)}</em>
@@ -12628,7 +13023,7 @@ function ScenarioModelsView({
 	                <button className="atlas-scenario-save-button" type="button" onClick={saveScenarioParametersAsCustom}>Save as New Scenario</button>
 	              </>
 	            ) : (
-	              <button className="atlas-scenario-edit-button" type="button" onClick={startScenarioAdjustmentEditing}>Edit Parameters</button>
+	              <button className="atlas-scenario-edit-button" disabled={isCreateScenarioMode && !createSetupComplete} type="button" onClick={startScenarioAdjustmentEditing}>{isCreateScenarioMode && !createSetupComplete ? 'Select context first' : 'Edit Parameters'}</button>
 	            )}
 	          </aside>
 
@@ -12672,10 +13067,10 @@ function ScenarioModelsView({
 	                <div className="atlas-scenario-posture-copy">
 	                  <span>Strategy posture</span>
 	                  <h2>{postureTime} {postureLabel}</h2>
-	                  <p>{displayScenario.name.replace(/^[A-C]\.\s*/, '')} lands at {postureTime}; Markus Weber is expected near {buyerTime}.</p>
+	                  <p>{isCreateScenarioMode ? 'The working scenario' : displayScenario.name.replace(/^[A-C]\.\s*/, '')} lands at {postureTime}; {scenarioNegotiator.name} is expected near {buyerTime}.</p>
 	                  <div>
 	                    <button className="atlas-scenario-posture-badge atlas-scenario-posture-badge--scenario selected" type="button"><span aria-hidden="true" /> Selected Scenario</button>
-	                    <button className="atlas-scenario-posture-badge atlas-scenario-posture-badge--buyer" type="button"><span aria-hidden="true" /> Markus Weber</button>
+	                    <button className="atlas-scenario-posture-badge atlas-scenario-posture-badge--buyer" type="button"><span aria-hidden="true" /> {scenarioNegotiator.name}</button>
 	                    <button className="atlas-scenario-posture-badge atlas-scenario-posture-badge--other" type="button"><span aria-hidden="true" /> Other Scenarios</button>
 	                  </div>
 	                </div>
@@ -12697,7 +13092,7 @@ function ScenarioModelsView({
 	                    <strong>Lever read</strong>
 	                    <p>Current levers are workable, but the buyer will test the give-get. {pct(displayScenario.inputs.priceIncreasePercent)} ask, {pct(displayScenario.inputs.expectedRealizationPercent)} realization, {euros(displayScenario.inputs.tradeSpendChange)} support.</p>
 	                    <strong>Posture read</strong>
-	                    <p>Markus Weber profiles near {buyerTime}; this path lands at {postureTime} {postureLabel}.</p>
+	                    <p>{scenarioNegotiator.name} profiles near {buyerTime}; this path lands at {postureTime} {postureLabel}. {scenarioNegotiator.watch}</p>
 	                  </article>
 	                  <div>
 	                    <article>
@@ -12736,7 +13131,7 @@ function ScenarioModelsView({
 	              </article>
 	              <article>
 	                <span><BarChart3 size={20} /> Modelling</span>
-	                <p>ATLAS modeled the response paths and recommends the {displayScenario.name.replace(/^[A-C]\.\s*/, '').toLowerCase()} before the next buyer counter.</p>
+	                <p>{isCreateScenarioMode ? 'ATLAS will model the response path once buyer and market context are selected.' : `ATLAS modeled the response paths and recommends the ${displayScenario.name.replace(/^[A-C]\.\s*/, '').toLowerCase()} before the next buyer counter.`}</p>
 	              </article>
 	              <article>
 	                <span><Brain size={20} /> Decision</span>
@@ -12750,16 +13145,18 @@ function ScenarioModelsView({
 	            </aside>
 	          </div>
 	        </div>
+	        )}
 	        {scenarioSaveStatus ? <span className="atlas-scenario-save-status">{scenarioSaveStatus}</span> : null}
+	        {scenarioSaveConfirmationModal}
 	      </section>
 	    );
 	  }
 
 	  return (
-	    <section className="atlas-scenario-modeler" aria-label="Scenario Lab intelligent modeler">
+	    <section className={`atlas-scenario-modeler${scenarioLabMode === 'create' ? ' atlas-scenario-modeler-create' : ''}`} aria-label="Scenario Lab intelligent modeler">
 	      <header className="atlas-scenario-modeler-head">
-	        <h1>{scenarioLiveHeaderTitle}</h1>
-	        <p>{scenarioLiveHeaderCopy}</p>
+	        <h1>{scenarioLabMode === 'create' ? 'Create scenario from buyer context' : scenarioLiveHeaderTitle}</h1>
+	        <p>{scenarioLabMode === 'create' ? 'Start with the buying group and impacted markets. ATLAS will populate the levers, model the posture, and keep the scenario ready to save.' : scenarioLiveHeaderCopy}</p>
 	      </header>
 
 		      {scenarioLabMode === 'review' ? <section className="atlas-scenario-overview" aria-label="Modeled scenario impact overview">
@@ -12913,164 +13310,155 @@ function ScenarioModelsView({
 		        </div>
 		      </section> : null}
 
-      {scenarioLabMode === 'create' ? <section className="atlas-scenario-lever-workbench atlas-scenario-modeler-levers" aria-label="Scenario lever controls">
-        <header>
-          <div>
-            <span>Manual scenario</span>
-            <h2>Change the primary levers and save the adjusted scenario back to the table.</h2>
-          </div>
-          <div className="atlas-scenario-manual-actions">
-            <label>
-              <span>Competitor pressure</span>
-              <select value={inputs.competitorPressureLevel} onChange={(event) => updateInput('competitorPressureLevel', event.target.value as ScenarioInputs['competitorPressureLevel'])}>
-                <option value="low">Low</option>
-                <option value="medium">Medium</option>
-                <option value="high">High</option>
-              </select>
-            </label>
-            <button type="button" onClick={saveAdjustedScenarioToTable}>Save adjusted scenario to table</button>
-          </div>
-        </header>
-        <div className="atlas-scenario-delta-strip" aria-label="Difference from ATLAS prediction">
-          {scenarioMetricCards.map((metric) => (
-            <article className={metric.delta < 0 ? 'negative' : metric.delta > 0 ? 'positive' : ''} key={metric.label}>
-              <span>{metric.label}</span>
-              <strong>{scenarioDeltaLabel(metric.delta)}</strong>
-              <em>{scenarioPercentChange(metric.delta, metric.value)} from current</em>
-            </article>
-          ))}
-        </div>
-        <div className="atlas-scenario-lever-grid">
-          {visibleScenarioControls.map(({ key, label, max, min, step }) => (
-            <label className="atlas-scenario-input" key={key}>
-              <span>{label}</span>
-              <strong>{formatScenarioInputValue(key, Number(inputs[key]))}</strong>
-              <input type="range" min={min} max={max} step={step} value={Number(inputs[key])} onChange={(event) => updateInput(key, Number(event.target.value) as ScenarioInputs[typeof key])} onInput={(event) => updateInput(key, Number(event.currentTarget.value) as ScenarioInputs[typeof key])} />
-              <small><span>{formatScenarioInputValue(key, min)}</span><span>{formatScenarioInputValue(key, max)}</span></small>
-            </label>
-          ))}
-        </div>
-      </section> : null}
-
-      {scenarioLabMode === 'create' ? <details className="atlas-scenario-advanced-workbench">
-          <summary>Advanced modeling: levels, SKU drill-in, custom levers, and debrief memory</summary>
-          <div className="atlas-scenario-level-buttons">
-            {scenarioLevels.map((level) => (
-              <button className={selectedLevel === level.id ? 'active' : ''} key={level.id} onClick={() => selectScenarioLevel(level.id)} type="button">
-                <span>{level.label}</span>
-                <small>{level.note}</small>
-              </button>
-            ))}
-          </div>
-          <div className="atlas-scenario-lever-grid">
-            {advancedScenarioControls.map(({ key, label, max, min, step }) => (
-              <label className="atlas-scenario-input" key={key}>
-                <span>{label}</span>
-                <strong>{formatScenarioInputValue(key, Number(inputs[key]))}</strong>
-                <input type="range" min={min} max={max} step={step} value={Number(inputs[key])} onChange={(event) => updateInput(key, Number(event.target.value) as ScenarioInputs[typeof key])} onInput={(event) => updateInput(key, Number(event.currentTarget.value) as ScenarioInputs[typeof key])} />
-                <small><span>{formatScenarioInputValue(key, min)}</span><span>{formatScenarioInputValue(key, max)}</span></small>
-              </label>
-            ))}
-          </div>
-          <section className="atlas-scenario-detail-table atlas-standalone-scenario-detail-table">
-            <header><h4>Optional SKU / pack drill-in</h4><button type="button" onClick={addSkuRow}>Add SKU</button></header>
-            <table>
-              <thead><tr><th>SKU / pack</th><th>Price move</th><th>Volume risk</th><th>GM rate</th><th>Buyer sensitivity</th><th>Action</th></tr></thead>
-              <tbody>
-                {skuRows.map((row) => (
-                  <tr key={row.id}>
-                    <td><input value={row.sku} onChange={(event) => updateSkuRow(row.id, 'sku', event.currentTarget.value)} /></td>
-                    <td><input type="number" step="0.1" value={row.priceMove} onChange={(event) => updateSkuRow(row.id, 'priceMove', Number(event.currentTarget.value))} />%</td>
-                    <td><input type="number" step="0.1" value={row.volumeRisk} onChange={(event) => updateSkuRow(row.id, 'volumeRisk', Number(event.currentTarget.value))} />%</td>
-                    <td><input type="number" step="0.1" value={row.margin} onChange={(event) => updateSkuRow(row.id, 'margin', Number(event.currentTarget.value))} />%</td>
-                    <td>
-                      <select value={row.sensitivity} onChange={(event) => updateSkuRow(row.id, 'sensitivity', event.currentTarget.value)}>
-                        <option>Low</option>
-                        <option>Medium</option>
-                        <option>High</option>
-                        <option>Needs review</option>
-                      </select>
-                    </td>
-                    <td><button type="button" onClick={() => removeSkuRow(row.id)}>Remove</button></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </section>
-          <section className="atlas-scenario-detail-table atlas-standalone-scenario-detail-table">
-            <header><h4>Custom scenario levers</h4><button type="button" onClick={addCustomLever}>Add lever</button></header>
-            <table>
-              <thead><tr><th>Lever</th><th>Value</th><th>Impact</th><th>Weight</th><th>Status</th><th>Action</th></tr></thead>
-              <tbody>
-                {customLevers.map((row) => (
-                  <tr key={row.id}>
-                    <td><input value={row.name} onChange={(event) => updateCustomLever(row.id, 'name', event.currentTarget.value)} /></td>
-                    <td><input value={row.value} onChange={(event) => updateCustomLever(row.id, 'value', event.currentTarget.value)} /></td>
-                    <td><input value={row.impact} onChange={(event) => updateCustomLever(row.id, 'impact', event.currentTarget.value)} /></td>
-                    <td><input type="number" min="0" max="10" value={row.weight} onChange={(event) => updateCustomLever(row.id, 'weight', Number(event.currentTarget.value))} /></td>
-                    <td>
-                      <select value={row.status} onChange={(event) => updateCustomLever(row.id, 'status', event.currentTarget.value)}>
-                        <option>Assumption</option>
-                        <option>User-added</option>
-                        <option>Needs review</option>
-                        <option>Validated</option>
-                      </select>
-                    </td>
-                    <td><button type="button" onClick={() => removeCustomLever(row.id)}>Remove</button></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </section>
-          <section className="atlas-scenario-debrief-loop" aria-label="Debrief updates scenario prediction">
+      {scenarioLabMode === 'create' ? (
+        <section className="atlas-scenario-create-workspace" aria-label="Create scenario workspace">
+          <aside className="atlas-scenario-create-setup" aria-label="Scenario setup">
             <header>
-              <div>
-                <span>Debrief memory</span>
-                <h3>Capture what happened so the next model is smarter.</h3>
-              </div>
-              {latestScenarioDebrief ? <strong>Prediction updated</strong> : <strong>Not yet captured</strong>}
+              <span>Scenario setup</span>
+              <h2>Choose the buyer, then select every impacted market.</h2>
             </header>
-            <div className="atlas-scenario-debrief-grid">
-              <div className="atlas-scenario-debrief-form">
-                <textarea value={scenarioDebriefText} onChange={(event) => setScenarioDebriefText(event.currentTarget.value)} placeholder="What happened in the room? Add buyer ask, objections, concessions, and outcome." />
-                <div>
-                  <label><span>Buyer counter</span><input value={scenarioDebriefBuyerCounter} onChange={(event) => setScenarioDebriefBuyerCounter(event.currentTarget.value)} placeholder="ex: 2.1%" /></label>
-                  <label><span>Final landed</span><input value={scenarioDebriefFinalLanded} onChange={(event) => setScenarioDebriefFinalLanded(event.currentTarget.value)} placeholder="ex: 2.6%" /></label>
-                  <label>
-                    <span>Behavior pattern</span>
-                    <select value={scenarioDebriefBehavior} onChange={(event) => setScenarioDebriefBehavior(event.currentTarget.value)}>
-                      <option>Asked for trade support before accepting price</option>
-                      <option>Delayed decision until Finance evidence was shown</option>
-                      <option>Challenged volume risk and category pressure</option>
-                      <option>Accepted price after prior-year outcome proof</option>
-                    </select>
-                  </label>
-                  <label><span>Attachment note</span><input value={scenarioDebriefAttachments} onChange={(event) => setScenarioDebriefAttachments(event.currentTarget.value)} placeholder="ex: room notes, signed CMA" /></label>
-                </div>
-                <input value={scenarioDebriefNextCycle} onChange={(event) => setScenarioDebriefNextCycle(event.currentTarget.value)} placeholder="Next-cycle learning, ex: lead with prior-year concession evidence" />
-                <button type="button" onClick={saveScenarioDebrief}>Save debrief to memory</button>
-              </div>
-              <aside>
-                {latestScenarioDebrief ? (
-                  <>
-                    <span>{new Date(latestScenarioDebrief.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
-                    <strong>{latestScenarioDebrief.predictionImpact}</strong>
-                    <p>Counter: {latestScenarioDebrief.buyerCounter || 'not entered'} / Landed: {latestScenarioDebrief.finalLanded || 'not entered'}</p>
-                  </>
-                ) : (
-                  <>
-                    <span>Closed loop</span>
-                    <strong>Debriefs update buyer-counter predictions and report evidence.</strong>
-                    <p>Use this after a round to capture what changed and what should influence the next scenario.</p>
-                  </>
-                )}
-                {scenarioDebriefStatus ? <em>{scenarioDebriefStatus}</em> : null}
-              </aside>
+
+            <div className="atlas-scenario-create-picker">
+              <label htmlFor="scenario-create-buyer">Buying group</label>
+              <select
+                id="scenario-create-buyer"
+                value={createBuyingGroupId}
+                onChange={(event) => selectCreateBuyingGroup(event.currentTarget.value)}
+              >
+                <option value="">Select buying group</option>
+                {createBuyingGroups.map((group) => (
+                  <option key={group.id} value={group.id}>{group.name}</option>
+                ))}
+              </select>
             </div>
-          </section>
-      </details> : null}
-    </section>
-  );
+
+            <div className={`atlas-scenario-create-market-select${createBuyingGroup ? '' : ' is-disabled'}`}>
+              <div>
+                <span>Markets impacted</span>
+                <small>{createBuyingGroup ? 'Select one or more markets' : 'Select a buying group first'}</small>
+              </div>
+              <div>
+                {createBuyingGroup ? createMarketOptions.map((market) => {
+                  const isSelected = createMarketIds.includes(market.id);
+                  return (
+                    <button
+                      aria-pressed={isSelected}
+                      className={isSelected ? 'selected' : ''}
+                      key={market.id}
+                      onClick={() => toggleCreateMarket(market.id)}
+                      type="button"
+                    >
+                      <strong>{market.name}</strong>
+                      <small>{euros(market.marginAtRisk)} margin risk</small>
+                    </button>
+                  );
+                }) : (
+                  <p>Pick the buying group to reveal eligible markets.</p>
+                )}
+              </div>
+            </div>
+
+            <dl className="atlas-scenario-create-context-read">
+              <div>
+                <dt>Revenue scope</dt>
+                <dd>{createSetupComplete ? euros(createContextRevenue) : 'Pending'}</dd>
+              </div>
+              <div>
+                <dt>Margin at risk</dt>
+                <dd>{createSetupComplete ? euros(createContextMargin) : 'Pending'}</dd>
+              </div>
+              <div>
+                <dt>Markets</dt>
+                <dd>{createSetupComplete ? createMarkets.map((market) => market.name).join(' / ') : 'None selected'}</dd>
+              </div>
+            </dl>
+          </aside>
+
+          <main className={`atlas-scenario-create-main${createSetupComplete ? '' : ' is-locked'}`}>
+            <section className="atlas-scenario-create-metrics" aria-label="Scenario impact preview">
+              {scenarioMetricCards.map((metric) => (
+                <article className={metric.delta < 0 ? 'negative' : metric.delta > 0 ? 'positive' : ''} key={metric.label}>
+                  <span>{metric.label}</span>
+                  <strong>{createSetupComplete ? scenarioDeltaLabel(metric.delta) : 'Pending'}</strong>
+                  <em>{createSetupComplete ? `${scenarioPercentChange(metric.delta, metric.value)} from current` : 'Complete setup first'}</em>
+                </article>
+              ))}
+            </section>
+
+            <section className="atlas-scenario-create-editor" aria-label="Scenario levers">
+              <header>
+                <div>
+                  <span>Scenario levers</span>
+                  <h2>{createSetupComplete ? `${createBuyingGroup?.name} / ${createMarkets.map((market) => market.name).join(' + ')}` : 'Complete setup to populate levers'}</h2>
+                </div>
+                <label>
+                  <span>Competitor pressure</span>
+                  <select disabled={!createSetupComplete} value={inputs.competitorPressureLevel} onChange={(event) => updateInput('competitorPressureLevel', event.target.value as ScenarioInputs['competitorPressureLevel'])}>
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                  </select>
+                </label>
+              </header>
+
+              {!createSetupComplete ? (
+                <div className="atlas-scenario-create-lock-note">
+                  <strong>Select a buyer and at least one market to begin.</strong>
+                  <p>The lever set is generated from buyer exposure, market pressure, and current finance guardrails.</p>
+                </div>
+              ) : null}
+
+              <div className="atlas-scenario-create-levers">
+                {[...visibleScenarioControls, ...advancedScenarioControls.slice(0, 3)].map(({ key, label, max, min, step }) => {
+                  const currentValue = Number(inputs[key]);
+                  const progress = max === min ? 0 : Math.min(100, Math.max(0, ((currentValue - min) / (max - min)) * 100));
+                  return (
+                    <label key={key} style={{ '--scenario-lever-progress': `${progress}%` } as CSSProperties}>
+                      <span>{label.replace(' increase %', ' Ask').replace(' change €', '').replace(' probability', '')}</span>
+                      <strong>{formatScenarioInputValue(key, currentValue)}</strong>
+                      <input disabled={!createSetupComplete} type="range" min={min} max={max} step={step} value={currentValue} onChange={(event) => updateInput(key, Number(event.currentTarget.value) as ScenarioInputs[typeof key])} />
+                      <b aria-hidden="true">=</b>
+                      <small>
+                        <em>{formatScenarioInputValue(key, min)} - {formatScenarioInputValue(key, max)}</em>
+                        <span>{createSetupComplete ? `Affects ${scenarioControlRows.find((row) => row.key === key)?.affects.toLowerCase()}` : 'Waiting on setup'}</span>
+                      </small>
+                    </label>
+                  );
+                })}
+              </div>
+            </section>
+          </main>
+
+          <aside className="atlas-scenario-create-posture" aria-label="Negotiation clock posture">
+            <header>
+              <span>Clock framework</span>
+              <h2>{createSetupComplete ? `${createPostureTime} ${createPostureLabel}` : 'Waiting for context'}</h2>
+              <p>{createSetupComplete ? 'The scenario position updates as the levers move.' : 'Choose buyer and market scope to map the scenario.'}</p>
+            </header>
+            <div className="atlas-scenario-clock" aria-label={`Strategy posture ${createPostureTime} ${createPostureLabel}`}>
+              <img src="/images/backgrounds/clock-background.svg" alt="" aria-hidden="true" />
+              <span aria-hidden="true" className="atlas-scenario-clock-marker is-buyer" style={createClockMarkerStyle(createBuyerClockTime, 40)} />
+              <span aria-hidden="true" className="atlas-scenario-clock-marker is-active" style={createClockMarkerStyle(createPostureTime, 40)} />
+              <div className="atlas-scenario-clock-label">
+                <strong>{createSetupComplete ? createPostureTime : '--'}</strong>
+                <span>{createSetupComplete ? createPostureLabel : 'No scenario'}</span>
+              </div>
+            </div>
+            <div className="atlas-scenario-create-posture-read">
+              <p><span>Selected scenario</span><strong>{createSetupComplete ? `${pct(inputs.priceIncreasePercent)} ask / ${pct(inputs.expectedRealizationPercent)} realization` : 'Not started'}</strong></p>
+              <p><span>Buyer pressure</span><strong>{createSetupComplete ? `${Math.round(inputs.buyerAcceptanceProbability)}% response likelihood` : 'Pending'}</strong></p>
+              <p><span>CNO move</span><strong>{createSetupComplete ? (corridorBreached ? 'Review guardrail before saving' : 'Ready to save as draft') : 'Select context first'}</strong></p>
+	            </div>
+	            <footer>
+	              <button disabled={!createSetupComplete} type="button" onClick={() => saveScenarioToBuyingGroup()}>Save scenario</button>
+	              <a aria-disabled={!createSetupComplete} href={createSetupComplete ? scenarioReportHref : '#'} rel="noreferrer" target={createSetupComplete ? '_blank' : undefined}>Download report <ArrowRight size={13} /></a>
+	            </footer>
+	          </aside>
+	        </section>
+	      ) : null}
+	      {scenarioSaveConfirmationModal}
+	    </section>
+	  );
 }
 
 function ScenarioCompareView({
