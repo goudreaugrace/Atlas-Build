@@ -86783,19 +86783,20 @@ html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-create-action:hov
   box-shadow: 0 4px 12px rgba(35, 127, 225, 0.35) !important;
 }
 
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-create-action > span {
+  color: #FFFFFF !important;
+}
+
 html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-create-action svg,
 html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-create-action .atlas-btn-icon {
   width: 20px !important;
   height: 20px !important;
-  color: #F5F5F5 !important;
+  color: #FFFFFF !important;
   flex-shrink: 0 !important;
 }
 
 html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-create-action .atlas-btn-arrow {
-  width: 16px !important;
-  height: 16px !important;
-  color: #F5F5F5 !important;
-  flex-shrink: 0 !important;
+  display: none !important;
 }
 
 /* 3. TOOLBAR: UNBOXED & FLUID (No borders or padding per user request) */
