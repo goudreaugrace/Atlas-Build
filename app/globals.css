@@ -75888,6 +75888,35 @@ html body main.atlas-hub-shell .atlas-hub-main .atlas-buyer-list-head-multi .atl
   backdrop-filter: blur(12px) !important;
 }
 
+html body main.atlas-hub-shell .atlas-hub-main .atlas-buyer-list-head,
+html body main.atlas-hub-shell .atlas-hub-main .atlas-buyer-list-head-multi,
+.atlas-buyer-list-head,
+.atlas-buyer-list-head-multi {
+  justify-items: start !important;
+  padding: 64px 44px !important;
+  text-align: left !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-buyer-list-head > div:first-child,
+html body main.atlas-hub-shell .atlas-hub-main .atlas-buyer-list-head-multi > div:first-child,
+.atlas-buyer-list-head > div:first-child,
+.atlas-buyer-list-head-multi > div:first-child {
+  justify-items: start !important;
+  max-width: 585px !important;
+  text-align: left !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-buyer-list-head h1,
+html body main.atlas-hub-shell .atlas-hub-main .atlas-buyer-list-head-multi h1,
+html body main.atlas-hub-shell .atlas-hub-main .atlas-buyer-list-head p,
+html body main.atlas-hub-shell .atlas-hub-main .atlas-buyer-list-head-multi p,
+.atlas-buyer-list-head h1,
+.atlas-buyer-list-head-multi h1,
+.atlas-buyer-list-head p,
+.atlas-buyer-list-head-multi p {
+  max-width: 585px !important;
+}
+
 html body main.atlas-hub-shell .atlas-hub-main .atlas-buyer-list-shell .atlas-buyer-table-sort::before,
 html body main.atlas-hub-shell .atlas-hub-main .atlas-buyer-list-shell .atlas-buyer-table-sort a {
   font-family: var(--font-body) !important;
