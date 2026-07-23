@@ -12495,6 +12495,21 @@ function ScenarioModelsView({
     const impactOrder: Record<string, number> = { high: 3, medium: 2, low: 1 };
     const impactDelta = impactOrder[scenarioTableImpact(a).tone] - impactOrder[scenarioTableImpact(b).tone];
     const createdDelta = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+
+    if (key === 'status') {
+      const badgeA = getScenarioBadge(a).label;
+      const badgeB = getScenarioBadge(b).label;
+      const statusDelta = badgeA.localeCompare(badgeB);
+      if (statusDelta !== 0) return direction === 'asc' ? statusDelta : -statusDelta;
+    }
+
+    if (key === 'acceptance') {
+      const acceptanceA = a.inputs.buyerAcceptanceProbability ?? 0;
+      const acceptanceB = b.inputs.buyerAcceptanceProbability ?? 0;
+      const acceptanceDelta = acceptanceA - acceptanceB;
+      if (acceptanceDelta !== 0) return direction === 'asc' ? acceptanceDelta : -acceptanceDelta;
+    }
+
     if (key === 'impact' && impactDelta !== 0) return direction === 'asc' ? impactDelta : -impactDelta;
     if (key === 'created' && createdDelta !== 0) return direction === 'asc' ? createdDelta : -createdDelta;
     if (impactDelta !== 0) return -impactDelta;
@@ -13542,15 +13557,15 @@ function ScenarioModelsView({
                           <col className="levers-col" />
                           <col className="impact-col" />
                           <col className="acceptance-col" />
-                          <col className="buyer-col" />
+                          <col className="scope-col" />
                         </colgroup>
                         <thead>
                           <tr>
                             <th>Scenario & Origin</th>
-                            <th>Status</th>
+                            <th><ScenarioTableSortableHeader label="Status" sort="status" /></th>
                             <th>Levers Snapshot</th>
                             <th><ScenarioTableSortableHeader label="Impact" sort="impact" /></th>
-                            <th>Acceptance</th>
+                            <th><ScenarioTableSortableHeader label="Acceptance" sort="acceptance" /></th>
                             <th>Scope</th>
                           </tr>
                         </thead>

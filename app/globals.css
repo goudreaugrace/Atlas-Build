@@ -72336,33 +72336,48 @@ html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-modeler:has(.atla
   border: 1px solid #EBEBEB !important;
   border-radius: 24px !important;
   padding: 20px !important;
-  overflow: hidden !important;
+  overflow-x: auto !important;
   width: 100% !important;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.03) !important;
 }
 
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-review-table,
 html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-modeler:has(.atlas-scenario-overview) .atlas-scenario-review-table {
   border-collapse: separate !important;
   border-spacing: 0 !important;
   display: table !important;
   font-family: var(--font-body) !important;
-  min-width: 0 !important;
+  min-width: 900px !important;
   table-layout: fixed !important;
   width: 100% !important;
 }
 
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-review-table .scenario-col,
 html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-modeler:has(.atlas-scenario-overview) .atlas-scenario-review-table .scenario-col {
-  width: 31% !important;
+  width: 24% !important;
 }
 
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-review-table .status-col,
 html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-modeler:has(.atlas-scenario-overview) .atlas-scenario-review-table .status-col {
+  width: 15% !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-review-table .levers-col {
+  width: 19% !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-review-table .impact-col {
   width: 18% !important;
 }
 
-html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-modeler:has(.atlas-scenario-overview) .atlas-scenario-review-table .type-col,
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-review-table .acceptance-col {
+  width: 10% !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-review-table .scope-col,
 html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-modeler:has(.atlas-scenario-overview) .atlas-scenario-review-table .buyer-col,
 html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-modeler:has(.atlas-scenario-overview) .atlas-scenario-review-table .market-col {
-  width: 13.5% !important;
+  width: 14% !important;
 }
 
 html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-modeler:has(.atlas-scenario-overview) .atlas-scenario-review-table .created-col {
@@ -87071,22 +87086,27 @@ html body main.atlas-hub-shell .atlas-hub-main .rich-card-link:hover {
 
 /* 5. MATRIX TABLE STYLES */
 html body main.atlas-hub-shell .atlas-hub-main .matrix-title-cell {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  justify-content: center !important;
+  gap: 4px !important;
 }
 
 html body main.atlas-hub-shell .atlas-hub-main .origin-pill {
-  font-family: var(--font-body, "Inter"), sans-serif;
-  font-size: 11px;
-  font-weight: 500;
-  padding: 2px 8px;
-  border-radius: 20px;
-  background: #F5F5F5;
-  color: #707172;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
+  font-family: var(--font-body, "Inter"), sans-serif !important;
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  padding: 2px 8px !important;
+  border-radius: 20px !important;
+  background: #F5F5F5 !important;
+  color: #707172 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  white-space: nowrap !important;
+  width: fit-content !important;
+  line-height: 1.2 !important;
 }
 
 html body main.atlas-hub-shell .atlas-hub-main .matrix-levers-cell {
