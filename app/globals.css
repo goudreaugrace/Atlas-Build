@@ -87279,6 +87279,83 @@ html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-empty-state butto
   cursor: pointer;
 }
 
+/* Intelligence Library focused layout updates. */
+html body main.atlas-hub-shell .atlas-hub-main--database .atlas-intent-brief {
+  padding: 64px 44px !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main--database .atlas-intent-brief > div:first-child {
+  max-width: 720px !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main--database .atlas-source-database {
+  margin-top: 24px !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main--database .atlas-source-database > header {
+  align-items: center !important;
+  gap: 24px !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main--database .atlas-source-database-tools {
+  align-items: flex-end !important;
+  display: grid !important;
+  gap: 10px !important;
+  justify-items: end !important;
+  min-width: min(100%, 420px) !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main--database .atlas-source-database-search {
+  align-items: center !important;
+  background: #ffffff !important;
+  border: 1px solid rgba(217, 218, 219, .96) !important;
+  border-radius: 999px !important;
+  box-shadow: 0 1px 2px rgba(49, 55, 61, .04) !important;
+  color: #707172 !important;
+  display: inline-flex !important;
+  gap: 8px !important;
+  min-height: 42px !important;
+  padding: 0 14px !important;
+  width: min(100%, 360px) !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main--database .atlas-source-database-search:focus-within {
+  border-color: #237fe1 !important;
+  box-shadow: 0 0 0 3px rgba(35, 127, 225, .12) !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main--database .atlas-source-database-search input {
+  background: transparent !important;
+  border: 0 !important;
+  color: #31373d !important;
+  flex: 1 !important;
+  font-family: var(--font-body, "Inter"), sans-serif !important;
+  font-size: 13px !important;
+  font-weight: 400 !important;
+  min-width: 0 !important;
+  outline: 0 !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main--database .atlas-source-database-search input::placeholder {
+  color: #949698 !important;
+}
+
+@media (max-width: 760px) {
+  html body main.atlas-hub-shell .atlas-hub-main--database .atlas-intent-brief {
+    padding: 44px 28px !important;
+  }
+
+  html body main.atlas-hub-shell .atlas-hub-main--database .atlas-source-database > header,
+  html body main.atlas-hub-shell .atlas-hub-main--database .atlas-source-database-tools {
+    align-items: stretch !important;
+    justify-items: stretch !important;
+  }
+
+  html body main.atlas-hub-shell .atlas-hub-main--database .atlas-source-database-search {
+    width: 100% !important;
+  }
+}
+
 /* Buyer profile header badge stabilization. */
 html body main.atlas-hub-shell .atlas-hub-main .atlas-bg-hero .atlas-bg-hero-meta span,
 html body main.atlas-hub-shell .atlas-hub-main .atlas-buying-group-hero .atlas-buyer-risk-badge {
