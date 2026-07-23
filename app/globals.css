@@ -546,7 +546,7 @@ html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-screen-tabs butto
   grid-template-rows: 34px 14px !important;
   justify-content: start !important;
   min-height: 72px !important;
-  padding: 14px 22px !important;
+  padding: 0 22px !important;
   text-align: left !important;
   transition:
     background .18s ease,
