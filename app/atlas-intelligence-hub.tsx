@@ -14533,8 +14533,6 @@ function SourceDatabaseView({ initialPrompt }: { initialPrompt?: string }) {
   const allRows = buildSourceDatabaseRows();
   const promptFilteredRows = filterSourceDatabaseRows(allRows, initialPrompt);
   const rows = filterSourceDatabaseRows(promptFilteredRows, sourceSearchQuery);
-  const sourceWatchouts = allRows.filter((row) => row.source.status === 'stale' || row.source.status === 'needs_validation' || row.source.status === 'missing');
-  const approvedRows = allRows.filter((row) => row.source.status === 'approved' || row.source.status === 'ready');
   const highConfidenceRows = allRows.filter((row) => row.source.confidence === 'high');
   const sourceDatabasePageSize = 10;
   const sourceDatabaseTotalPages = Math.max(1, Math.ceil(rows.length / sourceDatabasePageSize));
@@ -14550,19 +14548,18 @@ function SourceDatabaseView({ initialPrompt }: { initialPrompt?: string }) {
     <>
       <IntentBrief
         eyebrow="Intelligence Library"
-        title={`${rows.length} memory, source, and scenario records / ${sourceWatchouts.length} watchouts.`}
-        body={`${approvedRows.length} approved or ready / ${highConfidenceRows.length} high confidence records.`}
+        title={`${rows.length} memory, source, and scenario records.`}
+        body={`${highConfidenceRows.length} high confidence records across buying groups, markets, and scenario outputs.`}
         metrics={[
           { label: 'Records', value: String(rows.length) },
-          { label: 'High confidence', value: String(highConfidenceRows.length), tone: 'good' },
-          { label: 'Source watchouts', value: String(sourceWatchouts.length), tone: 'watch' }
+          { label: 'High confidence', value: String(highConfidenceRows.length), tone: 'good' }
         ]}
       />
       <section className="atlas-source-database">
         <header>
           <div>
             <h3>{initialPrompt ? 'Filtered source records' : 'All ATLAS source records'}</h3>
-            <p>{rows.length} shown / {allRows.length} total. {sourceWatchouts.length} source watchouts / {approvedRows.length} usable records.</p>
+            <p>{rows.length} shown / {allRows.length} total records.</p>
           </div>
           <div className="atlas-source-database-tools">
             <label className="atlas-source-database-search">
