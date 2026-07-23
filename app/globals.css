@@ -87308,6 +87308,38 @@ html body main.atlas-hub-shell .atlas-hub-main--database .atlas-source-database 
   text-align: left !important;
 }
 
+html body main.atlas-hub-shell .atlas-hub-main--database .atlas-source-database-table {
+  border-top: 1px solid #e5ebf2 !important;
+  border-radius: 18px 18px 0 0 !important;
+  box-shadow: none !important;
+  overflow: hidden !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main--database .atlas-source-database-pagination {
+  background: #ffffff !important;
+  border-top: 1px solid #e8edf3 !important;
+  border-radius: 0 0 18px 18px !important;
+  box-shadow: none !important;
+  margin: 0 !important;
+  padding: 14px 18px 18px !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main--database .atlas-source-database-pagination button,
+html body main.atlas-hub-shell .atlas-hub-main--database .atlas-source-database-pagination div span {
+  background: #f5f7fa !important;
+  border: 1px solid #dfe5ec !important;
+  color: #5f6874 !important;
+  font-weight: 500 !important;
+  text-transform: none !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main--database .atlas-source-database-pagination button:hover,
+html body main.atlas-hub-shell .atlas-hub-main--database .atlas-source-database-pagination div span.active {
+  background: #eaf4ff !important;
+  border-color: #237fe1 !important;
+  color: #0b6fd3 !important;
+}
+
 html body main.atlas-hub-shell .atlas-hub-main--database .atlas-source-database-tools {
   align-items: flex-end !important;
   display: grid !important;
