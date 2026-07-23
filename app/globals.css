@@ -538,6 +538,7 @@ html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-screen-tabs butto
   border-radius: 16px 16px 0 0 !important;
   color: #5d6670 !important;
   cursor: pointer !important;
+  align-content: center !important;
   display: grid !important;
   column-gap: 10px !important;
   row-gap: 2px !important;
@@ -556,6 +557,7 @@ html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-screen-tabs butto
 }
 
 html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-screen-tabs button svg {
+  align-self: center !important;
   color: #66717a !important;
   grid-row: 1 / span 2 !important;
   height: 17px !important;
