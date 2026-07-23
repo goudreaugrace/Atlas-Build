@@ -12942,8 +12942,10 @@ function ScenarioModelsView({
 	                type="button"
 	              >
 	                {tabItem.icon}
-	                <strong>{tabItem.label}</strong>
-	                <small>{tabItem.note}</small>
+	                <span className="atlas-scenario-tab-copy">
+	                  <strong>{tabItem.label}</strong>
+	                  <small>{tabItem.note}</small>
+	                </span>
 	              </button>
 	            );
 	          })}
