@@ -54460,7 +54460,10 @@ summary {
   align-items: center;
   display: flex;
   justify-content: flex-end;
-  margin-bottom: 18px;
+  margin: 0;
+  position: absolute;
+  right: 22px;
+  top: 22px;
 }
 
 .atlas-scenario-save-modal header span {
@@ -54475,8 +54478,8 @@ summary {
 
 .atlas-scenario-save-modal header button {
   align-items: center;
-  background: rgba(255, 255, 255, .28);
-  border: 1.5px solid #31373d;
+  background: transparent;
+  border: 0;
   border-radius: 999px;
   box-sizing: border-box;
   color: #31373d;
@@ -54508,8 +54511,8 @@ summary {
   display: grid;
   gap: 10px;
   justify-items: center;
-  min-height: 154px;
-  padding: 24px;
+  min-height: 166px;
+  padding: 34px 24px 24px;
   text-align: center;
 }
 
