@@ -12715,7 +12715,6 @@ function ScenarioModelsView({
         onClick={(event) => event.stopPropagation()}
       >
         <header>
-          <span>Scenario saved</span>
           <button aria-label="Close scenario saved confirmation" onClick={() => setScenarioSaveConfirmation(null)} type="button"><X size={17} /></button>
         </header>
         <div className="atlas-scenario-save-modal-body">
