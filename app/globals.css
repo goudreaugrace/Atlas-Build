@@ -27,6 +27,1507 @@
   --pepsi-text-muted: #666666;
 }
 
+
+/* Scenario-specific screen: tabbed model workspace. */
+html body main.atlas-hub-shell:has(.atlas-scenario-screen),
+html body main.atlas-hub-shell:has(.atlas-scenario-screen) .atlas-hub-main {
+  background: #dfeaf4 !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-screen {
+  --scenario-content-bg: #FAFAFA;
+  --scenario-masthead-top: 68px;
+  --scenario-header-height: 142px;
+  --scenario-tabs-height: 85px;
+  --scenario-sticky-content-top: calc(var(--scenario-masthead-top) + var(--scenario-header-height) + var(--scenario-tabs-height));
+  background: #dfeaf4 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  color: #31373d !important;
+  display: grid !important;
+  gap: 0 !important;
+  margin: -18px calc(50% - 50vw) 0 !important;
+  min-height: calc(100vh - 90px) !important;
+  padding: 0 !important;
+  width: 100vw !important;
+}
+
+html body:has(.atlas-scenario-screen) .atlas-command-surface.atlas-global-command-surface {
+  display: none !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-screen-header {
+  align-items: center !important;
+  background: #dfeaf4 !important;
+  display: grid !important;
+  gap: 18px !important;
+  grid-template-columns: 42px minmax(0, 1fr) auto !important;
+  min-height: var(--scenario-header-height) !important;
+  padding: 42px 54px 40px !important;
+  position: sticky !important;
+  top: var(--scenario-masthead-top) !important;
+  z-index: 230 !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-screen-back {
+  align-items: center !important;
+  background: transparent !important;
+  border: 1px solid #237fe1 !important;
+  border-radius: 999px !important;
+  box-sizing: border-box !important;
+  color: #237fe1 !important;
+  display: inline-flex !important;
+  font-size: 20px !important;
+  font-weight: 300 !important;
+  height: 36px !important;
+  justify-content: center !important;
+  line-height: 1 !important;
+  text-decoration: none !important;
+  transition: background .15s ease, border-color .15s ease, transform .15s ease !important;
+  width: 36px !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-screen-back:hover,
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-screen-back:focus-visible {
+  background: rgba(35, 127, 225, .08) !important;
+  border-color: #237fe1 !important;
+  outline: none !important;
+  transform: translateY(-1px) !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-screen-header span,
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-lever-rail header span,
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-posture-copy > span,
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-breakdown article span,
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-response-grid article > span {
+  color: #5d6670 !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0 !important;
+  line-height: 17px !important;
+  text-transform: uppercase !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-screen-header h1 {
+  color: #31373d !important;
+  font-family: var(--font-display) !important;
+  font-size: 29px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0 !important;
+  line-height: 36px !important;
+  margin: 4px 0 0 !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-screen-actions {
+  align-items: center !important;
+  display: flex !important;
+  gap: 12px !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-screen-actions a {
+  align-items: center !important;
+  background: linear-gradient(135deg, #1479e8, #83bd4e) !important;
+  border: 0 !important;
+  border-radius: 999px !important;
+  color: #ffffff !important;
+  display: inline-flex !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  justify-content: center !important;
+  min-height: 44px !important;
+  padding: 0 26px !important;
+  text-decoration: none !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-screen-actions a.icon-only {
+  background: transparent !important;
+  border: 1.5px solid #2785ed !important;
+  color: #2785ed !important;
+  min-width: 44px !important;
+  padding: 0 !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-screen-actions .atlas-scenario-download-report {
+  background-color: #f5f5f5 !important;
+  background-image: none !important;
+  border: 1px solid #237fe1 !important;
+  border-radius: 20px !important;
+  color: #237fe1 !important;
+  cursor: pointer !important;
+  flex-shrink: 0 !important;
+  font-family: var(--font-display) !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  gap: 4px !important;
+  letter-spacing: -0.12px !important;
+  line-height: 22px !important;
+  min-height: 0 !important;
+  padding: 8px 16px !important;
+  text-transform: none !important;
+  transition: background-color .15s ease, color .15s ease !important;
+  white-space: nowrap !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-screen-actions .atlas-scenario-download-report span {
+  color: #237fe1 !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  letter-spacing: -0.12px !important;
+  line-height: 22px !important;
+  text-transform: none !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-screen-actions .atlas-scenario-download-report svg {
+  color: #237fe1 !important;
+  height: 15px !important;
+  stroke-width: 2.1 !important;
+  width: 15px !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-screen-actions .atlas-scenario-download-report:hover {
+  background-color: #237fe1 !important;
+  color: #ffffff !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-screen-actions .atlas-scenario-download-report:hover span,
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-screen-actions .atlas-scenario-download-report:hover svg {
+  color: #ffffff !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-screen-actions .atlas-scenario-save-buying-group {
+  background-color: transparent !important;
+  background-image: linear-gradient(157.118deg, rgb(35, 127, 225) 51.552%, rgb(136, 180, 41) 99.331%) !important;
+  border: 0 !important;
+  border-radius: 20px !important;
+  color: #f5f5f5 !important;
+  cursor: pointer !important;
+  flex-shrink: 0 !important;
+  font-family: var(--font-display) !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  gap: 4px !important;
+  letter-spacing: -0.12px !important;
+  line-height: 22px !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  padding: 8px 16px !important;
+  position: relative !important;
+  transition: box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s ease, color 0.3s ease, transform 0.2s ease !important;
+  white-space: nowrap !important;
+  z-index: 1 !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-screen-actions .atlas-scenario-save-buying-group::before {
+  background: linear-gradient(189deg, #0A63C2 57.58%, #88B429 123.75%) !important;
+  content: "" !important;
+  inset: 0 !important;
+  opacity: 0 !important;
+  position: absolute !important;
+  transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  z-index: -1 !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-screen-actions .atlas-scenario-save-buying-group:hover {
+  box-shadow: 0 0 16px rgba(10, 99, 194, 0.6) !important;
+  transform: translateY(-1px) !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-screen-actions .atlas-scenario-save-buying-group:hover::before {
+  opacity: 1 !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-screen-tabs {
+  align-items: stretch !important;
+  background: #dfeaf4 !important;
+  display: grid !important;
+  gap: 10px !important;
+  grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+  min-height: var(--scenario-tabs-height) !important;
+  padding: 0 48px 0 !important;
+  position: sticky !important;
+  top: calc(var(--scenario-masthead-top) + var(--scenario-header-height)) !important;
+  z-index: 225 !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-screen-tabs button {
+  align-items: center !important;
+  background: rgba(255, 255, 255, .26) !important;
+  border: 1px solid rgba(49, 55, 61, .13) !important;
+  border-bottom-color: rgba(49, 55, 61, .10) !important;
+  border-radius: 16px 16px 0 0 !important;
+  color: #5d6670 !important;
+  cursor: pointer !important;
+  display: grid !important;
+  gap: 1px 10px !important;
+  grid-template-columns: 20px minmax(0, 1fr) !important;
+  justify-content: start !important;
+  min-height: 72px !important;
+  padding: 14px 22px !important;
+  text-align: left !important;
+  transition:
+    background .18s ease,
+    border-color .18s ease,
+    box-shadow .18s ease,
+    color .18s ease,
+    transform .18s ease !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-screen-tabs button svg {
+  color: #66717a !important;
+  grid-row: 1 / span 2 !important;
+  height: 17px !important;
+  stroke-width: 2.15 !important;
+  width: 17px !important;
+  transition: color .18s ease, transform .18s ease !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-screen-tabs button strong {
+  color: #31373d !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0 !important;
+  line-height: 18px !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-screen-tabs button small {
+  align-items: center !important;
+  color: #6e7780 !important;
+  display: inline-flex !important;
+  font-size: 11px !important;
+  font-weight: 400 !important;
+  gap: 5px !important;
+  letter-spacing: 0 !important;
+  line-height: 14px !important;
+  margin-top: -1px !important;
+  min-width: 0 !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-screen-tabs button small span {
+  color: inherit !important;
+  font-size: inherit !important;
+  font-weight: inherit !important;
+  letter-spacing: 0 !important;
+  line-height: inherit !important;
+  min-width: 0 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-screen-tabs button small i {
+  background: currentColor !important;
+  border-radius: 999px !important;
+  display: inline-block !important;
+  flex: 0 0 auto !important;
+  height: 7px !important;
+  opacity: .42 !important;
+  width: 1px !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-screen-tabs button:hover {
+  background: rgba(255, 255, 255, .56) !important;
+  border-color: rgba(49, 55, 61, .20) !important;
+  box-shadow: 0 10px 24px rgba(27, 39, 51, .06) !important;
+  transform: translateY(-1px) !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-screen-tabs button:hover svg,
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-screen-tabs button:hover strong {
+  color: #0f73d8 !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-screen-tabs button:focus-visible {
+  border-color: #0f73d8 !important;
+  box-shadow: 0 0 0 3px rgba(15, 115, 216, .16) !important;
+  outline: none !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-screen-tabs button.active {
+  background: var(--scenario-content-bg) !important;
+  border-color: rgba(49, 55, 61, .14) !important;
+  border-bottom-color: var(--scenario-content-bg) !important;
+  box-shadow: 0 -8px 22px rgba(27, 39, 51, .045) !important;
+  color: #0f73d8 !important;
+  transform: none !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-screen-tabs button.active svg,
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-screen-tabs button.active strong,
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-screen-tabs button.active small {
+  color: #0f73d8 !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-screen-shell {
+  align-items: stretch !important;
+  background: var(--scenario-content-bg) !important;
+  display: grid !important;
+  grid-template-columns: 368px minmax(0, 1fr) 368px !important;
+  grid-template-rows: auto minmax(0, 1fr) !important;
+  min-height: 760px !important;
+  position: relative !important;
+  z-index: 1 !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-lever-rail {
+  background: var(--scenario-content-bg) !important;
+  border-right: 1px solid #e2e3e5 !important;
+  box-shadow: 16px 0 40px rgba(27, 39, 51, .05) !important;
+  display: grid !important;
+  grid-template-rows: auto minmax(0, 1fr) auto auto !important;
+  max-height: calc(100vh - var(--scenario-sticky-content-top)) !important;
+  overflow: hidden !important;
+  padding: 20px 30px 14px !important;
+  position: sticky !important;
+  top: var(--scenario-sticky-content-top) !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-lever-rail:not(.is-editing) {
+  grid-template-rows: auto minmax(0, 1fr) auto !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-lever-rail header {
+  align-items: center !important;
+  display: flex !important;
+  justify-content: space-between !important;
+  margin-bottom: 10px !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-lever-rail header button {
+  align-items: center !important;
+  background: transparent !important;
+  border: 1.4px solid #2785ed !important;
+  border-radius: 999px !important;
+  color: #2785ed !important;
+  display: flex !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  height: 28px !important;
+  justify-content: center !important;
+  min-height: 0 !important;
+  padding: 0 12px !important;
+  width: auto !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-lever-rail header button:disabled {
+  border-color: #cfd4d8 !important;
+  color: #8a9097 !important;
+  cursor: default !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-add-lever-menu {
+  position: relative !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-add-lever-menu > div {
+  background: #ffffff !important;
+  border: 1px solid #d9dadb !important;
+  border-radius: 12px !important;
+  box-shadow: 0 16px 36px rgba(27, 39, 51, .14) !important;
+  display: grid !important;
+  gap: 2px !important;
+  min-width: 178px !important;
+  padding: 6px !important;
+  position: absolute !important;
+  right: 0 !important;
+  top: calc(100% + 8px) !important;
+  z-index: 20 !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-add-lever-menu > div button {
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 8px !important;
+  color: #31373d !important;
+  display: block !important;
+  font-size: 12px !important;
+  font-weight: 400 !important;
+  height: auto !important;
+  line-height: 16px !important;
+  min-height: 30px !important;
+  padding: 7px 9px !important;
+  text-align: left !important;
+  width: 100% !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-add-lever-menu > div button:hover {
+  background: #f5f5f5 !important;
+  color: #0f73d8 !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-lever-list {
+  align-content: start !important;
+  display: grid !important;
+  gap: 18px !important;
+  grid-auto-rows: max-content !important;
+  min-height: 0 !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain !important;
+  padding-right: 2px !important;
+  scrollbar-gutter: stable !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-lever-list label {
+  align-self: start !important;
+  border-bottom: 0 !important;
+  display: grid !important;
+  gap: 5px !important;
+  grid-template-columns: 1fr auto !important;
+  padding: 10px 0 11px !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-lever-list label > span {
+  color: #5d6670 !important;
+  font-size: 13px !important;
+  font-weight: 400 !important;
+  line-height: 18px !important;
+  text-transform: none !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-lever-list label strong {
+  color: #31373d !important;
+  font-size: 15px !important;
+  font-weight: 700 !important;
+  line-height: 18px !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-lever-list input[type="range"] {
+  accent-color: #2785ed !important;
+  grid-column: 1 / -1 !important;
+  margin: 1px 0 !important;
+  width: 100% !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-lever-list small {
+  color: #707172 !important;
+  display: flex !important;
+  font-size: 11px !important;
+  font-weight: 400 !important;
+  grid-column: 1 / -1 !important;
+  justify-content: space-between !important;
+  line-height: 14px !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-lever-list i {
+  display: none !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-update-button {
+  background: transparent !important;
+  border: 0 !important;
+  color: #0f73d8 !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  justify-self: center !important;
+  margin: 12px 0 10px !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-edit-button {
+  background: transparent !important;
+  border: 1.4px solid #2785ed !important;
+  border-radius: 999px !important;
+  color: #0f73d8 !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  justify-self: stretch !important;
+  min-height: 36px !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-save-button {
+  background: transparent !important;
+  border: 1.4px solid #2785ed !important;
+  border-radius: 999px !important;
+  color: #0f73d8 !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  min-height: 36px !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-decision-canvas {
+  background: var(--scenario-content-bg) !important;
+  display: grid !important;
+  gap: 34px !important;
+  padding: 22px 28px 48px !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-screen-metrics {
+  align-items: start !important;
+  background: var(--scenario-content-bg) !important;
+  display: grid !important;
+  gap: 28px !important;
+  grid-column: 2 / 4 !important;
+  grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+  grid-row: 1 !important;
+  margin: 0 !important;
+  padding: 22px 44px 18px 28px !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-screen-metrics div {
+  display: grid !important;
+  gap: 4px !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-screen-metrics dt {
+  color: #5d6670 !important;
+  font-size: 13px !important;
+  font-weight: 400 !important;
+  line-height: 18px !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-screen-metrics dd {
+  color: #31373d !important;
+  font-family: var(--font-display) !important;
+  font-size: 25px !important;
+  font-weight: 600 !important;
+  line-height: 31px !important;
+  margin: 0 !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-screen-metrics .decision-recommended dd,
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-screen-metrics .decision-ready dd {
+  color: #398d14 !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-screen-metrics .decision-needs-review dd {
+  color: #b85b00 !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-posture-stage {
+  align-items: center !important;
+  display: grid !important;
+  gap: 64px !important;
+  grid-template-columns: 320px minmax(0, 1fr) !important;
+  min-height: 320px !important;
+  padding: 28px 50px 18px !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-clock {
+  aspect-ratio: 1 !important;
+  background: transparent !important;
+  border-radius: 0 !important;
+  display: block !important;
+  isolation: isolate !important;
+  max-width: 320px !important;
+  position: relative !important;
+  width: 100% !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-clock img {
+  display: block !important;
+  height: auto !important;
+  position: relative !important;
+  width: 100% !important;
+  z-index: 1 !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-clock-marker {
+  border-radius: 999px !important;
+  display: block !important;
+  left: var(--clock-marker-x) !important;
+  position: absolute !important;
+  top: var(--clock-marker-y) !important;
+  transform: translate(-50%, -50%) !important;
+  z-index: 4 !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-clock-marker.is-muted {
+  background: #9d9d9d !important;
+  box-shadow: 0 0 0 6px rgba(157, 157, 157, .22) !important;
+  height: 15px !important;
+  opacity: .8 !important;
+  width: 15px !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-clock-marker.is-buyer {
+  background: #d83b8c !important;
+  box-shadow: 0 0 0 12px rgba(216, 59, 140, .2) !important;
+  height: 28px !important;
+  width: 28px !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-clock-marker.is-active {
+  background: #2785ed !important;
+  box-shadow: 0 0 0 12px rgba(39, 133, 237, .24) !important;
+  height: 28px !important;
+  width: 28px !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-clock-label {
+  align-content: center !important;
+  background: #e7e7e7 !important;
+  border: 0 !important;
+  border-radius: 999px !important;
+  display: grid !important;
+  height: 44% !important;
+  justify-items: center !important;
+  left: 50% !important;
+  padding-top: 4px !important;
+  position: absolute !important;
+  top: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  width: 44% !important;
+  z-index: 5 !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-clock-label strong {
+  color: #31373d !important;
+  font-family: var(--font-display) !important;
+  font-size: 27px !important;
+  font-weight: 700 !important;
+  line-height: 30px !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-clock-label span {
+  color: #31373d !important;
+  font-size: 18px !important;
+  font-weight: 400 !important;
+  line-height: 23px !important;
+  text-transform: none !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-posture-copy {
+  display: grid !important;
+  gap: 14px !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-posture-copy h2 {
+  color: #31373d !important;
+  font-family: var(--font-display) !important;
+  font-size: 30px !important;
+  font-weight: 600 !important;
+  line-height: 37px !important;
+  margin: 0 !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-posture-copy p {
+  color: #31373d !important;
+  font-size: 16px !important;
+  font-weight: 400 !important;
+  line-height: 24px !important;
+  margin: 0 !important;
+  max-width: 560px !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-posture-copy div {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 10px !important;
+  margin-top: 14px !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-posture-copy button {
+  align-items: center !important;
+  background: transparent !important;
+  border: 1.25px solid #a3a8ad !important;
+  border-radius: 999px !important;
+  color: #31373d !important;
+  display: inline-flex !important;
+  font-size: 14px !important;
+  font-weight: 400 !important;
+  gap: 6px !important;
+  min-height: 38px !important;
+  padding: 0 14px !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-posture-copy button.atlas-scenario-posture-badge {
+  background: #ffffff !important;
+  font-weight: 600 !important;
+  gap: 8px !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-posture-copy button.atlas-scenario-posture-badge > span {
+  border-radius: 999px !important;
+  display: inline-block !important;
+  height: 10px !important;
+  width: 10px !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-posture-copy button.selected {
+  border-color: #2785ed !important;
+  color: #31373d !important;
+  font-weight: 700 !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-posture-copy button.atlas-scenario-posture-badge--scenario {
+  background: rgba(39, 133, 237, .08) !important;
+  border-color: #2785ed !important;
+  color: #0f73d8 !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-posture-copy button.atlas-scenario-posture-badge--scenario > span {
+  background: #2785ed !important;
+  box-shadow: 0 0 0 5px rgba(39, 133, 237, .16) !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-posture-copy button.atlas-scenario-posture-badge--buyer {
+  background: rgba(216, 59, 140, .08) !important;
+  border-color: #d83b8c !important;
+  color: #8c215b !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-posture-copy button.atlas-scenario-posture-badge--buyer > span {
+  background: #d83b8c !important;
+  box-shadow: 0 0 0 5px rgba(216, 59, 140, .16) !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-posture-copy button.atlas-scenario-posture-badge--other {
+  background: rgba(157, 157, 157, .08) !important;
+  border-color: #c9cdd1 !important;
+  color: #5d6670 !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-posture-copy button.atlas-scenario-posture-badge--other > span {
+  background: #9d9d9d !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-response-panel {
+  background: #eaf4fc !important;
+  border: 1px solid #abd2fb !important;
+  border-radius: 24px !important;
+  box-shadow: 0 28px 62px rgba(27, 39, 51, .10) !important;
+  display: grid !important;
+  gap: 26px !important;
+  padding: 28px !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-response-panel header {
+  align-items: center !important;
+  display: flex !important;
+  justify-content: space-between !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-response-panel h2 {
+  color: #31373d !important;
+  font-family: var(--font-display) !important;
+  font-size: 19px !important;
+  font-weight: 700 !important;
+  line-height: 25px !important;
+  margin: 0 !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-response-panel header button,
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-breakdown header button {
+  align-items: center !important;
+  background: #ffffff !important;
+  border: 0 !important;
+  border-radius: 999px !important;
+  color: #0f73d8 !important;
+  display: inline-flex !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  gap: 7px !important;
+  min-height: 36px !important;
+  padding: 0 14px !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-response-prompt {
+  align-items: center !important;
+  display: grid !important;
+  gap: 12px !important;
+  justify-items: center !important;
+  min-height: 144px !important;
+  text-align: center !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-response-prompt > svg {
+  color: #2785ed !important;
+  height: 32px !important;
+  stroke-width: 2.6 !important;
+  width: 32px !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-response-prompt p {
+  color: #31373d !important;
+  font-family: var(--font-display) !important;
+  font-size: 20px !important;
+  font-weight: 400 !important;
+  line-height: 28px !important;
+  margin: 8px 0 4px !important;
+  max-width: 760px !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-response-likelihood {
+  align-items: center !important;
+  background: rgba(255, 255, 255, .60) !important;
+  border: 1.5px solid #4c9b1f !important;
+  border-radius: 999px !important;
+  color: #3f8f17 !important;
+  display: inline-flex !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  line-height: 18px !important;
+  min-height: 31px !important;
+  padding: 0 15px !important;
+  text-transform: none !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-response-grid {
+  display: grid !important;
+  gap: 16px !important;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, .95fr) !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-response-grid > article,
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-response-grid > div article {
+  background: #f4faff !important;
+  border: 1.25px solid #abd2fb !important;
+  border-radius: 20px !important;
+  display: grid !important;
+  gap: 12px !important;
+  padding: 22px !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-response-grid > div {
+  display: grid !important;
+  gap: 16px !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-response-grid article strong {
+  color: #31373d !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  line-height: 20px !important;
+  margin-top: 8px !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-response-grid article p {
+  color: #4d565f !important;
+  font-size: 14px !important;
+  font-weight: 400 !important;
+  line-height: 22px !important;
+  margin: 0 !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-response-grid article > span {
+  align-items: center !important;
+  color: #31373d !important;
+  display: inline-flex !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  gap: 9px !important;
+  line-height: 20px !important;
+  text-transform: none !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-response-grid article > span svg {
+  color: #2785ed !important;
+  height: 20px !important;
+  stroke-width: 2.5 !important;
+  width: 20px !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-breakdown {
+  background: var(--scenario-content-bg) !important;
+  border-left: 1px solid #e2e3e5 !important;
+  display: grid !important;
+  gap: 28px !important;
+  padding: 72px 44px 42px !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-breakdown header {
+  align-items: center !important;
+  display: flex !important;
+  justify-content: space-between !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-breakdown h2 {
+  color: #31373d !important;
+  font-family: var(--font-display) !important;
+  font-size: 19px !important;
+  font-weight: 700 !important;
+  line-height: 25px !important;
+  margin: 0 !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-breakdown article {
+  display: grid !important;
+  gap: 11px !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-breakdown article p {
+  color: #4d565f !important;
+  font-size: 15px !important;
+  font-weight: 400 !important;
+  line-height: 23px !important;
+  margin: 0 !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-breakdown .atlas-source-mini {
+  margin-top: 4px !important;
+}
+
+@media (max-width: 1300px) {
+  html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-screen-shell {
+    grid-template-columns: 320px minmax(0, 1fr) !important;
+  }
+
+  html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-breakdown {
+    border-left: 0 !important;
+    grid-column: 1 / -1 !important;
+    padding: 32px 48px !important;
+  }
+}
+
+@media (max-width: 980px) {
+  html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-screen-header,
+  html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-screen-shell,
+  html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-posture-stage,
+  html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-response-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-screen-tabs {
+    grid-template-columns: 1fr !important;
+    padding: 0 20px !important;
+  }
+
+  html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-lever-rail {
+    max-height: none !important;
+    position: static !important;
+  }
+
+  html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-screen-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+/* Scenario detail rail density pass. Keep the adjustment controls visible above the fold. */
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-lever-rail .atlas-scenario-lever-list label {
+  gap: 3px !important;
+  padding: 5px 0 6px !important;
+  position: relative !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-lever-rail .atlas-scenario-lever-list label > span,
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-lever-rail .atlas-scenario-lever-list label strong {
+  align-self: center !important;
+  font-size: 13px !important;
+  line-height: 16px !important;
+  min-height: 0 !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-lever-rail .atlas-scenario-lever-list label > span {
+  color: #31373d !important;
+  font-weight: 400 !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-lever-rail .atlas-scenario-lever-list label.atlas-scenario-added-lever select {
+  align-self: center !important;
+  appearance: none !important;
+  background: transparent !important;
+  border: 0 !important;
+  color: #31373d !important;
+  cursor: pointer !important;
+  font: inherit !important;
+  font-size: 13px !important;
+  font-weight: 400 !important;
+  line-height: 16px !important;
+  min-width: 0 !important;
+  outline: 0 !important;
+  padding: 0 18px 0 0 !important;
+  width: 100% !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-lever-rail .atlas-scenario-lever-list label.atlas-scenario-added-lever select:disabled {
+  cursor: default !important;
+  opacity: 1 !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-lever-rail .atlas-scenario-lever-list label.atlas-scenario-added-lever::after {
+  color: #8a9097 !important;
+  content: "v" !important;
+  font-size: 12px !important;
+  left: calc(100% - 18px) !important;
+  pointer-events: none !important;
+  position: absolute !important;
+  top: 5px !important;
+  transform: translateX(-100%) !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-lever-rail .atlas-scenario-lever-list label strong {
+  font-weight: 700 !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-lever-rail .atlas-scenario-lever-list input[type="range"] {
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  background: linear-gradient(
+    90deg,
+    #82b8ed 0%,
+    #2785ed var(--scenario-lever-progress),
+    #e9e9ea var(--scenario-lever-progress),
+    #e9e9ea 100%
+  ) !important;
+  border-radius: 999px !important;
+  grid-column: 1 / -1 !important;
+  grid-row: 2 !important;
+  height: 12px !important;
+  margin: 0 !important;
+  outline: none !important;
+  width: 100% !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-lever-rail .atlas-scenario-lever-list input[type="range"]:disabled {
+  cursor: default !important;
+  opacity: 1 !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-lever-rail .atlas-scenario-lever-list input[type="range"]::-webkit-slider-runnable-track {
+  background: transparent !important;
+  border: 0 !important;
+  height: 12px !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-lever-rail .atlas-scenario-lever-list input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  background: transparent !important;
+  border: 0 !important;
+  height: 20px !important;
+  margin-top: -4px !important;
+  width: 20px !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-lever-rail .atlas-scenario-lever-list input[type="range"]::-moz-range-track {
+  background: transparent !important;
+  border: 0 !important;
+  height: 12px !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-lever-rail .atlas-scenario-lever-list input[type="range"]::-moz-range-thumb {
+  background: transparent !important;
+  border: 0 !important;
+  height: 20px !important;
+  width: 20px !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-lever-rail .atlas-scenario-lever-list label > b {
+  align-self: center !important;
+  align-items: center !important;
+  background: #0f73d8 !important;
+  border-radius: 7px !important;
+  color: #ffffff !important;
+  display: none !important;
+  font-size: 15px !important;
+  font-weight: 400 !important;
+  grid-column: 1 / -1 !important;
+  grid-row: 2 !important;
+  height: 20px !important;
+  justify-content: center !important;
+  justify-self: start !important;
+  left: clamp(10px, var(--scenario-lever-progress), calc(100% - 10px)) !important;
+  line-height: 1 !important;
+  pointer-events: none !important;
+  position: absolute !important;
+  top: -4px !important;
+  transform: translateX(-50%) !important;
+  width: 20px !important;
+  z-index: 2 !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-lever-rail.is-editing .atlas-scenario-lever-list label > b {
+  display: flex !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-lever-rail .atlas-scenario-lever-list small {
+  align-items: center !important;
+  display: flex !important;
+  font-size: 10.5px !important;
+  justify-content: space-between !important;
+  line-height: 16px !important;
+  margin-top: 0 !important;
+  min-height: 0 !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-lever-rail .atlas-scenario-lever-list small em {
+  color: #31373d !important;
+  font-style: normal !important;
+  font-weight: 400 !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-lever-rail .atlas-scenario-lever-list small button {
+  align-items: center !important;
+  background: transparent !important;
+  border: 1px solid #d7d8da !important;
+  border-radius: 999px !important;
+  color: #31373d !important;
+  cursor: pointer !important;
+  display: inline-flex !important;
+  font-size: 10.5px !important;
+  font-weight: 400 !important;
+  justify-content: center !important;
+  line-height: 16px !important;
+  min-height: 0 !important;
+  padding: 0 8px !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-lever-rail .atlas-scenario-lever-list small button:disabled {
+  cursor: default !important;
+  opacity: .82 !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-lever-rail .atlas-scenario-update-button {
+  margin: 5px 0 6px !important;
+  min-height: 28px !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-lever-rail .atlas-scenario-save-button {
+  min-height: 32px !important;
+}
+
+/* Scenario detail scrolling model: masthead fixed, side rails steady, center canvas scrolls. */
+html body:has(.atlas-scenario-screen) {
+  overflow: hidden !important;
+}
+
+html body main.atlas-hub-shell:has(.atlas-scenario-screen),
+html body main.atlas-hub-shell:has(.atlas-scenario-screen) .atlas-hub-main {
+  height: 100vh !important;
+  overflow: hidden !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-screen {
+  display: grid !important;
+  grid-template-rows: var(--scenario-header-height) var(--scenario-tabs-height) minmax(0, 1fr) !important;
+  height: calc(100vh - var(--scenario-masthead-top)) !important;
+  left: 0 !important;
+  margin: 0 !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  position: fixed !important;
+  right: 0 !important;
+  top: var(--scenario-masthead-top) !important;
+  width: 100vw !important;
+  z-index: 120 !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-screen-header,
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-screen-tabs {
+  position: relative !important;
+  top: auto !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-screen-shell {
+  grid-template-rows: minmax(0, 1fr) !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-lever-rail {
+  grid-column: 1 !important;
+  grid-row: 1 !important;
+  height: 100% !important;
+  max-height: none !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  position: relative !important;
+  top: auto !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-content-scroll {
+  align-items: start !important;
+  background: var(--scenario-content-bg) !important;
+  display: grid !important;
+  grid-column: 2 / 4 !important;
+  grid-row: 1 !important;
+  grid-template-columns: minmax(0, 1fr) 368px !important;
+  grid-template-rows: auto auto !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain !important;
+  transition: grid-template-columns .34s cubic-bezier(.22, 1, .36, 1) !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-content-scroll.is-breakdown-collapsed {
+  grid-template-columns: minmax(0, 1fr) 52px !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-content-scroll .atlas-scenario-screen-metrics {
+  grid-column: 1 / 3 !important;
+  grid-row: 1 !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-content-scroll.is-breakdown-collapsed .atlas-scenario-screen-metrics {
+  grid-column: 1 / 3 !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-decision-canvas {
+  grid-column: 1 !important;
+  grid-row: 2 !important;
+  height: auto !important;
+  min-height: 0 !important;
+  min-width: 0 !important;
+  overflow: visible !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-decision-canvas > * {
+  min-width: 0 !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-posture-stage {
+  gap: 42px !important;
+  grid-template-columns: minmax(280px, 320px) minmax(0, 1fr) !important;
+  padding-left: 30px !important;
+  padding-right: 30px !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-clock {
+  max-width: 320px !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-breakdown {
+  align-content: start !important;
+  align-self: start !important;
+  gap: 34px !important;
+  grid-column: 2 !important;
+  grid-row: 2 !important;
+  height: auto !important;
+  min-height: 0 !important;
+  overflow: visible !important;
+  padding: 36px 44px 28px !important;
+  position: sticky !important;
+  top: 0 !important;
+  transition:
+    padding .28s cubic-bezier(.22, 1, .36, 1),
+    background-color .22s ease,
+    border-color .22s ease,
+    opacity .22s ease !important;
+  will-change: padding, opacity !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-breakdown header {
+  align-items: center !important;
+  gap: 18px !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-breakdown header button {
+  align-items: center !important;
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 999px !important;
+  color: #707172 !important;
+  display: inline-flex !important;
+  flex: 0 0 auto !important;
+  font-size: 12px !important;
+  font-weight: 400 !important;
+  gap: 0 !important;
+  height: 34px !important;
+  justify-content: center !important;
+  min-height: 34px !important;
+  padding: 0 !important;
+  transition:
+    background .18s ease,
+    border-color .18s ease,
+    color .18s ease,
+    transform .24s cubic-bezier(.22, 1, .36, 1) !important;
+  width: 34px !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-breakdown .atlas-scenario-breakdown-toggle {
+  border: 1px solid transparent !important;
+  color: #707172 !important;
+  font-size: 12px !important;
+  font-weight: 400 !important;
+  min-height: 34px !important;
+  padding: 0 !important;
+  position: relative !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-breakdown .atlas-scenario-breakdown-toggle::after {
+  background: #31373d !important;
+  border-radius: 999px !important;
+  color: #ffffff !important;
+  content: attr(data-tooltip) !important;
+  font-size: 11px !important;
+  font-weight: 400 !important;
+  left: 50% !important;
+  line-height: 16px !important;
+  opacity: 0 !important;
+  padding: 5px 10px !important;
+  pointer-events: none !important;
+  position: absolute !important;
+  top: calc(100% + 8px) !important;
+  transform: translate(-50%, -3px) !important;
+  transition: opacity .16s ease, transform .16s ease !important;
+  white-space: nowrap !important;
+  z-index: 20 !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-breakdown .atlas-scenario-breakdown-toggle:hover::after,
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-breakdown .atlas-scenario-breakdown-toggle:focus-visible::after {
+  opacity: 1 !important;
+  transform: translate(-50%, 0) !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-breakdown .atlas-scenario-breakdown-toggle:hover {
+  background: rgba(255, 255, 255, .72) !important;
+  border-color: #d9dadb !important;
+  color: #31373d !important;
+  transform: translateX(-1px) !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-breakdown .atlas-scenario-breakdown-toggle:active {
+  transform: scale(.94) !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-breakdown .atlas-scenario-breakdown-toggle span {
+  clip: rect(0 0 0 0) !important;
+  clip-path: inset(50%) !important;
+  height: 1px !important;
+  overflow: hidden !important;
+  position: absolute !important;
+  white-space: nowrap !important;
+  width: 1px !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-breakdown header button svg {
+  color: #8a9097 !important;
+  height: 16px !important;
+  stroke-width: 2 !important;
+  transition:
+    color .18s ease,
+    transform .32s cubic-bezier(.22, 1, .36, 1) !important;
+  width: 16px !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-breakdown .atlas-scenario-breakdown-toggle:hover svg {
+  color: #0f73d8 !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-content-scroll.is-breakdown-collapsed .atlas-scenario-breakdown {
+  align-self: stretch !important;
+  border-left-color: transparent !important;
+  gap: 0 !important;
+  grid-row: 2 !important;
+  height: 100% !important;
+  justify-items: center !important;
+  min-height: 100% !important;
+  overflow: visible !important;
+  padding: 18px 6px !important;
+  z-index: 4 !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-content-scroll.is-breakdown-collapsed .atlas-scenario-breakdown header {
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  justify-content: center !important;
+  justify-items: center !important;
+  width: 100% !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-content-scroll.is-breakdown-collapsed .atlas-scenario-breakdown h2,
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-content-scroll.is-breakdown-collapsed .atlas-scenario-breakdown article,
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-content-scroll.is-breakdown-collapsed .atlas-scenario-breakdown .atlas-source-mini {
+  opacity: 0 !important;
+  pointer-events: none !important;
+  position: absolute !important;
+  transform: translateX(8px) !important;
+  visibility: hidden !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-content-scroll.is-breakdown-collapsed .atlas-scenario-breakdown .atlas-scenario-breakdown-toggle {
+  background: rgba(255, 255, 255, .44) !important;
+  border-color: rgba(217, 218, 219, .72) !important;
+  box-shadow: 0 8px 20px rgba(27, 39, 51, .05) !important;
+  display: inline-flex !important;
+  height: 38px !important;
+  justify-content: center !important;
+  padding: 0 !important;
+  position: relative !important;
+  width: 38px !important;
+  z-index: 2 !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-content-scroll.is-breakdown-collapsed .atlas-scenario-breakdown .atlas-scenario-breakdown-toggle::after {
+  left: auto !important;
+  right: 0 !important;
+  transform: translate(0, -3px) !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-content-scroll.is-breakdown-collapsed .atlas-scenario-breakdown .atlas-scenario-breakdown-toggle:hover::after,
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-content-scroll.is-breakdown-collapsed .atlas-scenario-breakdown .atlas-scenario-breakdown-toggle:focus-visible::after {
+  transform: translate(0, 0) !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-content-scroll.is-breakdown-collapsed .atlas-scenario-breakdown .atlas-scenario-breakdown-toggle svg {
+  transform: rotate(180deg) !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-content-scroll.is-breakdown-collapsed .atlas-scenario-breakdown .atlas-scenario-breakdown-toggle:hover {
+  background: rgba(255, 255, 255, .72) !important;
+  border-color: #d9dadb !important;
+  transform: translateX(1px) !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-breakdown h2,
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-breakdown article,
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-breakdown .atlas-source-mini {
+  opacity: 1 !important;
+  transform: translateX(0) !important;
+  transition:
+    opacity .18s ease .08s,
+    transform .24s cubic-bezier(.22, 1, .36, 1) .06s,
+    visibility 0s linear 0s !important;
+  visibility: visible !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-content-scroll.is-breakdown-collapsed .atlas-scenario-breakdown h2,
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-content-scroll.is-breakdown-collapsed .atlas-scenario-breakdown article,
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-content-scroll.is-breakdown-collapsed .atlas-scenario-breakdown .atlas-source-mini {
+  transition:
+    opacity .14s ease,
+    transform .2s cubic-bezier(.22, 1, .36, 1),
+    visibility 0s linear .14s !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-breakdown article {
+  gap: 14px !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-breakdown article span {
+  align-items: center !important;
+  color: #31373d !important;
+  display: inline-flex !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  gap: 9px !important;
+  letter-spacing: 0 !important;
+  line-height: 18px !important;
+  text-transform: uppercase !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-breakdown article span svg {
+  color: #0f73d8 !important;
+  flex: 0 0 auto !important;
+  height: 20px !important;
+  stroke-width: 2.6 !important;
+  width: 20px !important;
+}
+
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-breakdown article p {
+  color: #31373d !important;
+  font-size: 14px !important;
+  font-weight: 400 !important;
+  line-height: 22px !important;
+}
+
+@media (max-width: 1300px) and (min-width: 981px) {
+  html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-screen-shell {
+    grid-template-columns: 320px minmax(0, 1fr) 320px !important;
+  }
+
+  html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-breakdown {
+    border-left: 1px solid #e2e3e5 !important;
+    grid-column: auto !important;
+    padding: 32px 32px 24px !important;
+  }
+}
+
+
 /* Material cleanup for older Brand Doctor surfaces that still ship with this build. */
 .solution-home-page .brand-home-hero h1,
 .brand-home-page .brand-home-hero h1,

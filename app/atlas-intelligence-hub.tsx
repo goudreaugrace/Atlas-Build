@@ -1,6 +1,7 @@
 'use client';
 
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
+import type { CSSProperties } from 'react';
 import {
   AlertCircle,
   AlertTriangle,
@@ -22,6 +23,8 @@ import {
   Loader2,
   Mic,
   Newspaper,
+  PanelRightClose,
+  PanelRightOpen,
   Search,
   Send,
   ShieldCheck,
@@ -672,6 +675,14 @@ function appendAtlasReturnContext(href: string, returnTo: string, returnLabel: s
   params.set('returnTo', returnTo);
   if (returnLabel) params.set('returnLabel', returnLabel);
   return `${path}?${params.toString()}`;
+}
+
+function isSameAtlasDate(dateInput: string, comparisonDate: Date) {
+  const date = new Date(dateInput);
+  if (Number.isNaN(date.getTime())) return false;
+  return date.getUTCFullYear() === comparisonDate.getUTCFullYear()
+    && date.getUTCMonth() === comparisonDate.getUTCMonth()
+    && date.getUTCDate() === comparisonDate.getUTCDate();
 }
 
 type PageIntentKey =
@@ -6899,6 +6910,11 @@ type ScenarioCustomLeverRow = {
   value: string;
   weight: number;
 };
+type ScenarioNumericInputKey = Exclude<keyof ScenarioInputs, 'competitorPressureLevel'>;
+type ScenarioAdjustmentAddedLeverRow = {
+  id: string;
+  key: ScenarioNumericInputKey;
+};
 type ScenarioDebriefEntry = {
   attachments: string;
   behavior: string;
@@ -6956,6 +6972,7 @@ const scenarioWorkspaceModules: Array<{ id: PredictiveWorkspaceModuleId; label: 
 ];
 
 const SCENARIO_DEBRIEF_STORAGE_KEY = 'atlas-scenario-debriefs';
+const SCENARIO_LAB_VISIT_STORAGE_KEY = 'atlas-scenario-lab-last-visit';
 
 function readScenarioDebriefMemory(buyingGroupId?: string): ScenarioDebriefEntry[] {
   if (typeof window === 'undefined') return [];
@@ -10979,18 +10996,22 @@ function scenarioFocusLabel(focus: ScenarioFocus) {
 
 function ScenarioModelsView({
   buyingGroupId,
-  initialScenarioCaseId,
+  initialScenarioCaseId: _initialScenarioCaseId,
   initialScenarioId,
   initialScenarioLabMode,
+  initialScenarioPage,
+  initialSort,
   initialPrompt,
   marketId,
-  returnLabel,
-  returnTo
+  returnLabel: _returnLabel,
+  returnTo: _returnTo
 }: {
   buyingGroupId?: string;
   initialScenarioCaseId?: string;
   initialScenarioId?: string;
   initialScenarioLabMode?: string;
+  initialScenarioPage?: string;
+  initialSort?: string;
   initialPrompt?: string;
   initialView?: string;
   marketId?: string;
@@ -11014,15 +11035,22 @@ function ScenarioModelsView({
   const [selectedScenarioId, setSelectedScenarioId] = useState(initialScenarioId ?? '');
   const [scenarioLabMode, setScenarioLabMode] = useState<ScenarioLabMode>(initialScenarioLabMode === 'create' ? 'create' : 'review');
   const [scenarioTypeFilter, setScenarioTypeFilter] = useState('all');
-  const [scenarioCaseTriggerFilter, setScenarioCaseTriggerFilter] = useState('all');
-  const [expandedScenarioEventIds, setExpandedScenarioEventIds] = useState<string[]>([]);
+  const [openScenarioFilter, setOpenScenarioFilter] = useState<string | null>(null);
+  const [scenarioTableBuyingGroupFilter, setScenarioTableBuyingGroupFilter] = useState(buyingGroupId ?? '');
+  const [scenarioTableMarketFilter, setScenarioTableMarketFilter] = useState(marketId ?? '');
+  const [scenarioTablePage, setScenarioTablePage] = useState(Number.parseInt(initialScenarioPage || '1', 10));
+  const [scenarioTableSort, setScenarioTableSort] = useState(initialSort || 'impact');
+  const [scenarioNewSinceLastVisitCount, setScenarioNewSinceLastVisitCount] = useState<number | null>(null);
+  const [scenarioAdjustmentEditing, setScenarioAdjustmentEditing] = useState(false);
+  const [scenarioAdjustmentBaselineInputs, setScenarioAdjustmentBaselineInputs] = useState<ScenarioInputs | null>(null);
+  const [scenarioInputOverrides, setScenarioInputOverrides] = useState<Record<string, ScenarioInputs>>({});
+  const [scenarioAdjustmentAddedLeversByScenario, setScenarioAdjustmentAddedLeversByScenario] = useState<Record<string, ScenarioAdjustmentAddedLeverRow[]>>({});
+  const [scenarioAdjustmentLeverMenuOpen, setScenarioAdjustmentLeverMenuOpen] = useState(false);
+  const [scenarioBreakdownCollapsed, setScenarioBreakdownCollapsed] = useState(false);
+  const [expandedScenarioPriorityGroups, setExpandedScenarioPriorityGroups] = useState({ planning: false, traceability: false });
   const [expandedScenarioRowIds, setExpandedScenarioRowIds] = useState<string[]>([]);
   const [compareScenarioIds, setCompareScenarioIds] = useState<string[]>([]);
   const [savedManualScenarios, setSavedManualScenarios] = useState<ScenarioLabOption[]>([]);
-  const [scenarioEditOverrides, setScenarioEditOverrides] = useState<Record<string, ScenarioLabOption>>({});
-  const [fullScenarioAdjusting, setFullScenarioAdjusting] = useState(false);
-  const [fullScenarioDraftInputs, setFullScenarioDraftInputs] = useState<ScenarioInputs | null>(null);
-  const [fullScenarioExtraLevers, setFullScenarioExtraLevers] = useState<Array<{ id: string; name: string; value: string }>>([]);
   const [skuRows, setSkuRows] = useState<ScenarioSkuRow[]>([
     { id: 'scenario-sku-core', sku: 'Core multipack family', priceMove: initialInputs.priceIncreasePercent, volumeRisk: Math.abs(initialInputs.volumeChangePercent), margin: 31.2, sensitivity: 'Medium' },
     { id: 'scenario-sku-promo', sku: 'Promo pack architecture', priceMove: Math.max(0.5, initialInputs.priceIncreasePercent - 0.4), volumeRisk: Math.abs(initialInputs.volumeChangePercent) + 0.7, margin: 27.6, sensitivity: 'High' }
@@ -11039,8 +11067,6 @@ function ScenarioModelsView({
   const [scenarioDebriefNextCycle, setScenarioDebriefNextCycle] = useState('');
   const [scenarioDebriefAttachments, setScenarioDebriefAttachments] = useState('');
   const [scenarioDebriefEntries, setScenarioDebriefEntries] = useState<ScenarioDebriefEntry[]>([]);
-  const resolvedReturnHref = normalizeAtlasReturnHref(returnTo);
-  const resolvedReturnLabel = normalizeAtlasReturnLabel(returnLabel);
   const outputs = useMemo(() => calculateScenarioOutputs(inputs, baseRevenue), [baseRevenue, inputs]);
   const scenarioOwnerName = attachedBuyingGroup?.name ?? attachedMarket?.name ?? 'Europe portfolio';
   const scenarioScopeName = attachedBuyingGroup && selectedMarket
@@ -11057,6 +11083,15 @@ function ScenarioModelsView({
     .slice(0, 5);
   const attachedWorkspace = attachedBuyingGroup ? buildBuyingGroupWorkspacePacket(attachedBuyingGroup.id) : undefined;
   const latestScenarioDebrief = scenarioDebriefEntries[0];
+  const scenarioLabNow = new Date();
+  const scenarioLabCreatedAt = (daysAgo: number, hour: number, minute: number) => new Date(Date.UTC(
+    scenarioLabNow.getFullYear(),
+    scenarioLabNow.getMonth(),
+    scenarioLabNow.getDate() - daysAgo,
+    hour,
+    minute,
+    0
+  )).toISOString();
   function scenarioHref({ buyer = selectedBuyingGroupId, market = selectedMarketId }: { buyer?: string; market?: string } = {}) {
     const params = new URLSearchParams();
     if (market) params.set('market', market);
@@ -11065,13 +11100,16 @@ function ScenarioModelsView({
     return query ? `/scenario-lab?${query}` : '/scenario-lab';
   }
 
-  function scenarioHrefWithReturn(href: string) {
-    return appendAtlasReturnContext(href, resolvedReturnHref, resolvedReturnLabel);
-  }
-
   useEffect(() => {
     setInputs(initialInputs);
   }, [initialInputs]);
+
+  useEffect(() => {
+    setScenarioTableBuyingGroupFilter(buyingGroupId ?? '');
+    setScenarioTableMarketFilter(marketId ?? '');
+    setScenarioTablePage(Number.parseInt(initialScenarioPage || '1', 10));
+    setScenarioTableSort(initialSort || 'impact');
+  }, [buyingGroupId, initialScenarioPage, initialSort, marketId]);
 
   useEffect(() => {
     setScenarioDebriefEntries(readScenarioDebriefMemory(attachedBuyingGroup?.id));
@@ -11225,8 +11263,8 @@ function ScenarioModelsView({
     { key: 'priceIncreasePercent', label: 'Price increase %', min: 0, max: Math.max(6, inputs.priceIncreasePercent + 1), step: 0.1, affects: 'Target ask, acceptance, revenue' },
     { key: 'expectedRealizationPercent', label: 'Expected realization %', min: 0, max: Math.max(5, inputs.priceIncreasePercent + 1), step: 0.1, affects: 'Gap to plan, margin, risk value' },
     { key: 'volumeChangePercent', label: 'Volume change %', min: -5, max: 3, step: 0.1, affects: 'Volume, revenue, buyer risk' },
-    { key: 'tradeSpendChange', label: 'Trade spend change EUR', min: 0, max: Math.max(1000000, inputs.tradeSpendChange * 1.5), step: 25000, affects: 'Trade spend, margin, acceptance' },
-    { key: 'concessionAmount', label: 'Concession amount EUR', min: 0, max: Math.max(1000000, inputs.concessionAmount * 1.75), step: 25000, affects: 'Revenue leakage, guardrail pressure' },
+    { key: 'tradeSpendChange', label: 'Trade spend change €', min: 0, max: Math.max(1000000, inputs.tradeSpendChange * 1.5), step: 25000, affects: 'Trade spend, margin, acceptance' },
+    { key: 'concessionAmount', label: 'Concession amount €', min: 0, max: Math.max(1000000, inputs.concessionAmount * 1.75), step: 25000, affects: 'Revenue leakage, guardrail pressure' },
     { key: 'costInflationPercent', label: 'Cost inflation %', min: 0, max: Math.max(6, inputs.costInflationPercent + 1), step: 0.1, affects: 'Evidence strength, defendability' },
     { key: 'buyerAcceptanceProbability', label: 'Buyer acceptance probability', min: 0, max: 100, step: 1, affects: 'Risk-adjusted value' },
     { key: 'contractLengthMonths', label: 'Contract length months', min: 3, max: 24, step: 1, affects: 'Exposure window, lock-in risk' }
@@ -11482,9 +11520,13 @@ function ScenarioModelsView({
     tradeSpendChange: Math.round(initialInputs.tradeSpendChange * 0.88),
     volumeChangePercent: initialInputs.volumeChangePercent - 0.55
   };
+  const recommendedWorkingInputs = scenarioInputOverrides.recommended ?? recommendedScenarioInputs;
+  const conservativeWorkingInputs = scenarioInputOverrides.conservative ?? conservativeScenarioInputs;
+  const aggressiveWorkingInputs = scenarioInputOverrides.aggressive ?? aggressiveScenarioInputs;
+  const buyerCounterWorkingInputs = scenarioInputOverrides['buyer-counter'] ?? buyerCounterInputs;
   const planningScenarioOptions = [
     {
-      createdAt: '2026-07-17T09:18:00.000Z',
+      createdAt: scenarioLabCreatedAt(0, 13, 42),
       description: 'Pairs the price ask with a service-value commitment to improve acceptance without opening a pure concession.',
       id: 'service-value-tradeoff',
       inputs: {
@@ -11498,7 +11540,7 @@ function ScenarioModelsView({
       why: 'Tests whether non-price value can protect the ask before adding trade support.'
     },
     {
-      createdAt: '2026-07-17T09:21:00.000Z',
+      createdAt: scenarioLabCreatedAt(0, 12, 58),
       description: 'Stages the realization ask across the agreement period to reduce first-round buyer resistance.',
       id: 'phased-realization-path',
       inputs: {
@@ -11512,7 +11554,7 @@ function ScenarioModelsView({
       why: 'Tests if a staged ask keeps the negotiation inside guardrails while improving the chance to land.'
     },
     {
-      createdAt: '2026-07-17T09:24:00.000Z',
+      createdAt: scenarioLabCreatedAt(0, 12, 21),
       description: 'Uses a controlled promo envelope to defend volume while keeping the landed price near target.',
       id: 'promo-envelope-defense',
       inputs: {
@@ -11527,7 +11569,7 @@ function ScenarioModelsView({
       why: 'Tests whether a small, bounded support package prevents volume risk without breaking the pricing case.'
     },
     {
-      createdAt: '2026-07-17T09:27:00.000Z',
+      createdAt: scenarioLabCreatedAt(1, 16, 35),
       description: 'Offsets buyer pushback by shifting focus toward higher-margin categories in the same buying group.',
       id: 'category-mix-offset',
       inputs: {
@@ -11542,7 +11584,7 @@ function ScenarioModelsView({
       why: 'Tests if the strategy can protect value by moving pressure away from the most sensitive category.'
     },
     {
-      createdAt: '2026-07-17T09:30:00.000Z',
+      createdAt: scenarioLabCreatedAt(1, 15, 48),
       description: 'Holds the price position but adds a guardrail review before any concession is offered.',
       id: 'finance-guardrail-review',
       inputs: {
@@ -11564,7 +11606,7 @@ function ScenarioModelsView({
   }));
   const referenceScenarioOptions = [
     {
-      createdAt: '2026-07-17T09:34:00.000Z',
+      createdAt: scenarioLabCreatedAt(1, 14, 20),
       description: 'Keeps the current recommended ask and only monitors buyer response timing against prior cycles.',
       id: 'response-cadence-watch',
       inputs: {
@@ -11576,7 +11618,7 @@ function ScenarioModelsView({
       why: 'Keeps the scenario available as a low-risk watchout if buyer timing starts to look unusual.'
     },
     {
-      createdAt: '2026-07-17T09:37:00.000Z',
+      createdAt: scenarioLabCreatedAt(2, 11, 55),
       description: 'Tests whether stronger source documentation changes confidence without changing the commercial move.',
       id: 'source-proof-only',
       inputs: initialInputs,
@@ -11585,7 +11627,7 @@ function ScenarioModelsView({
       why: 'Useful as a documentation check, but it does not change the pricing position by itself.'
     },
     {
-      createdAt: '2026-07-17T09:40:00.000Z',
+      createdAt: scenarioLabCreatedAt(2, 10, 40),
       description: 'Evaluates payment-term language as a minor support lever without changing price or trade spend.',
       id: 'terms-language-check',
       inputs: {
@@ -11597,7 +11639,7 @@ function ScenarioModelsView({
       why: 'Keeps a light operational lever in view without treating it as a primary scenario.'
     },
     {
-      createdAt: '2026-07-17T09:43:00.000Z',
+      createdAt: scenarioLabCreatedAt(0, 11, 44),
       description: 'Tracks whether an external market signal should stay as context rather than change the buyer move.',
       id: 'market-signal-monitor',
       inputs: initialInputs,
@@ -11606,7 +11648,7 @@ function ScenarioModelsView({
       why: 'Useful for awareness, but the signal is not material enough to change the current scenario.'
     },
     {
-      createdAt: '2026-07-17T09:46:00.000Z',
+      createdAt: scenarioLabCreatedAt(3, 15, 5),
       description: 'Keeps a buyer-history pattern visible for future rounds without changing this round’s assumption set.',
       id: 'history-pattern-reference',
       inputs: initialInputs,
@@ -11615,7 +11657,7 @@ function ScenarioModelsView({
       why: 'Preserves the closed-loop learning, but it is not urgent unless the buyer repeats the pattern.'
     },
     {
-      createdAt: '2026-07-17T09:49:00.000Z',
+      createdAt: scenarioLabCreatedAt(3, 13, 16),
       description: 'Checks whether shelf-visibility language should be added as supporting evidence, not a financial lever.',
       id: 'visibility-language-check',
       inputs: {
@@ -11632,17 +11674,142 @@ function ScenarioModelsView({
     origin: 'atlas' as const,
     scenarioStyle: scenario.scenarioStyle
   }));
-	  const baseScenarioOptions = [
-    { ...predictiveScenario('recommended', 'Balanced evidence-backed ask', 'Best current move based on buyer history, finance guardrails, and market signals.', recommendedScenarioInputs, 'Best default when the team needs a sourced starting point.'), createdAt: '2026-07-17T09:00:00.000Z', origin: 'atlas' as const, scenarioStyle: 'Recommended' },
-    { ...predictiveScenario('conservative', 'Lower-risk landing path', 'Protect landing probability with a smaller price move and controlled support.', conservativeScenarioInputs, 'Best when relationship risk or source confidence makes the full move harder to land.'), createdAt: '2026-07-17T09:05:00.000Z', origin: 'atlas' as const, scenarioStyle: 'Conservative' },
-    { ...predictiveScenario('aggressive', 'Value capture stretch', 'Push for more price realization with less trade support and higher buyer resistance.', aggressiveScenarioInputs, 'Use when margin protection is more important than relationship safety.'), createdAt: '2026-07-17T09:08:00.000Z', origin: 'atlas' as const, scenarioStyle: 'Aggressive' },
-    { ...predictiveScenario('buyer-counter', 'Likely buyer counter', 'Models the buyer pushing back with lower realization and more trade support.', buyerCounterInputs, 'Use to prepare the downside case and pushback response.'), createdAt: '2026-07-17T09:10:00.000Z', origin: 'atlas' as const, scenarioStyle: 'Buyer counter' },
-    { ...predictiveScenario('custom', 'Current working model', 'Uses the current levers, scenario level, SKU rows, and custom assumptions.', inputs, 'Updates as the CNO changes the model.'), createdAt: '2026-07-17T09:15:00.000Z', origin: 'atlas' as const, scenarioStyle: 'Custom' },
+  const highImpactScenarioOptions = [
+    {
+      createdAt: scenarioLabCreatedAt(0, 10, 52),
+      description: 'Models a competitor-driven buyer escalation where volume risk and proof burden rise together.',
+      id: 'competitor-escalation-stress',
+      inputs: {
+        ...initialInputs,
+        buyerAcceptanceProbability: Math.max(25, initialInputs.buyerAcceptanceProbability - 18),
+        competitorPressureLevel: 'high' as const,
+        expectedRealizationPercent: Math.max(0.5, initialInputs.expectedRealizationPercent - 0.35),
+        priceIncreasePercent: Math.min(6, initialInputs.priceIncreasePercent + 0.75),
+        tradeSpendChange: Math.round(initialInputs.tradeSpendChange * 1.28),
+        volumeChangePercent: initialInputs.volumeChangePercent - 1.1
+      },
+      name: 'Competitor escalation stress',
+      scenarioStyle: 'Stress test',
+      why: 'Shows where the plan breaks if a competitor reference changes the buyer’s negotiation posture.'
+    },
+    {
+      createdAt: scenarioLabCreatedAt(1, 13, 42),
+      description: 'Tests the downside case where the buyer rejects the ask and shifts the discussion to concessions.',
+      id: 'concession-pressure-breakpoint',
+      inputs: {
+        ...initialInputs,
+        buyerAcceptanceProbability: Math.max(22, initialInputs.buyerAcceptanceProbability - 20),
+        concessionAmount: Math.round(initialInputs.concessionAmount * 1.55),
+        expectedRealizationPercent: Math.max(0.5, initialInputs.expectedRealizationPercent - 0.6),
+        priceIncreasePercent: Math.min(6, initialInputs.priceIncreasePercent + 0.65),
+        tradeSpendChange: Math.round(initialInputs.tradeSpendChange * 1.35),
+        volumeChangePercent: initialInputs.volumeChangePercent - 0.95
+      },
+      name: 'Concession pressure breakpoint',
+      scenarioStyle: 'Stress test',
+      why: 'Highlights the impact if the buyer forces concessions before accepting any meaningful price movement.'
+    }
+  ].map((scenario) => ({
+    ...predictiveScenario(scenario.id, scenario.name, scenario.description, scenario.inputs, scenario.why),
+    createdAt: scenario.createdAt,
+    origin: 'atlas' as const,
+    scenarioStyle: scenario.scenarioStyle
+  }));
+  const lowImpactScenarioOptions = [
+    {
+      createdAt: scenarioLabCreatedAt(2, 9, 35),
+      description: 'Keeps a narrow source-quality note available without changing the commercial ask.',
+      id: 'source-quality-note',
+      inputs: {
+        ...initialInputs,
+        buyerAcceptanceProbability: Math.min(95, initialInputs.buyerAcceptanceProbability + 4),
+        concessionAmount: 0,
+        contractLengthMonths: 3,
+        costInflationPercent: 0,
+        expectedRealizationPercent: initialInputs.expectedRealizationPercent,
+        tradeSpendChange: 0,
+        volumeChangePercent: 0
+      },
+      name: 'Source quality note',
+      scenarioStyle: 'Reference',
+      why: 'Useful for evidence hygiene, but it does not materially change the buyer or financial position.'
+    },
+    {
+      createdAt: scenarioLabCreatedAt(2, 8, 55),
+      description: 'Captures a short-term communication adjustment that should not change the pricing scenario.',
+      id: 'message-sequencing-note',
+      inputs: {
+        ...initialInputs,
+        buyerAcceptanceProbability: Math.min(95, initialInputs.buyerAcceptanceProbability + 3),
+        concessionAmount: 0,
+        contractLengthMonths: 3,
+        costInflationPercent: 0,
+        expectedRealizationPercent: initialInputs.expectedRealizationPercent,
+        tradeSpendChange: 0,
+        volumeChangePercent: 0.05
+      },
+      name: 'Message sequencing note',
+      scenarioStyle: 'Reference',
+      why: 'Keeps the room narrative consistent while leaving the modeled economics largely unchanged.'
+    },
+    {
+      createdAt: scenarioLabCreatedAt(3, 9, 10),
+      description: 'Tracks a minor follow-up task for the buyer file without changing the current negotiation move.',
+      id: 'buyer-file-cleanup',
+      inputs: {
+        ...initialInputs,
+        buyerAcceptanceProbability: Math.min(95, initialInputs.buyerAcceptanceProbability + 2),
+        concessionAmount: 0,
+        contractLengthMonths: 3,
+        costInflationPercent: 0,
+        expectedRealizationPercent: initialInputs.expectedRealizationPercent,
+        tradeSpendChange: 0,
+        volumeChangePercent: 0
+      },
+      name: 'Buyer file cleanup',
+      scenarioStyle: 'Reference',
+      why: 'Low-impact housekeeping that keeps the buyer record current without changing the scenario recommendation.'
+    }
+  ].map((scenario) => ({
+    ...predictiveScenario(scenario.id, scenario.name, scenario.description, scenario.inputs, scenario.why),
+    createdAt: scenario.createdAt,
+    origin: 'atlas' as const,
+    scenarioStyle: scenario.scenarioStyle
+  }));
+	  const scenarioOptions = [
+    { ...predictiveScenario('recommended', 'Balanced evidence-backed ask', 'Best current move based on buyer history, finance guardrails, and market signals.', recommendedWorkingInputs, 'Best default when the team needs a sourced starting point.'), createdAt: scenarioLabCreatedAt(0, 14, 18), origin: 'atlas' as const, scenarioStyle: 'Recommended' },
+    { ...predictiveScenario('conservative', 'Lower-risk landing path', 'Protect landing probability with a smaller price move and controlled support.', conservativeWorkingInputs, 'Best when relationship risk or source confidence makes the full move harder to land.'), createdAt: scenarioLabCreatedAt(1, 17, 5), origin: 'atlas' as const, scenarioStyle: 'Conservative' },
+    { ...predictiveScenario('aggressive', 'Value capture stretch', 'Push for more price realization with less trade support and higher buyer resistance.', aggressiveWorkingInputs, 'Use when margin protection is more important than relationship safety.'), createdAt: scenarioLabCreatedAt(0, 13, 5), origin: 'atlas' as const, scenarioStyle: 'Aggressive' },
+    { ...predictiveScenario('buyer-counter', 'Likely buyer counter', 'Models the buyer pushing back with lower realization and more trade support.', buyerCounterWorkingInputs, 'Use to prepare the downside case and pushback response.'), createdAt: scenarioLabCreatedAt(0, 12, 47), origin: 'atlas' as const, scenarioStyle: 'Buyer counter' },
+    { ...predictiveScenario('custom', 'Current working model', 'Uses the current levers, scenario level, SKU rows, and custom assumptions.', inputs, 'Updates as the CNO changes the model.'), createdAt: scenarioLabCreatedAt(0, 11, 12), origin: 'atlas' as const, scenarioStyle: 'Custom' },
+    ...highImpactScenarioOptions,
     ...planningScenarioOptions,
     ...referenceScenarioOptions,
+    ...lowImpactScenarioOptions,
     ...savedManualScenarios
 	  ];
-	  const scenarioOptions = baseScenarioOptions.map((scenario) => scenarioEditOverrides[scenario.id] ?? scenario);
+  const scenarioGeneratedTodayCount = scenarioOptions.filter((scenario) => scenario.origin === 'atlas' && scenario.id !== 'custom' && isSameAtlasDate(scenario.createdAt, scenarioLabNow)).length;
+  const scenarioLiveHeaderCount = scenarioNewSinceLastVisitCount ?? scenarioGeneratedTodayCount;
+  const scenarioLiveHeaderTitle = scenarioLiveHeaderCount > 0
+    ? `${scenarioLiveHeaderCount} new scenarios generated since your last visit`
+    : `${scenarioGeneratedTodayCount} scenarios refreshed today from triage alerts`;
+  const scenarioLiveHeaderCopy = scenarioGeneratedTodayCount > 0
+    ? `ATLAS refreshed ${scenarioGeneratedTodayCount} scenarios today from active buyer pressure, market signal, and CNO-review alerts surfaced in triage.`
+    : 'ATLAS is monitoring triage alerts and will add new scenario rows when buyer pressure, market signals, or CNO-review watchouts change.';
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const previousVisit = window.localStorage.getItem(SCENARIO_LAB_VISIT_STORAGE_KEY);
+    const previousVisitTime = previousVisit ? new Date(previousVisit).getTime() : Number.NaN;
+    const fallbackVisitTime = scenarioLabNow.getTime() - 24 * 60 * 60 * 1000;
+    const lastVisitTime = Number.isNaN(previousVisitTime) ? fallbackVisitTime : previousVisitTime;
+    const generatedSinceLastVisit = scenarioOptions.filter((scenario) => (
+      scenario.origin === 'atlas'
+      && scenario.id !== 'custom'
+      && new Date(scenario.createdAt).getTime() > lastVisitTime
+    )).length;
+    setScenarioNewSinceLastVisitCount(generatedSinceLastVisit);
+    window.localStorage.setItem(SCENARIO_LAB_VISIT_STORAGE_KEY, new Date().toISOString());
+  }, []);
 	  const topRecommendedScenario = [...scenarioOptions].sort((a, b) => b.atlasScore - a.atlasScore)[0];
 	  const selectedPredictiveScenario = scenarioOptions.find((scenario) => scenario.id === selectedScenarioId) ?? scenarioOptions[0];
 	  useEffect(() => {
@@ -11652,6 +11819,47 @@ function ScenarioModelsView({
 	    setInputs(scenario.inputs);
 	    setSelectedScenarioId(scenario.id);
 	  }, [initialScenarioId, initialScenarioLabMode]);
+	  const visibleScenarioOptions = scenarioTypeFilter === 'all'
+    ? scenarioOptions
+    : scenarioTypeFilter === 'atlas'
+      ? scenarioOptions.filter((scenario) => scenario.origin === 'atlas')
+      : scenarioTypeFilter === 'manual'
+        ? scenarioOptions.filter((scenario) => scenario.origin === 'manual')
+        : scenarioOptions.filter((scenario) => scenario.id === scenarioTypeFilter || scenario.scenarioStyle.toLowerCase().replace(/\s+/g, '-') === scenarioTypeFilter);
+  function scenarioAttentionScore(scenario: ScenarioLabOption) {
+    const materialDownside = scenario.outputs.revenueImpact < -750000 || scenario.outputs.marginImpact < -300000;
+    const financialExposureScore = Math.min(34, Math.round((Math.abs(scenario.outputs.revenueImpact) + Math.abs(scenario.outputs.marginImpact)) / 42000));
+    const guardrailScore = scenario.guardrailRisk === 'Guardrail breach' ? 36 : scenario.guardrailRisk === 'Watch' ? 18 : 4;
+    const buyerResponseScore = scenario.relationshipRisk === 'High' ? 30 : scenario.relationshipRisk === 'Medium' ? 16 : 6;
+    const styleScore = scenario.scenarioStyle === 'Buyer counter'
+      ? 28
+      : scenario.scenarioStyle === 'Aggressive'
+        ? 24
+        : scenario.scenarioStyle === 'Recommended'
+          ? 18
+          : scenario.scenarioStyle === 'Reference'
+            ? -34
+            : 10;
+    const evidenceScore = scenario.evidenceStrength < 76 ? 10 : scenario.evidenceStrength >= 86 ? 6 : 2;
+    const likelihoodScore = scenario.likelihood < 55 ? 12 : scenario.likelihood >= 70 ? 6 : 3;
+    return financialExposureScore + guardrailScore + buyerResponseScore + styleScore + evidenceScore + likelihoodScore + (materialDownside ? 18 : 0);
+  }
+
+  function scenarioAttentionBucket(scenario: ScenarioLabOption) {
+    const attentionScore = scenarioAttentionScore(scenario);
+    const materialDownside = scenario.outputs.revenueImpact < -750000 || scenario.outputs.marginImpact < -300000;
+    if (
+      scenario.guardrailRisk === 'Guardrail breach'
+      || scenario.relationshipRisk === 'High'
+      || scenario.scenarioStyle === 'Aggressive'
+      || scenario.scenarioStyle === 'Buyer counter'
+      || materialDownside
+      || attentionScore >= 78
+    ) return 'cno-review';
+    if (scenario.scenarioStyle === 'Reference' || attentionScore < 45) return 'traceability';
+    return 'planning';
+  }
+
   function scenarioAttentionReason(scenario: ScenarioLabOption) {
     if (scenario.guardrailRisk === 'Guardrail breach') return 'Guardrail risk';
     if (scenario.relationshipRisk === 'High') return 'Buyer pushback risk';
@@ -11685,6 +11893,40 @@ function ScenarioModelsView({
 	    };
 	  }
 
+  const sortedVisibleScenarioOptions = [...visibleScenarioOptions].sort((a, b) => scenarioAttentionScore(b) - scenarioAttentionScore(a) || b.atlasScore - a.atlasScore);
+  const scenarioPriorityGroups = [
+    {
+      id: 'cno-review',
+      label: 'Look at immediately',
+      note: 'Highest first: guardrail risk, NR or margin exposure, buyer pushback risk, then evidence confidence.',
+      collapsedLabel: 'Always shown',
+      scenarios: sortedVisibleScenarioOptions.filter((scenario) => scenarioAttentionBucket(scenario) === 'cno-review')
+    },
+    {
+      id: 'planning',
+      label: 'Lower-priority planning',
+      note: 'Useful scenarios to keep nearby, but they do not appear to change the immediate negotiation move.',
+      collapsedLabel: 'Showing first 5',
+      scenarios: sortedVisibleScenarioOptions.filter((scenario) => scenarioAttentionBucket(scenario) === 'planning')
+    },
+    {
+      id: 'traceability',
+      label: 'Ran, not relevant now',
+      note: 'ATLAS tested these for traceability, but they do not currently change focus, risk, confidence, or the recommended action.',
+      collapsedLabel: 'Hidden by default',
+      scenarios: sortedVisibleScenarioOptions.filter((scenario) => scenarioAttentionBucket(scenario) === 'traceability')
+    }
+  ].map((group) => {
+    const isExpandable = group.id === 'planning' || group.id === 'traceability';
+    const isExpanded = group.id === 'planning' ? expandedScenarioPriorityGroups.planning : group.id === 'traceability' ? expandedScenarioPriorityGroups.traceability : true;
+    const previewCount = group.id === 'traceability' ? 0 : 5;
+    return {
+      ...group,
+      isExpandable,
+      isExpanded,
+      visibleScenarios: isExpandable && !isExpanded ? group.scenarios.slice(0, previewCount) : group.scenarios
+    };
+  });
   const scenarioDecisionRows = [
     {
       label: 'Selected case',
@@ -11767,7 +12009,8 @@ function ScenarioModelsView({
     setSelectedScenarioId(scenario.id);
     setInputs(scenario.inputs);
     setSelectedLevel(scenario.id === 'custom' || scenario.origin === 'manual' ? 'custom' : selectedLevel);
-    window.location.href = scenarioEditHref(scenario.id);
+    setScenarioLabMode('create');
+    setScenarioSaveStatus(`Loaded ${scenario.name} into Create scenario.`);
   }
 
   function selectScenarioRow(scenarioId: string) {
@@ -11795,6 +12038,25 @@ function ScenarioModelsView({
     setScenarioTypeFilter('all');
     setScenarioLabMode('review');
     setScenarioSaveStatus('Manual scenario added to the scenario table.');
+  }
+
+  function updateScenarioParametersForCurrentTab(scenarioId: string) {
+    setScenarioInputOverrides((current) => ({ ...current, [scenarioId]: inputs }));
+    setSelectedScenarioId(scenarioId);
+    setScenarioAdjustmentEditing(false);
+    setScenarioAdjustmentBaselineInputs(null);
+    setScenarioAdjustmentLeverMenuOpen(false);
+    setScenarioSaveStatus('Parameters updated for this scenario.');
+    if (typeof window !== 'undefined') window.history.replaceState(null, '', scenarioDetailHref(scenarioId));
+  }
+
+  function saveScenarioParametersAsCustom() {
+    setSelectedScenarioId('custom');
+    setScenarioAdjustmentEditing(false);
+    setScenarioAdjustmentBaselineInputs(null);
+    setScenarioAdjustmentLeverMenuOpen(false);
+    setScenarioSaveStatus('Saved as Custom scenario.');
+    if (typeof window !== 'undefined') window.history.replaceState(null, '', scenarioDetailHref('custom'));
   }
 
   function saveScenarioToBuyingGroup() {
@@ -11881,418 +12143,222 @@ function ScenarioModelsView({
 	    .sort((a, b) => riskRank(b.pressureLevel) - riskRank(a.pressureLevel) || b.marginAtRisk - a.marginAtRisk)
 	    .slice(0, 5);
 	  const scenarioTrigger = scenarioAlerts[0];
+	  const isScenarioDetailMode = Boolean(initialScenarioId) && initialScenarioLabMode !== 'create';
+	  const fullViewScenario = isScenarioDetailMode
+	    ? scenarioOptions.find((scenario) => scenario.id === (selectedScenarioId || initialScenarioId))
+	    : undefined;
 	  function scenarioDetailHref(scenarioId: string) {
 	    const params = new URLSearchParams();
 	    if (selectedMarketId) params.set('market', selectedMarketId);
 	    if (selectedBuyingGroupId) params.set('buyingGroup', selectedBuyingGroupId);
 	    params.set('scenario', scenarioId);
-	    return scenarioHrefWithReturn(`/scenario-lab?${params.toString()}`);
+	    return `/scenario-lab?${params.toString()}`;
 	  }
-  function scenarioCaseDetailHref(caseId: string, scenarioId?: string) {
-    const params = new URLSearchParams();
-    if (selectedMarketId) params.set('market', selectedMarketId);
-    if (selectedBuyingGroupId) params.set('buyingGroup', selectedBuyingGroupId);
-    params.set('case', caseId);
-    if (scenarioId) params.set('scenario', scenarioId);
-    return scenarioHrefWithReturn(`/scenario-lab?${params.toString()}`);
-  }
 	  function scenarioEditHref(scenarioId: string) {
 	    const params = new URLSearchParams();
 	    if (selectedMarketId) params.set('market', selectedMarketId);
 	    if (selectedBuyingGroupId) params.set('buyingGroup', selectedBuyingGroupId);
 	    params.set('mode', 'create');
 	    params.set('scenario', scenarioId);
-	    return scenarioHrefWithReturn(`/scenario-lab?${params.toString()}`);
-	  }
+	    return `/scenario-lab?${params.toString()}`;
+  }
+  const scenarioTableActiveSort = scenarioTableSort || 'impact';
+  const scenarioTablePageSize = 10;
+  const scenarioTableRows = visibleScenarioOptions.filter((scenario) => {
+    if (scenario.id === 'custom' || scenario.origin !== 'atlas') return false;
+    const scope = scenarioTableScope(scenario);
+    const matchesBuyingGroup = !scenarioTableBuyingGroupFilter || scope.buyingGroupId === scenarioTableBuyingGroupFilter;
+    const matchesMarket = !scenarioTableMarketFilter
+      || scope.marketId === scenarioTableMarketFilter
+      || ('marketIds' in scope && Array.isArray(scope.marketIds) && scope.marketIds.includes(scenarioTableMarketFilter));
+    return matchesBuyingGroup && matchesMarket;
+  }).slice(0, 20).sort((a, b) => {
+    const { direction, key } = parseSortParam(scenarioTableActiveSort, 'impact');
+    const impactOrder: Record<string, number> = { high: 3, medium: 2, low: 1 };
+    const impactDelta = impactOrder[scenarioTableImpact(a).tone] - impactOrder[scenarioTableImpact(b).tone];
+    const createdDelta = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+    if (key === 'impact' && impactDelta !== 0) return direction === 'asc' ? impactDelta : -impactDelta;
+    if (key === 'created' && createdDelta !== 0) return direction === 'asc' ? createdDelta : -createdDelta;
+    if (impactDelta !== 0) return -impactDelta;
+    return -createdDelta;
+  });
+  const scenarioTableTotalPages = Math.max(1, Math.ceil(scenarioTableRows.length / scenarioTablePageSize));
+  const scenarioTableCurrentPage = Math.min(Math.max(1, Number.isFinite(scenarioTablePage) ? scenarioTablePage : 1), scenarioTableTotalPages);
+  const scenarioTableStartIndex = (scenarioTableCurrentPage - 1) * scenarioTablePageSize;
+  const scenarioTableVisibleRows = scenarioTableRows.slice(scenarioTableStartIndex, scenarioTableStartIndex + scenarioTablePageSize);
+  function scenarioTableTitle(scenario: ScenarioLabOption) {
+    if (scenario.id === 'recommended') return 'EDEKA price realization pressure';
+    if (scenario.id === 'market-signal-monitor') return 'Market pressure may change the buyer response';
+    if (scenario.id === 'buyer-counter') return 'Buyer history suggests a counter pattern';
+    if (scenario.id === 'promo-envelope-defense') return 'Rewe promo envelope pressure';
+    return scenario.name.replace(/^[A-C]\.\s*/, '');
+  }
+  function scenarioTableImpact(scenario: ScenarioLabOption) {
+    const nrImpact = Math.abs(scenario.outputs.revenueImpact);
+    const gmImpact = Math.abs(scenario.outputs.marginImpact);
+    const tradeImpact = Math.abs(scenario.outputs.tradeSpendImpact);
+    const modeledSwing = Math.max(nrImpact + gmImpact, Math.abs(scenario.valueProtected), tradeImpact);
+    const hasBuyerRisk = scenario.relationshipRisk === 'High' || scenario.guardrailRisk === 'Guardrail breach';
+    const tone = modeledSwing >= 900000 || hasBuyerRisk
+      ? 'high'
+      : modeledSwing >= 620000 || scenario.guardrailRisk === 'Watch'
+        ? 'medium'
+        : 'low';
+    const label = tone === 'high' ? 'High impact' : tone === 'medium' ? 'Medium impact' : 'Low impact';
+    const reason = hasBuyerRisk
+      ? 'possible downside from buyer pushback'
+      : gmImpact >= nrImpact && gmImpact >= tradeImpact
+        ? 'margin risk'
+        : nrImpact >= tradeImpact
+          ? 'revenue movement'
+          : 'trade spend movement';
+    return {
+      detail: `${euros(Math.round(modeledSwing))} ${reason}`,
+      label,
+      tone
+    };
+  }
+  function scenarioTableScope(scenario: ScenarioLabOption) {
+    if (scenario.id === 'recommended') return { buyingGroup: 'EDEKA', buyingGroupId: 'edeka', market: 'Germany', marketId: 'germany', multi: false };
+    if (scenario.id === 'market-signal-monitor') {
+      const marketNames = railMarkets.map((market) => market.name);
+      const marketIds = railMarkets.map((market) => market.id);
+      const primaryGroup = mvpScenarioBuyingGroups[0];
+      return {
+        buyingGroup: primaryGroup?.name ?? 'EDEKA',
+        buyingGroupId: primaryGroup?.id ?? 'edeka',
+        market: `${marketNames.length} markets`,
+        marketId: marketIds[0] ?? '',
+        marketIds,
+        marketNames,
+        multi: false
+      };
+    }
+    if (scenario.id === 'buyer-counter') return { buyingGroup: 'Carrefour', buyingGroupId: 'carrefour', market: 'France', marketId: 'france', multi: false };
+    if (scenario.id === 'promo-envelope-defense') return { buyingGroup: 'Rewe', buyingGroupId: 'rewe', market: 'Germany', marketId: 'germany', multi: false };
+    const scenarioContext = scenarioBuyingGroupContext(scenario);
+    return { buyingGroup: scenarioContext.buyingGroup, market: scenarioContext.market, multi: false };
+  }
+  function scenarioTableCreatedLabel(createdAt: string) {
+    const date = new Date(createdAt);
+    if (Number.isNaN(date.getTime())) return createdAt;
+    const day = String(date.getUTCDate()).padStart(2, '0');
+    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+    const year = date.getUTCFullYear();
+    return `${day}/${month}/${year}`;
+  }
+  function scenarioTableSortHref(sort: string) {
+    const params = new URLSearchParams();
+    if (selectedBuyingGroupId) params.set('buyingGroup', selectedBuyingGroupId);
+    if (selectedMarketId) params.set('market', selectedMarketId);
+    params.set('sort', sort);
+    return `/scenario-lab?${params.toString()}`;
+  }
+  function scenarioTablePageHref(page: number) {
+    const params = new URLSearchParams();
+    if (selectedBuyingGroupId) params.set('buyingGroup', selectedBuyingGroupId);
+    if (selectedMarketId) params.set('market', selectedMarketId);
+    if (scenarioTableActiveSort) params.set('sort', scenarioTableActiveSort);
+    if (page > 1) params.set('page', String(page));
+    const query = params.toString();
+    return query ? `/scenario-lab?${query}` : '/scenario-lab';
+  }
   function scenarioCreateHref() {
     const params = new URLSearchParams();
-    if (selectedMarketId) params.set('market', selectedMarketId);
-    if (selectedBuyingGroupId) params.set('buyingGroup', selectedBuyingGroupId);
     params.set('mode', 'create');
-    return scenarioHrefWithReturn(`/scenario-lab?${params.toString()}`);
+    if (selectedBuyingGroupId) params.set('buyingGroup', selectedBuyingGroupId);
+    if (selectedMarketId) params.set('market', selectedMarketId);
+    return `/scenario-lab?${params.toString()}`;
+  }
+  function closeScenarioFilter(filterId = openScenarioFilter) {
+    if (!filterId) return;
+    setOpenScenarioFilter((currentFilter) => (currentFilter === filterId ? null : currentFilter));
+  }
+  function ScenarioTableSortableHeader({ label, sort }: { label: string; sort: string }) {
+    const active = parseSortParam(scenarioTableActiveSort, 'impact').key === sort;
+    const nextSort = nextSortParam(scenarioTableActiveSort, sort);
+    return (
+      <button
+        className={active ? 'active' : ''}
+        onClick={() => {
+          setScenarioTableSort(nextSort);
+          setScenarioTablePage(1);
+        }}
+        type="button"
+        aria-current={active ? 'true' : undefined}
+      >
+        {label}
+        {active ? <span aria-hidden="true">{sortDirectionArrow(scenarioTableActiveSort, sort)}</span> : null}
+      </button>
+    );
+  }
+  function ScenarioFilterDropdown({
+    id,
+    label,
+    onChange,
+    options,
+    value
+  }: {
+    id: string;
+    label: string;
+    onChange: (value: string) => void;
+    options: Array<{ label: string; value: string }>;
+    value: string;
+  }) {
+    const isOpen = openScenarioFilter === id;
+    const selected = options.find((option) => option.value === value) ?? options[0];
+    return (
+      <div
+        className={`atlas-scenario-filter-select${isOpen ? ' open' : ''}`}
+        onBlur={(event) => {
+          if (!event.currentTarget.contains(event.relatedTarget as Node | null)) closeScenarioFilter(id);
+        }}
+        onKeyDown={(event) => {
+          if (event.key === 'Escape') closeScenarioFilter(id);
+        }}
+      >
+        <button
+          aria-expanded={isOpen}
+          aria-haspopup="listbox"
+          aria-label={label}
+          onClick={() => {
+            if (isOpen) {
+              closeScenarioFilter(id);
+              return;
+            }
+            setOpenScenarioFilter(id);
+          }}
+          type="button"
+        >
+          <span>{selected?.label ?? label}</span>
+          <i aria-hidden="true" />
+        </button>
+          <div className="atlas-scenario-filter-menu" role="listbox" aria-label={label} aria-hidden={!isOpen}>
+            {options.map((option) => (
+              <button
+                aria-selected={option.value === value}
+                className={option.value === value ? 'selected' : ''}
+                key={option.value || 'all'}
+                onClick={() => {
+                  closeScenarioFilter(id);
+                  onChange(option.value);
+                }}
+                onMouseDown={(event) => event.preventDefault()}
+                role="option"
+                type="button"
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+      </div>
+    );
   }
 	  const compareParams = new URLSearchParams();
   compareScenarioIds.forEach((id) => compareParams.append('scenario', id));
   if (selectedBuyingGroupId) compareParams.set('buyingGroup', selectedBuyingGroupId);
   if (selectedMarketId) compareParams.set('market', selectedMarketId);
-  if (resolvedReturnHref) {
-    compareParams.set('returnTo', resolvedReturnHref);
-    if (resolvedReturnLabel) compareParams.set('returnLabel', resolvedReturnLabel);
-  }
   const compareHref = compareScenarioIds.length >= 2 ? `/scenario-lab/compare?${compareParams.toString()}` : '#';
-
-  function scenarioById(scenarioId: string) {
-    return scenarioOptions.find((scenario) => scenario.id === scenarioId);
-  }
-
-  function scenarioApproaches(ids: string[], caseId?: string) {
-    const seen = new Set<string>();
-    const useOnce = (scenario: ScenarioLabOption) => {
-      if (seen.has(scenario.id)) return false;
-      seen.add(scenario.id);
-      return true;
-    };
-    const baseApproaches = ids
-      .map((id) => scenarioById(id))
-      .filter((scenario): scenario is ScenarioLabOption => Boolean(scenario))
-      .filter(useOnce);
-    const customApproaches = caseId
-      ? savedManualScenarios.filter((scenario) => scenario.caseId === caseId).filter(useOnce)
-      : [];
-    return [...baseApproaches, ...customApproaches];
-  }
-
-  function eventGroupAt(index: number) {
-    return attachedBuyingGroup ?? mvpScenarioBuyingGroups[index] ?? scenarioContextGroups[index] ?? mvpScenarioBuyingGroups[0] ?? scenarioContextGroups[0];
-  }
-
-  const primaryEventGroup = eventGroupAt(0);
-  const secondaryEventGroup = eventGroupAt(1);
-  const tertiaryEventGroup = eventGroupAt(2);
-  const fourthEventGroup = eventGroupAt(3);
-  const eventMarketName = selectedMarket?.name ?? attachedMarket?.name ?? attachedMarkets[0]?.name ?? getMarket(primaryEventGroup?.primaryMarkets[0] ?? '')?.name ?? 'Europe';
-  const scenarioCases: ScenarioCase[] = [
-    {
-      actionLabel: 'Open modeled approaches',
-      approaches: scenarioApproaches(['recommended', 'conservative', 'aggressive', 'buyer-counter'], 'event-buyer-pressure'),
-      buyingGroup: primaryEventGroup?.name ?? scenarioOwnerName,
-      buyingGroupId: primaryEventGroup?.id,
-      confidence: 'High' as const,
-      createdAt: '2026-07-17T09:10:00.000Z',
-      decisionQuestion: 'Should the team hold the price position, trade service value, or plan for the likely counter?',
-      id: 'event-buyer-pressure',
-      impactLabel: 'Margin exposure',
-      impactValue: scenarioDeltaLabel(topRecommendedScenario.outputs.marginImpact),
-      market: eventMarketName,
-      marketId: primaryEventGroup?.primaryMarkets[0] ?? selectedMarketId,
-      order: '01',
-      priority: 'action' as const,
-      reaction: 'ATLAS modeled four response paths and recommends the balanced evidence-backed ask before the next buyer counter.',
-      recommendedApproachId: 'recommended',
-      sourceLabel: 'Buyer ask · Finance guardrail · Prior rounds',
-      sources: ['Buyer ask', 'Finance guardrail', 'Prior rounds'],
-      status: 'Needs CNO review' as const,
-      title: `${primaryEventGroup?.name ?? scenarioOwnerName} price realization pressure`,
-      trigger: `${primaryEventGroup?.name ?? scenarioOwnerName} movement changed the expected landing range for the current negotiation.`,
-      triggerType: 'Buyer event',
-      whyAtlasModeled: 'The trigger can change price realization, fallback logic, buyer acceptance, and the response package the CNO should carry into the room.'
-    },
-    {
-      actionLabel: 'Review market-driven runs',
-      approaches: scenarioApproaches(['service-value-tradeoff', 'phased-realization-path', 'promo-envelope-defense', 'finance-guardrail-review'], 'event-market-pressure'),
-      buyingGroup: secondaryEventGroup?.name ?? primaryEventGroup?.name ?? scenarioOwnerName,
-      buyingGroupId: secondaryEventGroup?.id ?? primaryEventGroup?.id,
-      confidence: 'Medium-high' as const,
-      createdAt: '2026-07-17T09:28:00.000Z',
-      decisionQuestion: 'Does the market signal require a pricing move, or should it stay as negotiation evidence?',
-      id: 'event-market-pressure',
-      impactLabel: 'NR swing tested',
-      impactValue: scenarioDeltaLabel(scenarioById('service-value-tradeoff')?.outputs.revenueImpact ?? outputs.revenueImpact),
-      market: getMarket(secondaryEventGroup?.primaryMarkets[0] ?? '')?.name ?? eventMarketName,
-      marketId: secondaryEventGroup?.primaryMarkets[0] ?? selectedMarketId,
-      order: '02',
-      priority: 'watch' as const,
-      reaction: 'ATLAS tested value, phasing, promo support, and finance review paths to avoid treating the market signal as a generic concession.',
-      recommendedApproachId: 'service-value-tradeoff',
-      sourceLabel: 'Market signal · Promo exposure · Category mix',
-      sources: ['Market signal', 'Promo exposure', 'Category mix'],
-      status: 'Monitoring' as const,
-      title: 'Market pressure may change the buyer response',
-      trigger: 'Cost and private-label pressure increased the chance that buyers challenge price with affordability or volume arguments.',
-      triggerType: 'Market signal',
-      whyAtlasModeled: 'The signal could change the evidence package, trade envelope, and how strongly PepsiCo should defend the ask.'
-    },
-    {
-      actionLabel: 'Open memory-backed runs',
-      approaches: scenarioApproaches(['buyer-counter', 'response-cadence-watch', 'source-proof-only', 'visibility-language-check'], 'event-response-delay'),
-      buyingGroup: tertiaryEventGroup?.name ?? primaryEventGroup?.name ?? scenarioOwnerName,
-      buyingGroupId: tertiaryEventGroup?.id ?? primaryEventGroup?.id,
-      confidence: 'Medium' as const,
-      createdAt: '2026-07-17T09:46:00.000Z',
-      decisionQuestion: 'Should buyer memory change the next-round response or simply stay as room context?',
-      id: 'event-history-pattern',
-      impactLabel: 'Likely counter',
-      impactValue: `${pct(buyerCounterInputs.expectedRealizationPercent)} realization`,
-      market: getMarket(tertiaryEventGroup?.primaryMarkets[0] ?? '')?.name ?? eventMarketName,
-      marketId: tertiaryEventGroup?.primaryMarkets[0] ?? selectedMarketId,
-      order: '03',
-      priority: 'reference' as const,
-      reaction: 'ATLAS kept buyer-history runs available because timing, proof quality, and visibility language can change the room response.',
-      recommendedApproachId: 'buyer-counter',
-      sourceLabel: 'Debrief memory · Source proof · Response cadence',
-      sources: ['Debrief memory', 'Source proof', 'Response cadence'],
-      status: 'Ready to use' as const,
-      title: 'Buyer history suggests a counter pattern',
-      trigger: 'Prior rounds show the buyer often waits before countering and asks for additional proof before moving from the first position.',
-      triggerType: 'History pattern',
-      whyAtlasModeled: 'Closed-loop buyer memory can change predicted response, round count, and the evidence the CNO should lead with.'
-    },
-    {
-      actionLabel: 'Open promo scenarios',
-      approaches: scenarioApproaches(['promo-envelope-defense', 'conservative', 'buyer-counter'], 'event-trade-spend'),
-      buyingGroup: fourthEventGroup?.name ?? primaryEventGroup?.name ?? scenarioOwnerName,
-      buyingGroupId: fourthEventGroup?.id ?? primaryEventGroup?.id,
-      confidence: 'Medium-high' as const,
-      createdAt: '2026-07-17T10:02:00.000Z',
-      decisionQuestion: 'Should PepsiCo protect price by tightening the promo envelope or prepare a service tradeoff?',
-      id: 'event-promo-pressure',
-      impactLabel: 'Trade exposure',
-      impactValue: scenarioDeltaLabel(scenarioById('promo-envelope-defense')?.outputs.tradeSpendImpact ?? outputs.tradeSpendImpact),
-      market: getMarket(fourthEventGroup?.primaryMarkets[0] ?? '')?.name ?? eventMarketName,
-      marketId: fourthEventGroup?.primaryMarkets[0] ?? selectedMarketId,
-      order: '04',
-      priority: 'action' as const,
-      reaction: 'ATLAS modeled promo-envelope defense against conservative and buyer-counter paths before trade support is offered.',
-      recommendedApproachId: 'promo-envelope-defense',
-      sourceLabel: 'Promo exposure · Buyer ask · Finance guardrail',
-      sources: ['Promo exposure', 'Buyer ask', 'Finance guardrail'],
-      status: 'Needs CNO review' as const,
-      title: `${fourthEventGroup?.name ?? 'Buyer'} promo envelope pressure`,
-      trigger: 'Buyer-side promo support request moved above the approved planning range.',
-      triggerType: 'Buyer event',
-      whyAtlasModeled: 'The ask could turn a pricing discussion into a trade-spend negotiation and weaken the guardrail if accepted too early.'
-    },
-    {
-      actionLabel: 'Review guardrail runs',
-      approaches: scenarioApproaches(['finance-guardrail-review', 'aggressive', 'recommended'], 'event-finance-guardrail'),
-      buyingGroup: primaryEventGroup?.name ?? scenarioOwnerName,
-      buyingGroupId: primaryEventGroup?.id,
-      confidence: 'High' as const,
-      createdAt: '2026-07-17T10:18:00.000Z',
-      decisionQuestion: 'Does the current position stay inside Finance guardrails after the latest counter?',
-      id: 'event-finance-guardrail',
-      impactLabel: 'Guardrail risk',
-      impactValue: 'Finance review',
-      market: eventMarketName,
-      marketId: primaryEventGroup?.primaryMarkets[0] ?? selectedMarketId,
-      order: '05',
-      priority: 'watch' as const,
-      reaction: 'ATLAS compared finance review, aggressive recovery, and the recommended path to keep escalation visible.',
-      recommendedApproachId: 'finance-guardrail-review',
-      sourceLabel: 'Finance model · Corridor v3 · Current ask',
-      sources: ['Finance model', 'Corridor v3', 'Current ask'],
-      status: 'Monitoring' as const,
-      title: `${primaryEventGroup?.name ?? scenarioOwnerName} guardrail check`,
-      trigger: 'Modeled fallback moved close to the approved floor after the latest concession request.',
-      triggerType: 'Buyer event',
-      whyAtlasModeled: 'Finance guardrails define where the team should pause, escalate, or replace price concession with value exchange.'
-    },
-    {
-      actionLabel: 'Open market signal runs',
-      approaches: scenarioApproaches(['service-value-tradeoff', 'recommended', 'aggressive'], 'event-commodity-signal'),
-      buyingGroup: secondaryEventGroup?.name ?? scenarioOwnerName,
-      buyingGroupId: secondaryEventGroup?.id,
-      confidence: 'Medium' as const,
-      createdAt: '2026-07-17T10:31:00.000Z',
-      decisionQuestion: 'Should private-label pressure change the evidence package or the actual ask?',
-      id: 'event-private-label-pressure',
-      impactLabel: 'Price defense',
-      impactValue: `${pct(recommendedScenarioInputs.expectedRealizationPercent)} realization`,
-      market: getMarket(secondaryEventGroup?.primaryMarkets[0] ?? '')?.name ?? eventMarketName,
-      marketId: secondaryEventGroup?.primaryMarkets[0] ?? selectedMarketId,
-      order: '06',
-      priority: 'watch' as const,
-      reaction: 'ATLAS tested whether the market pressure should trigger a value tradeoff or remain negotiation evidence.',
-      recommendedApproachId: 'service-value-tradeoff',
-      sourceLabel: 'Market signal · Category mix · Buyer profile',
-      sources: ['Market signal', 'Category mix', 'Buyer profile'],
-      status: 'Monitoring' as const,
-      title: 'Private-label pressure affecting price defense',
-      trigger: 'Private-label activity increased in a core category tied to the current annual plan.',
-      triggerType: 'Market signal',
-      whyAtlasModeled: 'Market pressure can change the buyer objection pattern and the evidence the CNO needs ready in the room.'
-    },
-    {
-      actionLabel: 'Open cadence runs',
-      approaches: scenarioApproaches(['response-cadence-watch', 'buyer-counter', 'conservative'], 'event-stall-pattern'),
-      buyingGroup: tertiaryEventGroup?.name ?? scenarioOwnerName,
-      buyingGroupId: tertiaryEventGroup?.id,
-      confidence: 'Medium-high' as const,
-      createdAt: '2026-07-17T10:44:00.000Z',
-      decisionQuestion: 'Is the delayed response a negotiation tactic or a signal to adjust the offer?',
-      id: 'event-response-delay',
-      impactLabel: 'Round timing',
-      impactValue: 'Cadence watch',
-      market: getMarket(tertiaryEventGroup?.primaryMarkets[0] ?? '')?.name ?? eventMarketName,
-      marketId: tertiaryEventGroup?.primaryMarkets[0] ?? selectedMarketId,
-      order: '07',
-      priority: 'reference' as const,
-      reaction: 'ATLAS modeled response-cadence, likely counter, and conservative paths so the team does not concede because of silence.',
-      recommendedApproachId: 'response-cadence-watch',
-      sourceLabel: 'Debrief memory · Response cadence · Prior outcomes',
-      sources: ['Debrief memory', 'Response cadence', 'Prior outcomes'],
-      status: 'Ready to use' as const,
-      title: `${tertiaryEventGroup?.name ?? 'Buyer'} response delay pattern`,
-      trigger: 'The buyer response window is tracking longer than comparable prior rounds.',
-      triggerType: 'History pattern',
-      whyAtlasModeled: 'History suggests delay can be a pressure tactic, so the model keeps the team anchored before changing the economics.'
-    },
-    {
-      actionLabel: 'Open source-proof runs',
-      approaches: scenarioApproaches(['source-proof-only', 'recommended', 'buyer-counter'], 'event-source-gap'),
-      buyingGroup: fourthEventGroup?.name ?? scenarioOwnerName,
-      buyingGroupId: fourthEventGroup?.id,
-      confidence: 'Medium' as const,
-      createdAt: '2026-07-17T11:06:00.000Z',
-      decisionQuestion: 'Is stronger source proof enough, or does the commercial position need to move?',
-      id: 'event-source-proof-gap',
-      impactLabel: 'Evidence gap',
-      impactValue: 'Proof review',
-      market: getMarket(fourthEventGroup?.primaryMarkets[0] ?? '')?.name ?? eventMarketName,
-      marketId: fourthEventGroup?.primaryMarkets[0] ?? selectedMarketId,
-      order: '08',
-      priority: 'reference' as const,
-      reaction: 'ATLAS kept source-proof-only scenarios available to separate evidence readiness from price movement.',
-      recommendedApproachId: 'source-proof-only',
-      sourceLabel: 'Source trail · Buyer objection · Prior proof',
-      sources: ['Source trail', 'Buyer objection', 'Prior proof'],
-      status: 'Ready to use' as const,
-      title: 'Buyer asked for stronger pricing proof',
-      trigger: 'Buyer feedback challenged the proof behind the current price increase instead of the mechanics of the offer.',
-      triggerType: 'History pattern',
-      whyAtlasModeled: 'The right move may be evidence sequencing, not economic concession, if the buyer is asking for proof rather than different terms.'
-    },
-    {
-      actionLabel: 'Open service tradeoff runs',
-      approaches: scenarioApproaches(['service-value-tradeoff', 'phased-realization-path', 'conservative'], 'event-category-mix'),
-      buyingGroup: primaryEventGroup?.name ?? scenarioOwnerName,
-      buyingGroupId: primaryEventGroup?.id,
-      confidence: 'High' as const,
-      createdAt: '2026-07-17T11:24:00.000Z',
-      decisionQuestion: 'Can service value protect the price ask without expanding trade spend?',
-      id: 'event-service-commitment',
-      impactLabel: 'Value exchange',
-      impactValue: scenarioDeltaLabel(scenarioById('service-value-tradeoff')?.valueProtected ?? topRecommendedScenario.valueProtected),
-      market: eventMarketName,
-      marketId: primaryEventGroup?.primaryMarkets[0] ?? selectedMarketId,
-      order: '09',
-      priority: 'action' as const,
-      reaction: 'ATLAS modeled service-value and phased paths because execution commitments may protect the ask better than cash support.',
-      recommendedApproachId: 'service-value-tradeoff',
-      sourceLabel: 'Buyer KPI · Service history · Finance guardrail',
-      sources: ['Buyer KPI', 'Service history', 'Finance guardrail'],
-      status: 'Needs CNO review' as const,
-      title: `${primaryEventGroup?.name ?? scenarioOwnerName} service-value exchange`,
-      trigger: 'Buyer signaled operational support could matter more than additional price concession.',
-      triggerType: 'Buyer event',
-      whyAtlasModeled: 'A service-value exchange could preserve margin while giving the buyer a credible reason to accept the pricing path.'
-    },
-    {
-      actionLabel: 'Open volume-risk runs',
-      approaches: scenarioApproaches(['phased-realization-path', 'buyer-counter', 'aggressive'], 'event-counterprep'),
-      buyingGroup: secondaryEventGroup?.name ?? scenarioOwnerName,
-      buyingGroupId: secondaryEventGroup?.id,
-      confidence: 'Medium-high' as const,
-      createdAt: '2026-07-17T11:47:00.000Z',
-      decisionQuestion: 'Should the team phase the price move if buyer volume risk increases?',
-      id: 'event-volume-risk',
-      impactLabel: 'Volume risk',
-      impactValue: pct(buyerCounterInputs.volumeChangePercent),
-      market: getMarket(secondaryEventGroup?.primaryMarkets[0] ?? '')?.name ?? eventMarketName,
-      marketId: secondaryEventGroup?.primaryMarkets[0] ?? selectedMarketId,
-      order: '10',
-      priority: 'watch' as const,
-      reaction: 'ATLAS modeled phased, buyer-counter, and aggressive paths to show where volume risk starts changing the best move.',
-      recommendedApproachId: 'phased-realization-path',
-      sourceLabel: 'Volume trend · Buyer counter · Market signal',
-      sources: ['Volume trend', 'Buyer counter', 'Market signal'],
-      status: 'Monitoring' as const,
-      title: 'Volume risk could change the price path',
-      trigger: 'Latest planning inputs show increased risk that the buyer ties acceptance to volume protection.',
-      triggerType: 'Market signal',
-      whyAtlasModeled: 'Volume risk changes the tradeoff between immediate realization, phased implementation, and relationship safety.'
-    }
-  ].filter((event) => event.approaches.length > 0);
-
-  function approachRoleLabel(scenario: ScenarioLabOption) {
-    if (scenario.id === 'recommended') return 'Best for PepsiCo';
-    if (scenario.id === 'buyer-counter') return 'Likely buyer counter';
-    return scenario.scenarioStyle;
-  }
-
-  function scenarioStatusReason(scenarioCase: ScenarioCase) {
-    if (scenarioCase.status === 'Needs CNO review') return 'Open first because the modeled change can affect the current negotiation position.';
-    if (scenarioCase.status === 'Monitoring') return 'Watch this because ATLAS found a signal that may change the next round.';
-    return 'Ready to use as reference context if the buyer raises this point.';
-  }
-
-  function visibleApproachesForEvent(event: ScenarioCase) {
-    return event.approaches.filter((scenario) => {
-      if (scenarioTypeFilter === 'all') return true;
-      if (scenarioTypeFilter === 'atlas') return scenario.origin === 'atlas';
-      if (scenarioTypeFilter === 'manual') return scenario.origin === 'manual';
-      return scenario.id === scenarioTypeFilter || scenario.scenarioStyle.toLowerCase().replace(/\s+/g, '-') === scenarioTypeFilter;
-    });
-  }
-
-  const visibleScenarioCases = scenarioCases
-    .map((event) => ({ ...event, approaches: visibleApproachesForEvent(event) }))
-    .filter((event) => {
-      if (!event.approaches.length) return false;
-      if (selectedBuyingGroupId && event.buyingGroupId !== selectedBuyingGroupId && !event.approaches.some((scenario) => scenarioBuyingGroupContext(scenario).buyingGroupId === selectedBuyingGroupId)) return false;
-      if (selectedMarketId && event.marketId !== selectedMarketId) return false;
-      if (scenarioCaseTriggerFilter !== 'all' && event.triggerType !== scenarioCaseTriggerFilter) return false;
-      return true;
-    });
-
-  function eventCompareHref(event: ScenarioCase) {
-    return scenarioCaseDetailHref(event.id, recommendedApproachForCase(event).id);
-  }
-
-  function scenarioCaseBuyingGroups(event: ScenarioCase) {
-    const names = [event.buyingGroup];
-    if (event.triggerType === 'Market signal') {
-      scenarioContextGroups.slice(0, 4).forEach((group) => names.push(group.name));
-    }
-    return Array.from(new Set(names.filter(Boolean)));
-  }
-
-  function scenarioCaseMarkets(event: ScenarioCase) {
-    const names = [event.market];
-    if (event.triggerType === 'Market signal') {
-      scenarioContextGroups.slice(0, 4).forEach((group) => {
-        group.primaryMarkets.forEach((marketId) => {
-          const market = getMarket(marketId);
-          if (market) names.push(market.name);
-        });
-      });
-    }
-    return Array.from(new Set(names.filter(Boolean)));
-  }
-
-  function ScenarioTableEntityCell({ items, singular, plural }: { items: string[]; singular: string; plural: string }) {
-    const label = items.length > 1 ? `${items.length} ${plural}` : items[0] ?? `No ${singular}`;
-    const detail = items.join(', ');
-
-    return (
-      <span
-        className="atlas-scenario-table-entity"
-        data-multiple={items.length > 1 ? 'true' : undefined}
-        tabIndex={items.length > 1 ? 0 : undefined}
-        title={items.length > 1 ? detail : undefined}
-      >
-        <span>{label}</span>
-        {items.length > 1 ? <span className="atlas-scenario-table-tooltip" role="tooltip">{detail}</span> : null}
-      </span>
-    );
-  }
-
-  function recommendedApproachForCase(scenarioCase: ScenarioCase) {
-    return scenarioCase.approaches.find((scenario) => scenario.id === scenarioCase.recommendedApproachId) ?? scenarioCase.approaches[0];
-  }
-
-  function scenarioCaseForScenarioId(scenarioId?: string) {
-    if (!scenarioId) return undefined;
-    return scenarioCases.find((scenarioCase) => scenarioCase.approaches.some((scenario) => scenario.id === scenarioId));
-  }
-
-  const fullScenarioCase = initialScenarioLabMode !== 'create'
-    ? scenarioCases.find((scenarioCase) => scenarioCase.id === initialScenarioCaseId) ?? scenarioCaseForScenarioId(initialScenarioId)
-    : undefined;
-  const activeFullScenarioId = selectedScenarioId || initialScenarioId;
-  const fullViewScenario = fullScenarioCase
-    ? fullScenarioCase.approaches.find((scenario) => scenario.id === activeFullScenarioId) ?? recommendedApproachForCase(fullScenarioCase)
-    : undefined;
 
 	  function toggleCompareScenario(scenarioId: string) {
 	    setCompareScenarioIds((current) => {
@@ -12300,14 +12366,6 @@ function ScenarioModelsView({
 	      return [...current, scenarioId].slice(-4);
 	    });
 	  }
-
-  function toggleScenarioEventExpansion(eventId: string) {
-    setExpandedScenarioEventIds((current) => (
-      current.includes(eventId)
-        ? current.filter((id) => id !== eventId)
-        : [...current, eventId]
-    ));
-  }
 
   function toggleScenarioRowExpansion(scenarioId: string) {
     setExpandedScenarioRowIds((current) => (
@@ -12319,841 +12377,398 @@ function ScenarioModelsView({
 
 	  if (fullViewScenario) {
 	    const scenario = fullViewScenario;
-	    const scenarioCase = fullScenarioCase ?? scenarioCaseForScenarioId(scenario.id);
-	    const scenarioContext = scenarioBuyingGroupContext(scenario);
-	    const scenarioWorkspace = scenarioContext.buyingGroupId ? buildBuyingGroupWorkspacePacket(scenarioContext.buyingGroupId) : undefined;
-	    const scenarioNegotiator = scenarioWorkspace
-	      ? buyerNegotiatorProfile(scenarioWorkspace)
-	      : {
-	          name: `${scenarioContext.buyingGroup} negotiator`,
-	          style: 'Buyer behavior'
-	        };
-	    const attentionReason = scenarioCase?.status ?? scenarioAttentionReason(scenario);
-	    const scenarioBasis = scenario.origin === 'manual'
-	      ? 'This scenario uses CNO-adjusted assumptions plus current buyer context and saved local inputs.'
-	      : scenarioCase
-	        ? scenarioCase.whyAtlasModeled
-	        : `${scenario.why}${scenarioTrigger ? ` It was refreshed after ATLAS reviewed ${scenarioTrigger.title.toLowerCase()}.` : ''}`;
-	    const scenarioFullSummary = `Based on ${scenario.scenarioStyle.toLowerCase()} logic, ATLAS modeled ${pct(scenario.inputs.priceIncreasePercent)} ask / ${pct(scenario.inputs.expectedRealizationPercent)} realization with ${scenarioDeltaLabel(scenario.outputs.revenueImpact)} NR impact and ${scenario.likelihood}% likelihood to land.`;
-	    const scenarioCaseTriggerText = scenarioCase?.trigger ?? scenarioBasis;
-	    const scenarioCaseModeledText = scenarioCase?.reaction ?? scenarioFullSummary;
-	    const scenarioCaseDecisionText = scenarioCase?.decisionQuestion ?? 'Decide whether this is the path to save, adjust, or carry into buyer preparation.';
-	    const fullScenarioBackHref = resolvedReturnHref || scenarioHref();
-	    const fullScenarioBackLabel = resolvedReturnLabel || 'Scenario Lab';
-	    const selectedApproaches = scenarioCase?.approaches ?? [scenario];
-	    const recommendedApproach = selectedApproaches.find((approach) => approach.id === scenarioCase?.recommendedApproachId) ?? selectedApproaches[0];
-	    const scenarioRecommendedText = recommendedApproach
-	      ? `${recommendedApproach.name}: ${recommendedApproach.recommendedEdit}`
-	      : 'Use the selected path only after checking buyer response, guardrail risk, and source confidence.';
-	    const activeScenarioInputs = fullScenarioDraftInputs ?? scenario.inputs;
-	    const activeScenarioOutputs = calculateScenarioOutputs(activeScenarioInputs, baseRevenue);
-	    const activeAcceptance = Math.max(1, Math.min(99, Math.round(activeScenarioInputs.buyerAcceptanceProbability)));
-	    const activeGuardrailRisk = activeScenarioInputs.expectedRealizationPercent < Math.max(0.4, initialInputs.expectedRealizationPercent - 0.5) || activeScenarioOutputs.marginImpact < -450000
-	      ? 'Guardrail breach'
-	      : activeScenarioInputs.expectedRealizationPercent < initialInputs.expectedRealizationPercent || activeScenarioOutputs.marginImpact < 0
-	        ? 'Watch'
-	        : 'Inside corridor';
-	    const activeRelationshipRisk = activeScenarioInputs.priceIncreasePercent > initialInputs.priceIncreasePercent + 0.55 || activeScenarioInputs.volumeChangePercent < initialInputs.volumeChangePercent - 0.8
-	      ? 'High'
-	      : activeScenarioInputs.priceIncreasePercent < initialInputs.priceIncreasePercent - 0.35
-	        ? 'Low'
-	        : 'Medium';
-	    const activeCounterPoint = Math.max(0.5, activeScenarioInputs.expectedRealizationPercent - 0.4).toFixed(1);
-	    const activeBuyerResponse = activeGuardrailRisk === 'Guardrail breach' && activeAcceptance < 55
-	      ? 'Likely to reject unless proof or the give-get improves.'
-	      : activeGuardrailRisk === 'Guardrail breach'
-	        ? `Likely to counter hard near ${activeCounterPoint}% unless the value exchange is tightened.`
-	        : activeAcceptance >= 70
-	          ? `Likely to challenge proof, then land near ${Math.max(0.5, activeScenarioInputs.priceIncreasePercent - 0.3).toFixed(1)}%.`
-	          : activeAcceptance >= 55
-	            ? `Likely to counter near ${Math.max(0.5, activeScenarioInputs.priceIncreasePercent - 0.5).toFixed(1)}% and ask for support.`
-	            : 'Likely to resist and use affordability or competitor pressure as leverage.';
-	    const updateFullScenarioDraftInput = <K extends keyof ScenarioInputs>(key: K, value: ScenarioInputs[K]) => {
-	      setFullScenarioDraftInputs((current) => ({
-	        ...(current ?? scenario.inputs),
-	        [key]: value
-	      }));
-	    };
-	    const scenarioDecisionStatusFor = ({
-	      guardrailRisk,
-	      isRecommended,
-	      likelihood,
-	      marginImpact,
-	      relationshipRisk
-	    }: {
-	      guardrailRisk: string;
-	      isRecommended: boolean;
-	      likelihood: number;
-	      marginImpact: number;
-	      relationshipRisk: string;
-	    }) => {
-	      if (isRecommended) {
-	        return {
-	          label: 'Recommended',
-	          reason: 'ATLAS selected this as the best balance of margin protection, landing probability, and relationship risk.',
-	          tone: 'recommended'
-	        };
-	      }
-	      if (guardrailRisk.toLowerCase().includes('breach') || marginImpact < -450000) {
-	        return {
-	          label: 'Guardrail watch',
-	          reason: 'This path may still be useful, but Finance or margin guardrails need to be checked before it is carried forward.',
-	          tone: 'watch'
-	        };
-	      }
-	      if (likelihood < 55 || relationshipRisk.toLowerCase().includes('high')) {
-	        return {
-	          label: 'Stress case',
-	          reason: 'Open this when you need to understand downside exposure or likely buyer pressure.',
-	          tone: 'negative'
-	        };
-	      }
-	      if (likelihood < 65) {
-	        return {
-	          label: 'Needs proof',
-	          reason: 'This can work if the team leads with stronger evidence and a clearer value exchange.',
-	          tone: 'watch'
-	        };
-	      }
-	      return {
-	        label: 'Viable',
-	        reason: 'This path is within the modeled range and can be used as an alternative to the recommended move.',
-	        tone: 'positive'
-	      };
-	    };
-	    const approachRationale = (approach: ScenarioLabOption, read = scenarioDecisionStatusFor({
-	      guardrailRisk: approach.guardrailRisk,
-	      isRecommended: approach.id === scenarioCase?.recommendedApproachId,
-	      likelihood: approach.likelihood,
-	      marginImpact: approach.outputs.marginImpact,
-	      relationshipRisk: approach.relationshipRisk
-	    })) => {
-	      const isRecommended = approach.id === scenarioCase?.recommendedApproachId;
-	      if (isRecommended) {
-	        return {
-	          ...read,
-	          text: `Best current path because ${approach.recommendedEdit.charAt(0).toLowerCase()}${approach.recommendedEdit.slice(1)}`
-	        };
-	      }
-	      if (approach.relationshipRisk.toLowerCase().includes('high') || approach.guardrailRisk.toLowerCase().includes('breach')) {
-	        return {
-	          ...read,
-	          text: `Useful as a stress case, but ${approach.buyerResponse.charAt(0).toLowerCase()}${approach.buyerResponse.slice(1)}`
-	        };
-	      }
-	      if (approach.likelihood < 55) {
-	        return {
-	          ...read,
-	          text: `Use to understand downside exposure. ${approach.buyerResponse}`
-	        };
-	      }
-	      return {
-	        ...read,
-	        text: approach.recommendedEdit
-	      };
-	    };
-	    const activeDecisionStatus = scenarioDecisionStatusFor({
-	      guardrailRisk: activeGuardrailRisk,
-	      isRecommended: scenario.id === scenarioCase?.recommendedApproachId,
-	      likelihood: activeAcceptance,
-	      marginImpact: activeScenarioOutputs.marginImpact,
-	      relationshipRisk: activeRelationshipRisk
-	    });
-	    const activeApproachRead = approachRationale({
+	    const scenarioWorkingInputs = scenarioAdjustmentEditing ? inputs : scenario.inputs;
+	    const scenarioWorkingRead = predictiveScenario(scenario.id, scenario.name, scenario.description, scenarioWorkingInputs, scenario.why);
+	    const displayScenario: ScenarioLabOption = {
 	      ...scenario,
-	      buyerResponse: activeBuyerResponse,
-	      guardrailRisk: activeGuardrailRisk,
-	      likelihood: activeAcceptance,
-	      outputs: activeScenarioOutputs,
-	      relationshipRisk: activeRelationshipRisk
-	    }, activeDecisionStatus);
-	    const activeScenarioUse = scenario.id === scenarioCase?.recommendedApproachId
-	      ? 'Use this as the working path unless the buyer opens with a materially lower counter.'
-	      : activeDecisionStatus.label === 'Stress case'
-	        ? 'Keep this as a pressure test. Do not lead with it unless leadership accepts the relationship risk.'
-	        : activeDecisionStatus.label === 'Guardrail watch'
-	          ? 'Use this only after Finance checks the floor and the team has a clean escalation story.'
-	          : activeDecisionStatus.label === 'Needs proof'
-	            ? 'Use this as an alternate path if stronger evidence is ready before the next buyer exchange.'
-	            : 'Keep this available as a practical fallback if the recommended path loses momentum.';
-	    const activeEvidenceCue = scenario.evidenceStrength < 72
-	      ? 'Add one stronger proof point before using this in the room.'
-	      : scenario.evidenceStrength < 84
-	        ? 'Evidence is usable, but lead with the prior outcome or market signal first.'
-	        : 'Evidence is strong enough to support this path; keep the source trail available if challenged.';
-	    const activeReadItems = [
-	      {
-	        label: scenario.id === scenarioCase?.recommendedApproachId ? 'Why ATLAS recommends it' : 'Why this path matters',
-	        text: activeApproachRead.text
-	      },
-	      {
-	        label: 'CNO move',
-	        text: activeScenarioUse
-	      },
-	      {
-	        label: 'Buyer watch',
-	        text: activeBuyerResponse
-	      },
-	      {
-	        label: 'Proof needed',
-	        text: activeEvidenceCue
-	      }
+	      ...scenarioWorkingRead,
+	      createdAt: scenario.createdAt,
+	      origin: scenario.origin,
+	      scenarioStyle: scenario.scenarioStyle
+	    };
+	    const scenarioContext = attachedBuyingGroup
+	      ? scenarioBuyingGroupContext(scenario)
+	      : { buyingGroup: 'EDEKA', buyingGroupId: 'edeka', market: 'Germany', marketId: 'germany', multi: false };
+	    const attentionReason = scenarioAttentionReason(scenario);
+	    const scenarioBasis = displayScenario.origin === 'manual'
+	      ? 'This scenario uses CNO-adjusted assumptions plus current buyer context and saved local inputs.'
+	      : `${displayScenario.why}${scenarioTrigger ? ` It was refreshed after ATLAS reviewed ${scenarioTrigger.title.toLowerCase()}.` : ''}`;
+	    const scenarioTabNote = (ask: string, realization: string) => (
+	      <>
+	        <span>{ask} Ask</span>
+	        <i aria-hidden="true" />
+	        <span>{realization} Realization</span>
+	      </>
+	    );
+	    const scenarioTabs = [
+	      { id: 'recommended', label: 'Balanced (Recommended)', note: scenarioTabNote(pct(recommendedScenarioInputs.priceIncreasePercent), pct(recommendedScenarioInputs.expectedRealizationPercent)), icon: <Target size={18} /> },
+	      { id: 'conservative', label: 'Conservative', note: scenarioTabNote(pct(conservativeScenarioInputs.priceIncreasePercent), pct(conservativeScenarioInputs.expectedRealizationPercent)), icon: <ShieldCheck size={18} /> },
+	      { id: 'aggressive', label: 'Aggressive', note: scenarioTabNote(pct(aggressiveScenarioInputs.priceIncreasePercent), pct(aggressiveScenarioInputs.expectedRealizationPercent)), icon: <TrendingUp size={18} /> },
+	      { id: 'buyer-counter', label: 'Likely Buyer Counter', note: scenarioTabNote(pct(buyerCounterInputs.priceIncreasePercent), pct(buyerCounterInputs.expectedRealizationPercent)), icon: <Sparkles size={18} /> },
+	      { id: 'custom', label: 'Custom', note: scenarioTabNote(pct(inputs.priceIncreasePercent), pct(inputs.expectedRealizationPercent)), icon: <Layers3 size={18} /> }
 	    ];
-	    const buyerResponseRecommendation = activeAcceptance < 55
-	      ? 'Improve the response by lowering the ask pressure or adding a clearer give-get before sharing this path.'
-	      : activeRelationshipRisk.toLowerCase().includes('high')
-	        ? 'Improve the response by leading with proof and one non-price alternative before the buyer asks for trade support.'
-	        : 'Keep the response stronger by tying every concession to volume, execution, or timing commitments.';
-	    const savedExtraLeverSummary = () => fullScenarioExtraLevers.map((lever) => {
-	      const leverOption = customLeverOptions.find((option) => option.id === lever.name);
-	      return `${leverOption?.label ?? lever.name}: ${lever.value || 'not set'}`;
-	    });
-	    const buildScenarioFromFullDraft = ({
-	      basedOnId,
-	      createdAt,
-	      description,
-	      id,
-	      name,
-	      origin,
-	      scenarioStyle,
-	      why
-	    }: {
-	      basedOnId?: string;
-	      createdAt: string;
-	      description: string;
-	      id: string;
-	      name: string;
-	      origin: ScenarioLabOption['origin'];
-	      scenarioStyle: string;
-	      why: string;
-	    }): ScenarioLabOption => {
-	      const savedInputs = fullScenarioDraftInputs ?? scenario.inputs;
+	    const detailMetricNumbers = [
+	      { label: 'Margin Impact', value: scenarioDeltaLabel(displayScenario.outputs.marginImpact) },
+	      { label: 'Ask', value: pct(displayScenario.inputs.priceIncreasePercent) },
+	      { label: 'Realization', value: pct(displayScenario.inputs.expectedRealizationPercent) },
+	      { label: 'Land', value: `${displayScenario.likelihood}%` },
+	      { label: 'Decision', value: displayScenario.id === 'recommended' ? 'Recommended' : displayScenario.guardrailRisk === 'Guardrail breach' ? 'Needs review' : 'Ready' }
+	    ];
+	    const baseClockHourForScenario = (scenarioId: string) => {
+	      if (scenarioId === 'aggressive') return 2.05;
+	      if (scenarioId === 'conservative') return 5;
+	      if (scenarioId === 'buyer-counter') return 4.5;
+	      if (scenarioId === 'custom') return 3.5;
+	      return 3;
+	    };
+	    const clockHourFromInputs = (nextInputs: ScenarioInputs, baselineInputs: ScenarioInputs, scenarioId: string) => {
+	      const postureHour = baseClockHourForScenario(scenarioId)
+	        + (nextInputs.priceIncreasePercent - baselineInputs.priceIncreasePercent) * .18
+	        + (baselineInputs.expectedRealizationPercent - nextInputs.expectedRealizationPercent) * .16
+	        + (baselineInputs.volumeChangePercent - nextInputs.volumeChangePercent) * .08
+	        + ((nextInputs.tradeSpendChange - baselineInputs.tradeSpendChange) / 1_000_000) * .35
+	        + ((baselineInputs.buyerAcceptanceProbability - nextInputs.buyerAcceptanceProbability) / 100) * .55;
+	      return Math.min(5.35, Math.max(2.15, postureHour));
+	    };
+	    const clockTimeFromHour = (clockHour: number) => {
+	      const hour = Math.floor(clockHour);
+	      const minutes = Math.round((clockHour - hour) * 60 / 5) * 5;
+	      const normalizedHour = minutes === 60 ? hour + 1 : hour;
+	      const normalizedMinutes = minutes === 60 ? 0 : minutes;
+	      return `${normalizedHour}:${String(normalizedMinutes).padStart(2, '0')}`;
+	    };
+	    const clockLabelFromHour = (clockHour: number) => {
+	      if (clockHour < 2.75) return 'Bartering';
+	      if (clockHour < 3.45) return 'Haggling';
+	      if (clockHour < 4.65) return 'Hard Bargaining';
+	      return 'Dealing';
+	    };
+	    const selectedClockHour = clockHourFromInputs(displayScenario.inputs, scenario.inputs, displayScenario.id);
+	    const buyerClockHour = Math.min(5.5, selectedClockHour + (displayScenario.relationshipRisk === 'High' ? .32 : .18));
+	    const postureTime = clockTimeFromHour(selectedClockHour);
+	    const buyerTime = clockTimeFromHour(buyerClockHour);
+	    const postureLabel = clockLabelFromHour(selectedClockHour);
+	    const clockMarkerStyle = (clockTime: string, radius = 39) => {
+	      const [hourValue, minuteValue = '0'] = clockTime.split(':');
+	      const hour = Number(hourValue) % 12;
+	      const minute = Number(minuteValue);
+	      const angle = ((hour + minute / 60) * 30 - 90) * (Math.PI / 180);
 	      return {
-	        ...predictiveScenario(id, name, description, savedInputs, why),
-	        basedOnId,
-	        buyerResponse: activeBuyerResponse,
-	        caseId: scenarioCase?.id ?? scenario.caseId,
-	        createdAt,
-	        extraLeverSummary: savedExtraLeverSummary(),
-	        guardrailRisk: activeGuardrailRisk,
-	        likelihood: activeAcceptance,
-	        origin,
-	        outputs: activeScenarioOutputs,
-	        recommendedEdit: buyerResponseRecommendation,
-	        relationshipRisk: activeRelationshipRisk,
-	        scenarioStyle
-	      };
+	        '--clock-marker-x': `${50 + Math.cos(angle) * radius}%`,
+	        '--clock-marker-y': `${50 + Math.sin(angle) * radius}%`
+	      } as CSSProperties;
 	    };
-	    const finishFullScenarioDraftSave = (status: string) => {
-	      setFullScenarioAdjusting(false);
-	      setFullScenarioDraftInputs(null);
-	      setFullScenarioExtraLevers([]);
-	      setScenarioSaveStatus(status);
-	    };
-	    const saveFullScenarioDraftEdits = () => {
-	      const editedScenario = buildScenarioFromFullDraft({
-	        basedOnId: scenario.basedOnId,
-	        createdAt: scenario.createdAt,
-	        description: `Edited CNO scenario using ${pct(activeScenarioInputs.priceIncreasePercent)} ask, ${pct(activeScenarioInputs.expectedRealizationPercent)} expected realization, and ${activeAcceptance.toFixed(0)}% buyer acceptance.`,
-	        id: scenario.id,
-	        name: scenario.name,
-	        origin: scenario.origin,
-	        scenarioStyle: scenario.scenarioStyle,
-	        why: `Saved edits to ${scenario.name} from the full scenario view.`
-	      });
-	      setScenarioEditOverrides((current) => ({
+	    const clockContextMarkers = [
+	      { label: 'Bartering pressure', time: '1:00', radius: 34 },
+	      { label: 'Competitive buyer read', time: '2:00', radius: 36 },
+	      { label: 'Fallback path', time: '5:00', radius: 36 }
+	    ];
+	    const scenarioDecisionTone = detailMetricNumbers[4].value.toLowerCase().replace(/\s+/g, '-');
+	    const scenarioCompareParams = new URLSearchParams();
+	    scenarioCompareParams.append('scenario', displayScenario.id);
+	    scenarioCompareParams.append('scenario', displayScenario.id === 'buyer-counter' ? 'recommended' : 'buyer-counter');
+	    if (scenarioContext.buyingGroupId) scenarioCompareParams.set('buyingGroup', scenarioContext.buyingGroupId);
+	    if (scenarioContext.marketId) scenarioCompareParams.set('market', scenarioContext.marketId);
+	    const buyerProfileHref = scenarioContext.buyingGroupId ? `/buying-groups/${scenarioContext.buyingGroupId}?view=current` : scenarioHref();
+	    const scenarioFullSummary = `${scenarioContext.buyingGroup} movement changed the expected landing range for the current negotiation.`;
+	    const scenarioAddedLeverRows = scenarioAdjustmentAddedLeversByScenario[displayScenario.id] ?? [];
+	    const scenarioAddedLeverKeys = new Set(scenarioAddedLeverRows.map((row) => row.key));
+	    const scenarioAddedLeverOptions = advancedScenarioControls.filter((row): row is typeof row & { key: ScenarioNumericInputKey } => row.key !== 'competitorPressureLevel');
+	    const availableScenarioAddedLeverOptions = scenarioAddedLeverOptions.filter((row) => !scenarioAddedLeverKeys.has(row.key));
+	    function startScenarioAdjustmentEditing() {
+	      setScenarioAdjustmentBaselineInputs(displayScenario.inputs);
+	      setInputs(displayScenario.inputs);
+	      setScenarioAdjustmentEditing(true);
+	    }
+	    function addScenarioAdjustmentLever(nextKey: ScenarioNumericInputKey) {
+	      const nextControl = availableScenarioAddedLeverOptions.find((row) => row.key === nextKey);
+	      if (!nextControl) return;
+	      if (!scenarioAdjustmentEditing) {
+	        startScenarioAdjustmentEditing();
+	      }
+	      setScenarioAdjustmentLeverMenuOpen(false);
+	      setScenarioAdjustmentAddedLeversByScenario((current) => ({
 	        ...current,
-	        [editedScenario.id]: editedScenario
+	        [displayScenario.id]: [
+	          ...(current[displayScenario.id] ?? []),
+	          { id: `scenario-adjustment-lever-${Date.now().toString(36)}`, key: nextKey }
+	        ]
 	      }));
-	      if (scenario.origin === 'manual') {
-	        setSavedManualScenarios((current) => current.map((item) => (
-	          item.id === editedScenario.id ? editedScenario : item
-	        )));
+	    }
+	    function changeScenarioAdjustmentLever(rowId: string, nextKey: ScenarioNumericInputKey) {
+	      const currentRow = scenarioAddedLeverRows.find((row) => row.id === rowId);
+	      const savedInputs = scenarioAdjustmentBaselineInputs ?? displayScenario.inputs;
+	      if (currentRow && currentRow.key !== nextKey) {
+	        setInputs((current) => ({ ...current, [currentRow.key]: savedInputs[currentRow.key], [nextKey]: current[nextKey] }));
 	      }
-	      finishFullScenarioDraftSave('Edits saved to this scenario.');
-	    };
-	    const saveFullScenarioDraftAsCustom = () => {
-	      const savedInputs = fullScenarioDraftInputs ?? scenario.inputs;
-	      const savedId = `custom-${scenarioCase?.id ?? scenario.id}-${Date.now().toString(36)}`;
-	      const savedScenario = buildScenarioFromFullDraft({
-	        basedOnId: scenario.id,
-	        createdAt: new Date().toISOString(),
-	        description: `Saved CNO adjustment using ${pct(savedInputs.priceIncreasePercent)} ask, ${pct(savedInputs.expectedRealizationPercent)} expected realization, and ${savedInputs.buyerAcceptanceProbability.toFixed(0)}% buyer acceptance.`,
-	        id: savedId,
-	        name: `Custom ${scenario.name.replace(/^Custom\s+/i, '').replace(/^Custom:\s*/i, '')}`,
-	        origin: 'manual',
-	        scenarioStyle: 'Custom',
-	        why: `Saved from ${scenario.name} after adjusting the levers in the full scenario view.`
-	      });
-	      setSavedManualScenarios((current) => [savedScenario, ...current.filter((item) => item.id !== savedScenario.id)]);
-	      setSelectedScenarioId(savedScenario.id);
-	      finishFullScenarioDraftSave('New scenario added to the comparison table.');
-	      if (typeof window !== 'undefined') {
-	        window.history.replaceState(null, '', scenarioCase ? scenarioCaseDetailHref(scenarioCase.id, savedScenario.id) : scenarioDetailHref(savedScenario.id));
+	      setScenarioAdjustmentAddedLeversByScenario((current) => ({
+	        ...current,
+	        [displayScenario.id]: (current[displayScenario.id] ?? []).map((row) => row.id === rowId ? { ...row, key: nextKey } : row)
+	      }));
+	    }
+	    function removeScenarioAdjustmentLever(rowId: string) {
+	      const currentRow = scenarioAddedLeverRows.find((row) => row.id === rowId);
+	      const savedInputs = scenarioAdjustmentBaselineInputs ?? displayScenario.inputs;
+	      if (currentRow) {
+	        setInputs((current) => ({ ...current, [currentRow.key]: savedInputs[currentRow.key] }));
 	      }
-	    };
-	    const customLeverOptions: Array<{
-	      control: 'number' | 'select' | 'text';
-	      id: string;
-	      label: string;
-	      max?: number;
-	      min?: number;
-	      options?: string[];
-	      step?: number;
-	      suffix?: string;
-	    }> = [
-	      {
-	        control: 'select',
-	        id: 'paymentTerms',
-	        label: 'Payment terms',
-	        options: ['Net 30', 'Net 45', 'Net 60']
-	      },
-	      {
-	        control: 'select',
-	        id: 'serviceSupport',
-	        label: 'Service support',
-	        options: ['Standard', 'Enhanced', 'Priority']
-	      },
-	      {
-	        control: 'number',
-	        id: 'promoEvents',
-	        label: 'Promo events',
-	        max: 8,
-	        min: 0,
-	        step: 1
-	      },
-	      {
-	        control: 'number',
-	        id: 'osaCommitment',
-	        label: 'OSA commitment',
-	        max: 99,
-	        min: 94,
-	        step: 0.1,
-	        suffix: '%'
-	      },
-	      {
-	        control: 'text',
-	        id: 'skuLever',
-	        label: 'SKU / pack lever'
-	      }
-	    ];
-	    const activePepsiPosture = strategyPostureForScenario(
-	      activeScenarioInputs,
-	      scenario.scenarioStyle,
-	      activeRelationshipRisk,
-	      activeBuyerResponse
-	    );
-	    const activeBuyerPostureInputs: ScenarioInputs = {
-	      ...activeScenarioInputs,
-	      buyerAcceptanceProbability: Math.max(35, activeScenarioInputs.buyerAcceptanceProbability - 12),
-	      expectedRealizationPercent: Math.max(0, activeScenarioInputs.expectedRealizationPercent - 0.35),
-	      tradeSpendChange: activeScenarioInputs.tradeSpendChange * 0.65,
-	      volumeChangePercent: Math.min(activeScenarioInputs.volumeChangePercent, activeScenarioInputs.volumeChangePercent - 0.2)
-	    };
-	    const activeBuyerPosture = strategyPostureForScenario(
-	      activeBuyerPostureInputs,
-	      'Buyer counter',
-	      activeRelationshipRisk,
-	      activeBuyerResponse
-	    );
-	    const negotiatorCadence = 'cadence' in scenarioNegotiator
-	      ? scenarioNegotiator.cadence
-	      : 'Usually counters below target first, then asks for trade support or phasing.';
-	    const negotiatorWatch = 'watch' in scenarioNegotiator
-	      ? scenarioNegotiator.watch
-	      : 'Watch for affordability, competitor comparison, and trade support requests.';
-	    const livePredictionRead = activeAcceptance < 55
-	      ? 'Current levers are likely to trigger a harder counter.'
-	      : activeAcceptance >= 68 && !activeRelationshipRisk.toLowerCase().includes('high')
-	        ? 'Current levers are likely to keep the buyer engaged.'
-	        : 'Current levers are workable, but the buyer will test the give-get.';
-	    const buyerLikelyMove = activeAcceptance < 55
-	      ? `${scenarioNegotiator.name} is likely to reject the first move and counter below ${pct(activeScenarioInputs.expectedRealizationPercent)}.`
-	      : activeRelationshipRisk.toLowerCase().includes('high')
-	        ? `${scenarioNegotiator.name} is likely to challenge the evidence before accepting the value exchange.`
-	        : `${scenarioNegotiator.name} is likely to test the give-get, then stay near ${pct(activeScenarioInputs.expectedRealizationPercent)} if the commitments are clear.`;
-	    const buyerResponseEvidence = [
-	      {
-	        label: 'Buyer memory',
-	        text: negotiatorCadence
-	      },
-	      {
-	        label: 'Lever read',
-	        text: `${livePredictionRead} ${pct(activeScenarioInputs.priceIncreasePercent)} ask, ${pct(activeScenarioInputs.expectedRealizationPercent)} realization, ${euros(activeScenarioInputs.tradeSpendChange)} support.`
-	      },
-	      {
-	        label: 'Posture read',
-	        text: `${scenarioNegotiator.name} profiles near ${activeBuyerPosture.clockLabel} ${activeBuyerPosture.posture}; this path lands at ${activePepsiPosture.clockLabel} ${activePepsiPosture.posture}.`
-	      }
-	    ];
-	    const buyerResponseActions = [
-	      buyerResponseRecommendation,
-	      activeEvidenceCue
-	    ];
-	    const buyerResponseWatchItems = [
-	      negotiatorWatch,
-	      scenario.id === 'buyer-counter'
-	        ? 'Counter stays below the modeled floor unless PepsiCo trades volume or service commitments.'
-	        : `Counter pressure clusters around ${pct(Math.max(0, activeScenarioInputs.expectedRealizationPercent - 0.5))}-${pct(activeScenarioInputs.expectedRealizationPercent)} realization.`
-	    ];
-	    const setupLevers = [
-	      {
-	        fill: Math.min(100, Math.max(0, (activeScenarioInputs.priceIncreasePercent / 6) * 100)),
-	        inputKey: 'priceIncreasePercent' as const,
-	        label: 'Price ask',
-	        max: 6,
-	        min: 0,
-	        postureImpact: activeScenarioInputs.priceIncreasePercent >= 4
-	          ? 'Pushes posture harder'
-	          : 'Keeps ask controlled',
-	        range: '0% - 6%',
-	        step: 0.1,
-	        value: pct(activeScenarioInputs.priceIncreasePercent)
-	      },
-	      {
-	        fill: Math.min(100, Math.max(0, (activeScenarioInputs.expectedRealizationPercent / 5) * 100)),
-	        inputKey: 'expectedRealizationPercent' as const,
-	        label: 'Expected realization',
-	        max: 5,
-	        min: 0,
-	        postureImpact: activeScenarioInputs.expectedRealizationPercent >= activeScenarioInputs.priceIncreasePercent - 0.25
-	          ? 'Supports win-win'
-	          : 'Creates concession gap',
-	        range: '0% - 5%',
-	        step: 0.1,
-	        value: pct(activeScenarioInputs.expectedRealizationPercent)
-	      },
-	      {
-	        fill: Math.min(100, Math.max(12, (Math.abs(activeScenarioInputs.tradeSpendChange) / 750000) * 100)),
-	        inputKey: 'tradeSpendChange' as const,
-	        label: 'Trade support',
-	        max: 750000,
-	        min: -750000,
-	        postureImpact: activeScenarioInputs.tradeSpendChange > 150000
-	          ? 'Needs buyer give-back'
-	          : 'Protects the floor',
-	        range: 'Low - high',
-	        step: 25000,
-	        value: euros(activeScenarioInputs.tradeSpendChange)
-	      },
-	      {
-	        fill: Math.min(100, Math.max(0, 50 + (activeScenarioInputs.volumeChangePercent * 18))),
-	        inputKey: 'volumeChangePercent' as const,
-	        label: 'Volume movement',
-	        max: 3,
-	        min: -3,
-	        postureImpact: activeScenarioInputs.volumeChangePercent >= 0
-	          ? 'Adds shared value'
-	          : 'Raises buyer risk',
-	        range: '-3% - +3%',
-	        step: 0.1,
-	        value: pct(activeScenarioInputs.volumeChangePercent)
-	      },
-	      {
-	        fill: activeScenarioInputs.buyerAcceptanceProbability,
-	        inputKey: 'buyerAcceptanceProbability' as const,
-	        label: 'Buyer acceptance',
-	        max: 100,
-	        min: 0,
-	        postureImpact: activeScenarioInputs.buyerAcceptanceProbability >= 65
-	          ? 'Buyer can engage'
-	          : 'Expect harder counter',
-	        range: 'Low - high',
-	        step: 1,
-	        value: `${activeScenarioInputs.buyerAcceptanceProbability.toFixed(0)}%`
-	      }
-	    ];
-	    const visibleExtraLevers = fullScenarioExtraLevers.map((lever) => {
-	      const selectedLeverOption = customLeverOptions.find((option) => option.id === lever.name) ?? customLeverOptions[0];
-	      const numericValue = Number(lever.value);
-	      const hasNumericRange = selectedLeverOption.control === 'number' && Number.isFinite(numericValue);
-	      const min = selectedLeverOption.min ?? 0;
-	      const max = selectedLeverOption.max ?? 100;
-	      const fill = hasNumericRange && max > min
-	        ? Math.min(100, Math.max(0, ((numericValue - min) / (max - min)) * 100))
-	        : 55;
-	      return {
-	        fill,
-	        id: lever.id,
-	        label: selectedLeverOption.label,
-	        postureImpact: selectedLeverOption.id === 'paymentTerms'
-	          ? 'Changes concession timing'
-	          : selectedLeverOption.id === 'serviceSupport'
-	            ? 'Adds non-price value'
-	            : selectedLeverOption.id === 'promoEvents'
-	              ? 'Changes trade pressure'
-	              : selectedLeverOption.id === 'osaCommitment'
-	                ? 'Adds service proof'
-	                : 'Adds custom context',
-	        range: selectedLeverOption.control === 'number'
-	          ? `${min}${selectedLeverOption.suffix ?? ''} - ${max}${selectedLeverOption.suffix ?? ''}`
-	          : 'Custom lever',
-	        value: `${lever.value || 'Not set'}${selectedLeverOption.control === 'number' && selectedLeverOption.suffix && lever.value ? selectedLeverOption.suffix : ''}`
-	      };
-	    });
+	      setScenarioAdjustmentAddedLeversByScenario((current) => ({
+	        ...current,
+	        [displayScenario.id]: (current[displayScenario.id] ?? []).filter((row) => row.id !== rowId)
+	      }));
+	    }
+	    function resetScenarioInputToSavedValue<K extends keyof ScenarioInputs>(key: K) {
+	      const savedInputs = scenarioAdjustmentBaselineInputs ?? displayScenario.inputs;
+	      setInputs((current) => ({ ...current, [key]: savedInputs[key] }));
+	    }
+	    function updateScenarioNumericInput(key: ScenarioNumericInputKey, rawValue: string, min: number, max: number) {
+	      const parsedValue = Number(rawValue);
+	      if (!Number.isFinite(parsedValue)) return;
+	      const nextValue = Math.min(max, Math.max(min, parsedValue));
+	      setInputs((current) => ({ ...current, [key]: nextValue }));
+	    }
 	    return (
-	      <section className="atlas-scenario-full-view" aria-label={`${scenarioCase?.title ?? scenario.name} full scenario view`}>
-	        <header className="atlas-scenario-full-header">
-	          <a href={fullScenarioBackHref}>Back to {fullScenarioBackLabel}</a>
+	      <section className="atlas-scenario-screen" aria-label={`${scenario.name} scenario screen`}>
+	        <header className="atlas-scenario-screen-header">
+	          <a className="atlas-scenario-screen-back" href={scenarioHref()} aria-label="Back to Scenario Lab">←</a>
 	          <div>
 	            <span>{attentionReason} · {scenarioContext.buyingGroup} · {scenarioContext.market}</span>
-	            <h1>{scenarioCase?.title ?? scenario.name.replace(/^[A-C]\.\s*/, '')}</h1>
-	            {!scenarioCase ? <p>{scenarioFullSummary}</p> : null}
+	            <h1>{scenarioContext.buyingGroup} price realization pressure</h1>
+	          </div>
+	          <div className="atlas-scenario-screen-actions">
+	            <a className="atlas-scenario-download-report" href={scenarioReportHref} rel="noreferrer" target="_blank" aria-label="Download scenario report"><Download size={15} /><span>Download scenario report</span></a>
+	            <a className="atlas-scenario-save-buying-group" href={buyerProfileHref}>Save to Buying Group <ArrowRight size={13} /></a>
 	          </div>
 	        </header>
 
-	        <section className="atlas-scenario-brief-strip" aria-label="Scenario brief">
-	          <article>
-	            <span>Trigger</span>
-	            <p>{scenarioCaseTriggerText}</p>
-	          </article>
-	          <article>
-	            <span>Modeled</span>
-	            <p>{scenarioCaseModeledText}</p>
-	          </article>
-	          <article>
-	            <span>Decision</span>
-	            <p>{scenarioCaseDecisionText}</p>
-	          </article>
-	          <article className="atlas-scenario-brief-recommendation">
-	            <span>ATLAS recommends</span>
-	            <p>{scenarioRecommendedText}</p>
-	          </article>
-	        </section>
-
-	        <section className="atlas-scenario-approach-board" aria-label="Compare modeled approaches">
-	          <header>
-	            <span>Compare scenarios</span>
-	          </header>
-	          <div className="atlas-scenario-approach-compare-layout">
-	            <div className="atlas-scenario-approach-grid-table" role="table" aria-label="Modeled approach comparison">
-	              <div className="atlas-scenario-approach-grid-head" role="row">
-	                <span role="columnheader">Scenario</span>
-	                <span role="columnheader">Margin</span>
-	                <span role="columnheader">Land</span>
-	                <span role="columnheader">Decision</span>
-	              </div>
-	              {selectedApproaches.map((approach) => {
-	                const isActive = approach.id === scenario.id;
-	                const isRecommended = approach.id === scenarioCase?.recommendedApproachId;
-	                const rowInputs = isActive ? activeScenarioInputs : approach.inputs;
-	                const rowOutputs = isActive ? activeScenarioOutputs : approach.outputs;
-	                const rowLikelihood = isActive ? activeAcceptance : approach.likelihood;
-	                const rowRelationshipRisk = isActive ? activeRelationshipRisk : approach.relationshipRisk;
-	                const rowGuardrailRisk = isActive ? activeGuardrailRisk : approach.guardrailRisk;
-	                const rowDecisionStatus = scenarioDecisionStatusFor({
-	                  guardrailRisk: rowGuardrailRisk,
-	                  isRecommended,
-	                  likelihood: rowLikelihood,
-	                  marginImpact: rowOutputs.marginImpact,
-	                  relationshipRisk: rowRelationshipRisk
-	                });
-	                const approachHref = scenarioCase ? scenarioCaseDetailHref(scenarioCase.id, approach.id) : scenarioDetailHref(approach.id);
-	                const selectApproach = () => {
-	                  setSelectedScenarioId(approach.id);
-	                  setFullScenarioAdjusting(false);
-	                  setFullScenarioDraftInputs(null);
-	                  setFullScenarioExtraLevers([]);
-	                  if (typeof window !== 'undefined') {
-	                    window.history.replaceState(null, '', approachHref);
-	                  }
-	                };
-	                return (
-	                  <button
-	                    aria-current={isActive ? 'true' : undefined}
-	                    className={[
-	                      'atlas-scenario-approach-grid-row',
-	                      isActive ? 'active' : '',
-	                      isRecommended ? 'recommended' : ''
-	                    ].filter(Boolean).join(' ')}
-	                    key={approach.id}
-	                    onClick={selectApproach}
-	                    type="button"
-	                  >
-	                    <span className="atlas-scenario-approach-title-cell">
-	                      <strong>{approach.name}</strong>
-	                      <span>{approachRoleLabel(approach)}</span>
-	                      <small>{pct(rowInputs.priceIncreasePercent)} ask · {pct(rowInputs.expectedRealizationPercent)} realization · {scenarioDeltaLabel(rowOutputs.revenueImpact)} NR</small>
-	                    </span>
-	                    <span className={rowOutputs.marginImpact >= 0 ? 'is-positive' : 'is-negative'}>{scenarioDeltaLabel(rowOutputs.marginImpact)}</span>
-	                    <span className={rowLikelihood >= 70 ? 'is-positive' : rowLikelihood >= 60 ? 'is-watch' : 'is-negative'}>{rowLikelihood}%</span>
-	                    <span
-	                      className={`atlas-scenario-status-badge is-status-${rowDecisionStatus.tone}`}
-	                      title={rowDecisionStatus.reason}
-	                    >
-	                      {rowDecisionStatus.label}
-	                    </span>
-	                  </button>
-	                );
-	              })}
-	            </div>
-	            <aside className="atlas-scenario-approach-reasons" aria-label="Selected scenario read">
-	              <span>Selected read</span>
-	              <section className="active" key={scenario.id}>
-	                <header>
-	                  <em className={activeApproachRead.label === 'Recommended' ? 'recommended' : undefined} title={activeApproachRead.reason}>{activeApproachRead.label}</em>
-	                </header>
-	                <h3>{scenario.name}</h3>
-	                <div className="atlas-scenario-approach-read-stack">
-	                  {activeReadItems.map((item) => (
-	                    <article key={item.label}>
-	                      <span>{item.label}</span>
-	                      <p>{item.text}</p>
-	                    </article>
-	                  ))}
-	                </div>
-	              </section>
-	            </aside>
-	          </div>
-	        </section>
-
-	        <section className="atlas-scenario-workbench-detail" aria-label="Scenario setup">
-	          <aside className="atlas-scenario-lever-panel">
-	            <div>
-	              <span>Scenario setup</span>
-	              <h2>{scenario.name}</h2>
-	              <p>{scenarioContext.buyingGroup} · {scenarioCase?.trigger ?? scenarioBasis}</p>
-	            </div>
-	            <div className="atlas-scenario-lever-posture-read" aria-label="Live posture read from scenario levers">
-	              <article>
-	                <span>Scenario posture</span>
-	                <strong>{activePepsiPosture.clockLabel} {activePepsiPosture.posture}</strong>
-	              </article>
-	              <article>
-	                <span>Buyer likely posture</span>
-	                <strong>{activeBuyerPosture.clockLabel} {activeBuyerPosture.posture}</strong>
-	              </article>
-	              <article>
-	                <span>Live prediction</span>
-	                <strong>{livePredictionRead}</strong>
-	              </article>
-	            </div>
-	            <div className="atlas-scenario-lever-list">
-	              {setupLevers.map((lever) => (
-	                <div className="atlas-scenario-lever-row" key={lever.label}>
-	                  <div>
-	                    <span>{lever.label}</span>
-	                    <strong>{lever.value}</strong>
-	                  </div>
-	                  {fullScenarioAdjusting ? (
-	                    <input
-	                      aria-label={lever.label}
-	                      className="atlas-scenario-lever-slider"
-	                      max={lever.max}
-	                      min={lever.min}
-	                      onChange={(event) => updateFullScenarioDraftInput(lever.inputKey, Number(event.currentTarget.value))}
-	                      step={lever.step}
-	                      type="range"
-	                      value={activeScenarioInputs[lever.inputKey]}
-	                    />
-	                  ) : (
-	                    <div className="atlas-scenario-lever-bar" aria-hidden="true">
-	                      <i style={{ width: `${lever.fill}%` }} />
-	                    </div>
-	                  )}
-	                  <small>{lever.range}</small>
-	                  <em>{lever.postureImpact}</em>
-	                </div>
-	              ))}
-	              {visibleExtraLevers.map((lever) => (
-	                <div className="atlas-scenario-lever-row custom" key={lever.id}>
-	                  <div>
-	                    <span>{lever.label}</span>
-	                    <strong>{lever.value}</strong>
-	                  </div>
-	                  <div className="atlas-scenario-lever-bar" aria-hidden="true">
-	                    <i style={{ width: `${lever.fill}%` }} />
-	                  </div>
-	                  <small>{lever.range}</small>
-	                  <em>{lever.postureImpact}</em>
-	                </div>
-	              ))}
-	            </div>
-	            {fullScenarioAdjusting ? (
-	              <section className="atlas-scenario-inline-adjustments" aria-label="Adjust scenario levers">
-	                <div className="atlas-scenario-extra-levers">
-	                  <header>
-	                    <span>Additional levers</span>
-	                    <button
-	                      onClick={() => setFullScenarioExtraLevers((current) => [
-	                        ...current,
-	                        { id: `lever-${Date.now()}`, name: 'paymentTerms', value: 'Net 45' }
-	                      ])}
-	                      type="button"
-	                    >
-	                      Add lever
-	                    </button>
-	                  </header>
-	                  {fullScenarioExtraLevers.length ? (
-	                    <div className="atlas-scenario-extra-lever-list">
-	                      {fullScenarioExtraLevers.map((lever) => {
-	                        const selectedLeverOption = customLeverOptions.find((option) => option.id === lever.name) ?? customLeverOptions[0];
-	                        const numericValue = Number.isFinite(Number(lever.value))
-	                          ? Number(lever.value)
-	                          : selectedLeverOption.min ?? 0;
-	                        const updateCustomLever = (value: string) => {
-	                          setFullScenarioExtraLevers((current) => current.map((item) => (
-	                            item.id === lever.id ? { ...item, value } : item
-	                          )));
-	                        };
-	                        return (
-	                          <div className="atlas-scenario-extra-lever-row" key={lever.id}>
-	                            <select
-	                              aria-label="Lever type"
-	                              onChange={(event) => {
-	                                const nextOption = customLeverOptions.find((option) => option.id === event.currentTarget.value) ?? customLeverOptions[0];
-	                                const nextValue = nextOption.control === 'select'
-	                                  ? nextOption.options?.[0] ?? ''
-	                                  : nextOption.control === 'number'
-	                                    ? String(nextOption.min ?? 0)
-	                                    : '';
-	                                setFullScenarioExtraLevers((current) => current.map((item) => (
-	                                  item.id === lever.id ? { ...item, name: nextOption.id, value: nextValue } : item
-	                                )));
-	                              }}
-	                              value={selectedLeverOption.id}
-	                            >
-	                              {customLeverOptions.map((option) => (
-	                                <option key={option.id} value={option.id}>{option.label}</option>
-	                              ))}
-	                            </select>
-	                            {selectedLeverOption.control === 'select' ? (
-	                              <select
-	                                aria-label={`${selectedLeverOption.label} value`}
-	                                onChange={(event) => updateCustomLever(event.currentTarget.value)}
-	                                value={lever.value || selectedLeverOption.options?.[0] || ''}
-	                              >
-	                                {(selectedLeverOption.options ?? []).map((option) => (
-	                                  <option key={option} value={option}>{option}</option>
-	                                ))}
-	                              </select>
-	                            ) : selectedLeverOption.control === 'number' ? (
-	                              <div className="atlas-scenario-custom-slider">
-	                                <input
-	                                  aria-label={`${selectedLeverOption.label} value`}
-	                                  max={selectedLeverOption.max}
-	                                  min={selectedLeverOption.min}
-	                                  onChange={(event) => updateCustomLever(event.currentTarget.value)}
-	                                  step={selectedLeverOption.step}
-	                                  type="range"
-	                                  value={numericValue}
-	                                />
-	                                <strong>{numericValue}{selectedLeverOption.suffix ?? ''}</strong>
-	                              </div>
-	                            ) : (
-	                              <input
-	                                aria-label={`${selectedLeverOption.label} value`}
-	                                onChange={(event) => updateCustomLever(event.currentTarget.value)}
-	                                placeholder="Add detail"
-	                                type="text"
-	                                value={lever.value}
-	                              />
-	                            )}
-	                          </div>
-	                        );
-	                      })}
-	                    </div>
-	                  ) : null}
-	                </div>
-	              </section>
-	            ) : null}
-	            {fullScenarioAdjusting ? (
-	              <div className="atlas-scenario-save-actions" aria-label="Save scenario edits">
-	                <button
-	                  className="atlas-scenario-panel-action"
-	                  onClick={saveFullScenarioDraftEdits}
-	                  type="button"
-	                >
-	                  Save edits
-	                </button>
-	                <button
-	                  className="atlas-scenario-panel-action secondary"
-	                  onClick={saveFullScenarioDraftAsCustom}
-	                  type="button"
-	                >
-	                  Save as new scenario
-	                </button>
-	              </div>
-	            ) : (
+	        <nav className="atlas-scenario-screen-tabs" aria-label="Scenario options">
+	          {scenarioTabs.map((tabItem) => {
+	            const isActive = scenario.id === tabItem.id;
+	            return (
 	              <button
-	                className="atlas-scenario-panel-action"
+	                aria-current={isActive ? 'page' : undefined}
+	                className={isActive ? 'active' : ''}
+	                key={tabItem.id}
 	                onClick={() => {
-	                  setFullScenarioAdjusting(true);
-	                  setFullScenarioDraftInputs((current) => current ?? scenario.inputs);
+	                  const nextScenario = scenarioOptions.find((item) => item.id === tabItem.id);
+	                  if (!nextScenario) return;
+	                  setScenarioAdjustmentEditing(false);
+	                  setScenarioAdjustmentBaselineInputs(null);
+	                  setScenarioAdjustmentLeverMenuOpen(false);
+	                  setSelectedScenarioId(nextScenario.id);
+	                  setInputs(nextScenario.inputs);
+	                  if (typeof window !== 'undefined') window.history.replaceState(null, '', scenarioDetailHref(nextScenario.id));
 	                }}
 	                type="button"
 	              >
-	                Adjust levers
+	                {tabItem.icon}
+	                <strong>{tabItem.label}</strong>
+	                <small>{tabItem.note}</small>
 	              </button>
-	            )}
-	            {scenarioSaveStatus ? <span className="atlas-scenario-save-status">{scenarioSaveStatus}</span> : null}
-	          </aside>
-	        </section>
-
-	        <section className="atlas-scenario-posture-row" aria-label="Strategy posture">
-	          <StrategyPostureClock
-	            buyerResponse={activeBuyerResponse}
-	            buyerNegotiator={{
-	              name: scenarioNegotiator.name,
-	              style: scenarioNegotiator.style
-	            }}
-	            compact
-	            comparisonOptions={selectedApproaches}
-	            inputs={activeScenarioInputs}
-	            relationshipRisk={activeRelationshipRisk}
-	            selectedOptionId={scenario.id}
-	            scenarioStyle={scenario.scenarioStyle}
-	          />
-	        </section>
-
-	        <section className="atlas-scenario-buyer-response-row" aria-label="ATLAS predicted buyer response">
-	          <section className="atlas-scenario-buyer-response-card atlas-scenario-buyer-response-card--closed-loop">
-	            <header>
-	              <span>ATLAS predicted buyer response</span>
-	              <em>{activeAcceptance.toFixed(0)}% response likelihood</em>
-	            </header>
-	            <p className="atlas-scenario-buyer-response-lead">{buyerLikelyMove}</p>
-	            <div className="atlas-buyer-response-intelligence" aria-label="Buyer response intelligence">
-	              <article className="atlas-buyer-response-intelligence-card atlas-buyer-response-intelligence-card--wide">
-	                <span>Why ATLAS thinks this</span>
-	                <div>
-	                  {buyerResponseEvidence.map((item) => (
-	                    <p key={item.label}><strong>{item.label}</strong>{item.text}</p>
-	                  ))}
-	                </div>
-	              </article>
-	              <article className="atlas-buyer-response-intelligence-card">
-	                <span>CNO move</span>
-	                <div>
-	                  {buyerResponseActions.map((item) => (
-	                    <p key={item}>{item}</p>
-	                  ))}
-	                </div>
-	              </article>
-	              <article className="atlas-buyer-response-intelligence-card">
-	                <span>Watch for</span>
-	                <div>
-	                  {buyerResponseWatchItems.map((item) => (
-	                    <p key={item}>{item}</p>
-	                  ))}
-	                </div>
-	              </article>
-	            </div>
-	          </section>
-	        </section>
-
-	        <nav className="atlas-scenario-full-actions-row" aria-label="Scenario actions">
-	          <a href={scenarioReportHrefFor(scenario)}>Download report</a>
-	          {scenarioContext.buyingGroupId ? (
-	            <a href={`/buying-groups/${scenarioContext.buyingGroupId}?view=current`}>Save to buying group</a>
-	          ) : null}
+	            );
+	          })}
 	        </nav>
 
-	        <section className="atlas-scenario-source-row" aria-label="Scenario source trail">
-	          <h2>Source trail</h2>
-	          <p>{scenarioCase ? `${scenarioCase.sources.join(', ')} support this scenario case.` : 'Buyer history, current scenario inputs, market signals, and Finance guardrails support this scenario.'}</p>
-	          <SourceTrustMini source={scenarioSource} />
-	        </section>
+	        <div className="atlas-scenario-screen-shell">
+	          <aside className={`atlas-scenario-lever-rail${scenarioAdjustmentEditing ? ' is-editing' : ''}`} aria-label="Scenario adjustments">
+	            <header>
+	              <span>Scenario adjustments</span>
+	              <div className="atlas-scenario-add-lever-menu">
+	                <button
+	                  aria-expanded={scenarioAdjustmentLeverMenuOpen}
+	                  aria-haspopup="menu"
+	                  type="button"
+	                  onClick={() => setScenarioAdjustmentLeverMenuOpen((open) => !open)}
+	                  disabled={availableScenarioAddedLeverOptions.length === 0}
+	                >
+	                  Add lever
+	                </button>
+	                {scenarioAdjustmentLeverMenuOpen ? (
+	                  <div role="menu" aria-label="Choose lever to add">
+	                    {availableScenarioAddedLeverOptions.map((option) => (
+	                      <button key={option.key} role="menuitem" type="button" onClick={() => addScenarioAdjustmentLever(option.key)}>
+	                        {option.label.replace(' €', '').replace(' %', '')}
+	                      </button>
+	                    ))}
+	                  </div>
+	                ) : null}
+	              </div>
+	            </header>
+	            <div className="atlas-scenario-lever-list">
+	              {visibleScenarioControls.map(({ key, label, max, min, step }) => {
+	                const currentValue = Number(displayScenario.inputs[key]);
+	                const progress = max === min ? 0 : Math.min(100, Math.max(0, ((currentValue - min) / (max - min)) * 100));
+	                return (
+	                  <label key={key} style={{ '--scenario-lever-progress': `${progress}%` } as CSSProperties}>
+	                    <span>{label.replace(' increase %', ' Ask').replace(' change €', '').replace(' probability', '')}</span>
+	                    <strong>{formatScenarioInputValue(key, currentValue)}</strong>
+	                    <input disabled={!scenarioAdjustmentEditing} type="range" min={min} max={max} step={step} value={currentValue} onChange={(event) => updateScenarioNumericInput(key as ScenarioNumericInputKey, event.currentTarget.value, min, max)} />
+	                    <b aria-hidden="true">=</b>
+	                    <small>
+	                      <em>{formatScenarioInputValue(key, min)} - {formatScenarioInputValue(key, max)}</em>
+	                      {scenarioAdjustmentEditing ? (
+	                        <button type="button" onClick={(event) => { event.preventDefault(); resetScenarioInputToSavedValue(key); }}>Reset to default</button>
+	                      ) : null}
+	                    </small>
+	                  </label>
+	                );
+	              })}
+	              {scenarioAddedLeverRows.map((addedLever) => {
+	                const control = scenarioAddedLeverOptions.find((row) => row.key === addedLever.key);
+	                if (!control) return null;
+	                const selectableOptions = scenarioAddedLeverOptions.filter((row) => row.key === addedLever.key || !scenarioAddedLeverKeys.has(row.key));
+	                const { key, label, max, min, step } = control;
+	                const currentValue = Number(displayScenario.inputs[key]);
+	                const progress = max === min ? 0 : Math.min(100, Math.max(0, ((currentValue - min) / (max - min)) * 100));
+	                return (
+	                  <label className="atlas-scenario-added-lever" key={addedLever.id} style={{ '--scenario-lever-progress': `${progress}%` } as CSSProperties}>
+	                    <select aria-label="Added lever name" disabled={!scenarioAdjustmentEditing} value={key} onChange={(event) => changeScenarioAdjustmentLever(addedLever.id, event.currentTarget.value as ScenarioNumericInputKey)}>
+	                      {selectableOptions.map((option) => (
+	                        <option key={option.key} value={option.key}>{option.label.replace(' €', '').replace(' %', '')}</option>
+	                      ))}
+	                    </select>
+	                    <strong>{formatScenarioInputValue(key, currentValue)}</strong>
+	                    <input disabled={!scenarioAdjustmentEditing} type="range" min={min} max={max} step={step} value={currentValue} onChange={(event) => updateScenarioNumericInput(key, event.currentTarget.value, min, max)} />
+	                    <b aria-hidden="true">=</b>
+	                    <small>
+	                      <em>{formatScenarioInputValue(key, min)} - {formatScenarioInputValue(key, max)}</em>
+	                      {scenarioAdjustmentEditing ? (
+	                        <button type="button" onClick={(event) => { event.preventDefault(); removeScenarioAdjustmentLever(addedLever.id); }}>Remove</button>
+	                      ) : null}
+	                    </small>
+	                  </label>
+	                );
+	              })}
+	            </div>
+	            {scenarioAdjustmentEditing ? (
+	              <>
+	                <button className="atlas-scenario-update-button" type="button" onClick={() => updateScenarioParametersForCurrentTab(displayScenario.id)}>Update Parameters</button>
+	                <button className="atlas-scenario-save-button" type="button" onClick={saveScenarioParametersAsCustom}>Save as New Scenario</button>
+	              </>
+	            ) : (
+	              <button className="atlas-scenario-edit-button" type="button" onClick={startScenarioAdjustmentEditing}>Edit Parameters</button>
+	            )}
+	          </aside>
+
+	          <div className={`atlas-scenario-content-scroll${scenarioBreakdownCollapsed ? ' is-breakdown-collapsed' : ''}`}>
+	            <dl className="atlas-scenario-screen-metrics">
+	              {detailMetricNumbers.map((metric) => (
+	                <div className={metric.label === 'Decision' ? `decision-${scenarioDecisionTone}` : ''} key={metric.label}>
+	                  <dt>{metric.label}</dt>
+	                  <dd>{metric.value}</dd>
+	                </div>
+	              ))}
+	            </dl>
+
+	            <main className="atlas-scenario-decision-canvas">
+	              <section className="atlas-scenario-posture-stage">
+	                <div className="atlas-scenario-clock" aria-label={`Strategy posture ${postureTime} ${postureLabel}`}>
+	                  <img src="/images/backgrounds/clock-background.svg" alt="" aria-hidden="true" />
+	                  {clockContextMarkers.map((marker) => (
+	                    <span
+	                      aria-hidden="true"
+	                      className="atlas-scenario-clock-marker is-muted"
+	                      key={marker.label}
+	                      style={clockMarkerStyle(marker.time, marker.radius)}
+	                    />
+	                  ))}
+	                  <span
+	                    aria-hidden="true"
+	                    className="atlas-scenario-clock-marker is-buyer"
+	                    style={clockMarkerStyle(buyerTime, 40)}
+	                  />
+	                  <span
+	                    aria-hidden="true"
+	                    className="atlas-scenario-clock-marker is-active"
+	                    style={clockMarkerStyle(postureTime, 40)}
+	                  />
+	                  <div className="atlas-scenario-clock-label">
+	                    <strong>{postureTime}</strong>
+	                    <span>{postureLabel}</span>
+	                  </div>
+	                </div>
+	                <div className="atlas-scenario-posture-copy">
+	                  <span>Strategy posture</span>
+	                  <h2>{postureTime} {postureLabel}</h2>
+	                  <p>{displayScenario.name.replace(/^[A-C]\.\s*/, '')} lands at {postureTime}; Markus Weber is expected near {buyerTime}.</p>
+	                  <div>
+	                    <button className="atlas-scenario-posture-badge atlas-scenario-posture-badge--scenario selected" type="button"><span aria-hidden="true" /> Selected Scenario</button>
+	                    <button className="atlas-scenario-posture-badge atlas-scenario-posture-badge--buyer" type="button"><span aria-hidden="true" /> Markus Weber</button>
+	                    <button className="atlas-scenario-posture-badge atlas-scenario-posture-badge--other" type="button"><span aria-hidden="true" /> Other Scenarios</button>
+	                  </div>
+	                </div>
+	              </section>
+
+	              <section className="atlas-scenario-response-panel">
+	                <header>
+	                  <h2>ATLAS predicted buyer response</h2>
+	                </header>
+	                <div className="atlas-scenario-response-prompt">
+	                  <p>{displayScenario.buyerResponse}</p>
+	                  <span className="atlas-scenario-response-likelihood">{Math.round(displayScenario.inputs.buyerAcceptanceProbability)}% response likelihood</span>
+	                </div>
+	                <div className="atlas-scenario-response-grid">
+	                  <article>
+	                    <span><Square size={16} /> Why ATLAS thinks this</span>
+	                    <strong>Buyer memory</strong>
+	                    <p>{scenarioBasis}</p>
+	                    <strong>Lever read</strong>
+	                    <p>Current levers are workable, but the buyer will test the give-get. {pct(displayScenario.inputs.priceIncreasePercent)} ask, {pct(displayScenario.inputs.expectedRealizationPercent)} realization, {euros(displayScenario.inputs.tradeSpendChange)} support.</p>
+	                    <strong>Posture read</strong>
+	                    <p>Markus Weber profiles near {buyerTime}; this path lands at {postureTime} {postureLabel}.</p>
+	                  </article>
+	                  <div>
+	                    <article>
+	                      <span><BarChart3 size={16} /> CNO move</span>
+	                      <p>{displayScenario.recommendedEdit}</p>
+	                    </article>
+	                    <article>
+	                      <span><AlertCircle size={16} /> Watch for</span>
+	                      <p>{displayScenario.relationshipRisk === 'High' ? 'Buyer may pressure affordability and ask for proof before accepting a phased landed increase.' : 'Buyer may ask for proof before accepting a phased landed increase.'}</p>
+	                      <strong>Counter pressure clusters around {pct(Math.max(.4, displayScenario.inputs.expectedRealizationPercent - .5))}-{pct(displayScenario.inputs.expectedRealizationPercent)} realization.</strong>
+	                    </article>
+	                  </div>
+	                </div>
+	              </section>
+	            </main>
+
+	            <aside className="atlas-scenario-breakdown" aria-label="Atlas Breakdown">
+	              <header>
+	                <h2>Atlas Breakdown</h2>
+	                <button
+	                  aria-label="Toggle sidebar"
+	                  aria-pressed={scenarioBreakdownCollapsed}
+	                  className="atlas-scenario-breakdown-toggle"
+	                  data-tooltip="Toggle sidebar"
+	                  onClick={() => setScenarioBreakdownCollapsed((collapsed) => !collapsed)}
+	                  title="Toggle sidebar"
+	                  type="button"
+	                >
+	                  {scenarioBreakdownCollapsed ? <PanelRightOpen size={18} /> : <PanelRightClose size={18} />}
+	                  <span>{scenarioBreakdownCollapsed ? 'Open' : 'Close'}</span>
+	                </button>
+	              </header>
+	              <article>
+	                <span><AlertCircle size={20} /> Trigger</span>
+	                <p>{scenarioFullSummary}</p>
+	              </article>
+	              <article>
+	                <span><BarChart3 size={20} /> Modelling</span>
+	                <p>ATLAS modeled the response paths and recommends the {displayScenario.name.replace(/^[A-C]\.\s*/, '').toLowerCase()} before the next buyer counter.</p>
+	              </article>
+	              <article>
+	                <span><Brain size={20} /> Decision</span>
+	                <p>Should the team hold the price position, trade service value, or plan for the likely counter?</p>
+	              </article>
+	              <article>
+	                <span><Sparkles size={20} /> Atlas recommends</span>
+	                <p>{displayScenario.recommendedEdit}</p>
+	              </article>
+	              <SourceTrustMini source={scenarioSource} />
+	            </aside>
+	          </div>
+	        </div>
+	        {scenarioSaveStatus ? <span className="atlas-scenario-save-status">{scenarioSaveStatus}</span> : null}
 	      </section>
 	    );
 	  }
@@ -13161,148 +12776,157 @@ function ScenarioModelsView({
 	  return (
 	    <section className="atlas-scenario-modeler" aria-label="Scenario Lab intelligent modeler">
 	      <header className="atlas-scenario-modeler-head">
-	        <div>
-	          <h1>{scenarioLabMode === 'create' ? 'Create scenario' : 'Scenario Lab'}</h1>
-	          <p>
-	            {scenarioLabMode === 'create'
-	              ? 'Adjust the primary levers, test the impact, and save the new scenario back into the review table.'
-	              : 'Review modeled cases. Open a scenario for the numbers, approaches, and evidence.'}
-	          </p>
-	        </div>
-	        <div className="atlas-scenario-header-actions">
-	          {scenarioLabMode === 'create' ? (
-	            <a href={scenarioHrefWithReturn(scenarioHref())}>Back to scenario review</a>
-	          ) : (
-	            <a href={scenarioCreateHref()}>Create new scenario</a>
-	          )}
-	        </div>
+	        <h1>{scenarioLiveHeaderTitle}</h1>
+	        <p>{scenarioLiveHeaderCopy}</p>
 	      </header>
 
-		      {scenarioLabMode === 'review' ? <section className="atlas-scenario-overview" aria-label="Modeled scenario cases">
-		        <div className="atlas-scenario-table-toolbar">
-		          <div className="atlas-scenario-index-summary">
-		            <span>{visibleScenarioCases.length} scenario cases</span>
-		          </div>
-		          <div className="atlas-scenario-table-filters atlas-scenario-table-filters-visible" aria-label="Scenario case filters">
-		            <label>
-		              <span>Scenario type</span>
-		              <select value={scenarioTypeFilter} onChange={(event) => setScenarioTypeFilter(event.currentTarget.value)}>
-		                <option value="all">All scenarios</option>
-		                <option value="atlas">ATLAS generated</option>
-		                <option value="manual">Manual / adjusted</option>
-		                <option value="recommended">Recommended</option>
-		                <option value="conservative">Conservative</option>
-		                <option value="aggressive">Aggressive</option>
-		                <option value="buyer-counter">Buyer counter</option>
-		                <option value="custom">Custom working</option>
-		              </select>
-		            </label>
-		            <label>
-		              <span>Trigger type</span>
-		              <select value={scenarioCaseTriggerFilter} onChange={(event) => setScenarioCaseTriggerFilter(event.currentTarget.value)}>
-		                <option value="all">All triggers</option>
-		                <option value="Buyer event">Buyer event</option>
-		                <option value="Market signal">Market signal</option>
-		                <option value="History pattern">History pattern</option>
-		              </select>
-		            </label>
-		            <label>
-		              <span>Buying group</span>
-		              <select
-		                value={selectedBuyingGroupId}
-		                onChange={(event) => {
-		                  window.location.href = scenarioHref({ buyer: event.currentTarget.value, market: selectedMarketId });
-		                }}
-		              >
-		                <option value="">All buying groups</option>
-		                {mvpScenarioBuyingGroups.map((group) => (
-		                  <option value={group.id} key={group.id}>{group.name}</option>
-		                ))}
-		              </select>
-		            </label>
-		            <label>
-		              <span>Market</span>
-		              <select
-		                value={selectedMarketId}
-		                onChange={(event) => {
-		                  window.location.href = scenarioHref({ buyer: selectedBuyingGroupId, market: event.currentTarget.value });
-		                }}
-		              >
-		                <option value="">All markets</option>
-		                {railMarkets.map((market) => (
-		                  <option value={market.id} key={market.id}>{market.name}</option>
-		                ))}
-		              </select>
-		            </label>
-		          </div>
-		        </div>
-
-		        <div className="atlas-scenario-table-shell">
-		          <table className="atlas-scenario-case-table">
-		            <thead>
-		              <tr>
-		                <th>Scenario</th>
-		                <th>Status</th>
-		                <th>Scenario type</th>
-		                <th>Created</th>
-		                <th>Buying group</th>
-		                <th>Market</th>
-		              </tr>
-		            </thead>
-		            <tbody>
-		              {visibleScenarioCases.map((scenarioCase) => {
-		                const recommendedApproach = recommendedApproachForCase(scenarioCase);
-		                const buyingGroups = scenarioCaseBuyingGroups(scenarioCase);
-		                const markets = scenarioCaseMarkets(scenarioCase);
-		                const scenarioCaseHref = scenarioCaseDetailHref(scenarioCase.id, recommendedApproach.id);
-		                return (
-		                  <tr
-		                    className={`priority-${scenarioCase.priority}`}
-		                    key={scenarioCase.id}
-		                    onClick={() => { window.location.href = scenarioCaseHref; }}
-		                    onKeyDown={(event) => {
-		                      if (event.key === 'Enter' || event.key === ' ') {
-		                        event.preventDefault();
-		                        window.location.href = scenarioCaseHref;
-		                      }
-		                    }}
-		                    role="link"
-		                    tabIndex={0}
-		                  >
-		                    <td>
-		                      <div className="atlas-scenario-table-title">
-		                        <span>{scenarioCase.title}</span>
-		                      </div>
-		                    </td>
-		                    <td>
-		                      <span
-		                        className="atlas-scenario-table-impact-level"
-		                        data-reason={scenarioStatusReason(scenarioCase)}
-		                        data-status={scenarioCase.status}
-		                        title={scenarioStatusReason(scenarioCase)}
-		                      >
-		                        {scenarioCase.status}
-		                      </span>
-		                    </td>
-		                    <td>
-		                      <div className="atlas-scenario-table-type">
-		                        <span>{recommendedApproach.origin === 'atlas' ? 'ATLAS generated' : 'Manual'}</span>
-		                      </div>
-		                    </td>
-		                    <td><time dateTime={scenarioCase.createdAt}>{formatAtlasDate(scenarioCase.createdAt, { includeYear: true })}</time></td>
-		                    <td><ScenarioTableEntityCell items={buyingGroups} singular="buying group" plural="buying groups" /></td>
-		                    <td><ScenarioTableEntityCell items={markets} singular="market" plural="markets" /></td>
-		                  </tr>
-		                );
-		              })}
-		            </tbody>
-		          </table>
-		          {!visibleScenarioCases.length ? (
-		            <article className="atlas-scenario-empty-state">
-		              <h2>No scenario cases match these filters.</h2>
-		              <p>Clear a filter or create a new scenario to model another buying group, market signal, or buyer response.</p>
-		            </article>
-		          ) : null}
+		      {scenarioLabMode === 'review' ? <section className="atlas-scenario-overview" aria-label="Modeled scenario impact overview">
+		        <div className="atlas-scenario-table-stack">
+		            <section className="atlas-scenario-table-section atlas-scenario-table-section-flat">
+                    <div className="atlas-scenario-table-toolbar">
+                      <div className="atlas-scenario-table-filters" aria-label="Scenario table filters">
+                        <ScenarioFilterDropdown
+                          id="scenario-type"
+                          label="Scenario type"
+                          onChange={(value) => {
+                            setScenarioTypeFilter(value);
+                            setScenarioTablePage(1);
+                          }}
+                          options={[
+                            { value: 'all', label: 'All scenarios' },
+                            { value: 'atlas', label: 'ATLAS generated' },
+                            { value: 'custom', label: 'Custom' }
+                          ]}
+                          value={scenarioTypeFilter}
+                        />
+                        <ScenarioFilterDropdown
+                          id="buying-group"
+                          label="Buying group"
+                          onChange={(value) => {
+                            setScenarioTableBuyingGroupFilter(value);
+                            setScenarioTablePage(1);
+                          }}
+                          options={[
+                            { value: '', label: 'All buying groups' },
+                            ...mvpScenarioBuyingGroups.map((group) => ({ value: group.id, label: group.name }))
+                          ]}
+                          value={scenarioTableBuyingGroupFilter}
+                        />
+                        <ScenarioFilterDropdown
+                          id="market"
+                          label="Market"
+                          onChange={(value) => {
+                            setScenarioTableMarketFilter(value);
+                            setScenarioTablePage(1);
+                          }}
+                          options={[
+                            { value: '', label: 'All markets' },
+                            ...railMarkets.map((market) => ({ value: market.id, label: market.name }))
+                          ]}
+                          value={scenarioTableMarketFilter}
+                        />
+                      </div>
+                      <a className="atlas-scenario-create-action" href={scenarioCreateHref()}>Create scenario</a>
+                    </div>
+		                <div className="atlas-scenario-table-wrap">
+		                  <table className="atlas-scenario-review-table">
+		                    <colgroup>
+		                      <col className="scenario-col" />
+		                      <col className="status-col" />
+		                      <col className="type-col" />
+		                      <col className="created-col" />
+		                      <col className="buyer-col" />
+		                      <col className="market-col" />
+		                    </colgroup>
+		                    <thead>
+		                      <tr>
+		                        <th>Scenario</th>
+		                        <th><ScenarioTableSortableHeader label="Impact" sort="impact" /></th>
+		                        <th>Scenario type</th>
+		                        <th><ScenarioTableSortableHeader label="Created" sort="created" /></th>
+		                        <th>Buying group</th>
+		                        <th>Market</th>
+		                      </tr>
+		                    </thead>
+		                    <tbody>
+		                      {scenarioTableVisibleRows.map((scenario) => {
+		                        const impact = scenarioTableImpact(scenario);
+		                        const scope = scenarioTableScope(scenario);
+                            const marketNames = 'marketNames' in scope && scope.marketNames
+                              ? scope.marketNames
+                              : scope.market.split(' / ').map((market) => market.trim()).filter(Boolean);
+                            const hasMultipleMarkets = marketNames.length > 1;
+		                        return (
+		                            <tr
+                                  className={`impact-${impact.tone}`}
+                                  key={scenario.id}
+                                  onClick={() => { window.location.href = scenarioDetailHref(scenario.id); }}
+                                  onKeyDown={(event) => {
+                                    if (event.key === 'Enter' || event.key === ' ') {
+                                      event.preventDefault();
+                                      window.location.href = scenarioDetailHref(scenario.id);
+                                    }
+                                  }}
+                                  role="link"
+                                  tabIndex={0}
+                                >
+		                              <td className="atlas-scenario-table-name">
+		                                <a href={scenarioDetailHref(scenario.id)}>
+		                                  <strong>{scenarioTableTitle(scenario)}</strong>
+		                                </a>
+		                              </td>
+                                  <td>
+                                    <span className={`atlas-scenario-impact-read impact-${impact.tone}`}>
+                                      <strong>{impact.label}</strong>
+                                      <small>{impact.detail}</small>
+                                    </span>
+                                  </td>
+                                  <td><span className="atlas-scenario-type-text">{scenario.origin === 'manual' ? 'Manual' : 'ATLAS generated'}</span></td>
+                                  <td>{scenarioTableCreatedLabel(scenario.createdAt)}</td>
+		                              <td>
+		                                <span className="atlas-scenario-scope-text">{scope.buyingGroup}</span>
+		                              </td>
+                                  <td>
+                                    {hasMultipleMarkets ? (
+                                      <span className="atlas-scenario-market-badge" aria-label={`Markets: ${marketNames.join(', ')}`}>
+                                        <span className="atlas-scenario-market-badge-label">{marketNames.length} markets</span>
+                                        <span className="atlas-scenario-market-tooltip" role="tooltip">{marketNames.join(', ')}</span>
+                                      </span>
+                                    ) : (
+                                      <span className="atlas-scenario-scope-text">{scope.market}</span>
+                                    )}
+                                  </td>
+		                            </tr>
+		                        );
+		                      })}
+		                    </tbody>
+		                  </table>
+		                </div>
+                    <nav className="atlas-scenario-table-pagination" aria-label="Scenario table pages">
+                      <span>
+                        Showing {scenarioTableStartIndex + 1}-{Math.min(scenarioTableStartIndex + scenarioTablePageSize, scenarioTableRows.length)} of {scenarioTableRows.length}
+                      </span>
+                      <div>
+                        {scenarioTableCurrentPage > 1 ? (
+                          <button onClick={() => setScenarioTablePage(scenarioTableCurrentPage - 1)} type="button">Previous</button>
+                        ) : (
+                          <span aria-disabled="true">Previous</span>
+                        )}
+                        {Array.from({ length: scenarioTableTotalPages }, (_, index) => index + 1).map((page) => (
+                          page === scenarioTableCurrentPage ? (
+                            <span aria-current="page" className="active" key={page}>{page}</span>
+                          ) : (
+                            <button onClick={() => setScenarioTablePage(page)} type="button" key={page}>{page}</button>
+                          )
+                        ))}
+                        {scenarioTableCurrentPage < scenarioTableTotalPages ? (
+                          <button onClick={() => setScenarioTablePage(scenarioTableCurrentPage + 1)} type="button">Next</button>
+                        ) : (
+                          <span aria-disabled="true">Next</span>
+                        )}
+                      </div>
+                    </nav>
+		            </section>
 		          {scenarioSaveStatus ? <span className="atlas-scenario-save-status">{scenarioSaveStatus}</span> : null}
 		        </div>
 		      </section> : null}
@@ -13334,12 +12958,6 @@ function ScenarioModelsView({
             </article>
           ))}
         </div>
-        <StrategyPostureClock
-          buyerResponse={outputs.recommendation}
-          inputs={inputs}
-          relationshipRisk={outputs.riskLevel}
-          scenarioStyle={selectedLevel === 'custom' ? 'Custom working' : selectedLevel.replaceAll('_', ' ')}
-        />
         <div className="atlas-scenario-lever-grid">
           {visibleScenarioControls.map(({ key, label, max, min, step }) => (
             <label className="atlas-scenario-input" key={key}>
