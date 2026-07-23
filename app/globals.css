@@ -75977,6 +75977,11 @@ html body main.atlas-hub-shell .atlas-hub-main .atlas-buyer-list-shell .atlas-bu
   justify-content: center !important;
 }
 
+html body main.atlas-hub-shell .atlas-hub-main .atlas-buyer-list-shell .atlas-buyer-triage-table th:first-child,
+html body main.atlas-hub-shell .atlas-hub-main .atlas-buyer-list-shell .atlas-buyer-triage-table td:first-child {
+  text-align: left !important;
+}
+
 html body main.atlas-hub-shell .atlas-hub-main .atlas-buyer-list-shell .atlas-buyer-triage-table td:first-child strong {
   font-family: var(--font-body) !important;
   font-size: 16px !important;
