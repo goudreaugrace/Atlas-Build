@@ -86650,7 +86650,24 @@ html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-segmented-control
   transition: all 0.15s ease-in-out;
 }
 
-html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-status-chips button,
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-status-chips button {
+  background: transparent !important;
+  border: 1px solid transparent !important;
+  color: #31373D !important;
+  border-radius: 28px !important;
+  padding: 8px 16px !important;
+  font-family: var(--font-display, "Libre Franklin"), sans-serif !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  letter-spacing: -0.12px !important;
+  line-height: 22px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+}
+
 html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-view-switcher button {
   background: #F5F5F5 !important;
   border: 1px solid #D9DADB !important;
@@ -86669,13 +86686,13 @@ html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-view-switcher but
   transition: all 0.15s ease-in-out;
 }
 
-html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-segmented-control button:hover:not(.active) {
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-segmented-control button:hover:not(.active),
+html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-status-chips button:hover:not(.active) {
   background: rgba(0, 0, 0, 0.04) !important;
   border-color: transparent !important;
   color: #1A1F26 !important;
 }
 
-html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-status-chips button:hover,
 html body main.atlas-hub-shell .atlas-hub-main .atlas-scenario-view-switcher button:hover {
   background: #EBEBEB !important;
   border-color: #CBD5E1 !important;
